@@ -5,6 +5,10 @@ type PreferencesShape = Partial<Preferences>;
 
 let store: ElectronStore<PreferencesShape> | null = null;
 
+export function resolveStoreName(): string {
+  return process.env.ZMT_RENDERER_URL ? 'preferences.dev' : 'preferences';
+}
+
 function getStore(): ElectronStore<PreferencesShape> {
   if (store === null) {
     store = new ElectronStore<PreferencesShape>({
@@ -15,10 +19,6 @@ function getStore(): ElectronStore<PreferencesShape> {
   return store;
 }
 
-function resolveStoreName(): string {
-  return process.env.ZMT_RENDERER_URL ? 'preferences.dev' : 'preferences';
-}
-
 export const preferencesService = {
   async get<K extends PreferenceKey>(key: K): Promise<null | Preferences[K]> {
     const value = getStore().get(key);
@@ -27,7 +27,6 @@ export const preferencesService = {
   async getAll(): Promise<Preferences> {
     const current = getStore().store;
     return {
-      lastOpenedFolder: current.lastOpenedFolder ?? null,
       locale: current.locale ?? null,
       pluginSettings: current.pluginSettings ?? {},
     };

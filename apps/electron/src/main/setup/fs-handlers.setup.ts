@@ -4,7 +4,6 @@ import { BrowserWindow, dialog } from 'electron';
 import {
   listDirectory,
   readTextFile,
-  rootStateService,
   searchFiles,
   writeFileService,
 } from '../fs';
@@ -20,13 +19,8 @@ export function registerFsHandlers(): void {
     if (result.canceled || result.filePaths.length === 0) return null;
 
     const [chosen] = result.filePaths;
-    rootStateService.set(chosen);
     return chosen;
   });
-
-  ipcHandle<null | string>(IPC_CHANNELS.fs.getCurrentRoot, async () =>
-    rootStateService.get(),
-  );
 
   ipcHandle<FsNode[]>(
     IPC_CHANNELS.fs.listDirectory,

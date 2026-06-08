@@ -8,7 +8,6 @@ import { ZmtApp } from './zmt-app.component';
 function installApiMock(): void {
   const api: AppApiModel = {
     fs: {
-      getCurrentRoot: vi.fn().mockResolvedValue(null),
       listDirectory: vi.fn().mockResolvedValue([]),
       openFolderDialog: vi.fn().mockResolvedValue(null),
       readTextFile: vi.fn().mockResolvedValue(''),
@@ -26,6 +25,11 @@ function installApiMock(): void {
     },
     system: {
       ping: vi.fn().mockResolvedValue('pong'),
+    },
+    workspace: {
+      closeMod: vi.fn().mockResolvedValue({ activeModId: null, openMods: [] }),
+      get: vi.fn().mockResolvedValue({ activeModId: null, openMods: [] }),
+      openMod: vi.fn().mockResolvedValue({ activeModId: null, openMods: [] }),
     },
   };
   Object.defineProperty(window, 'api', {

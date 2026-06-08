@@ -33,6 +33,7 @@ Each ADR follows a consistent structure:
 | 010 | [Paired-library architecture per game](010-plugin-architecture.md)              | Accepted |
 | 011 | [Form library: React Hook Form + Zod](011-form-library.md)                      | Accepted |
 | 012 | [Code editor: CodeMirror 6](012-editor-choice.md)                               | Accepted |
+| 013 | [Multi-mod workspace model](013-multi-mod-workspace-model.md)                   | Accepted |
 
 ## When to write an ADR
 

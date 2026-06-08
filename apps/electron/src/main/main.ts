@@ -10,15 +10,19 @@ import {
   registerPluginsHandlers,
   registerPreferencesHandlers,
   registerSystemHandlers,
+  registerWorkspaceHandlers,
 } from './setup';
+import { workspaceStoreService } from './workspace';
 
 async function bootstrap(): Promise<void> {
   registerSystemHandlers();
   registerFsHandlers();
   registerPreferencesHandlers();
+  registerWorkspaceHandlers();
   initializePlugins();
   registerPluginsHandlers();
   installContentSecurityPolicy();
+  await workspaceStoreService.load();
   await initializeDefaultRoot();
   createMainWindow();
 }

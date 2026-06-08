@@ -2,10 +2,16 @@ import { IPC_ERROR_CODES } from '@contracts';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { workspaceStoreService } from '../workspace';
 import { assertPathUnderRoot } from './path-guard.util';
-import { rootStateService } from './root-state.service';
+
+vi.mock('../workspace', () => ({
+  workspaceStoreService: {
+    getActiveModPath: vi.fn(),
+  },
+}));
 
 describe('assertPathUnderRoot', () => {
   let root: string;
@@ -20,12 +26,12 @@ describe('assertPathUnderRoot', () => {
     outside = path.join(realBase, 'outside');
     await fs.mkdir(root);
     await fs.mkdir(outside);
-    rootStateService.set(root);
+    vi.mocked(workspaceStoreService.getActiveModPath).mockReturnValue(root);
   });
 
   afterEach(async () => {
     const realBase = path.dirname(root);
-    rootStateService.set(null);
+    vi.mocked(workspaceStoreService.getActiveModPath).mockReset();
     await fs.rm(realBase, { force: true, recursive: true });
   });
 

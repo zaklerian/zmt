@@ -1,10 +1,10 @@
 import { FsNode } from '../fs';
 import { GamePlugin } from '../plugin';
 import { PreferenceKey, Preferences } from '../preferences';
+import { ModId, Workspace } from '../workspace';
 
 export interface AppApiModel {
   readonly fs: {
-    readonly getCurrentRoot: () => Promise<null | string>;
     readonly listDirectory: (path: string) => Promise<readonly FsNode[]>;
     readonly openFolderDialog: () => Promise<null | string>;
     readonly readTextFile: (path: string) => Promise<string>;
@@ -33,5 +33,10 @@ export interface AppApiModel {
   };
   readonly system: {
     readonly ping: () => Promise<string>;
+  };
+  readonly workspace: {
+    readonly closeMod: (id: ModId) => Promise<Workspace>;
+    readonly get: () => Promise<Workspace>;
+    readonly openMod: (path: string) => Promise<Workspace>;
   };
 }
