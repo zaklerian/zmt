@@ -19,7 +19,6 @@ ADRs, or rule files are not journaled here — the live artifact is the record.
 | ----- | ---------------------------------------------- | ----------------------------------------- | ---------- |
 | L-001 | DOMPurify for HTML preview                     | In discussion — at first HTML render      | 2026-06-08 |
 | L-002 | Chokidar file watcher                          | In discussion — at file-watch need        | 2026-06-08 |
-| L-003 | Persisted last-opened folder                   | In discussion — at right-panel land       | 2026-06-08 |
 | L-005 | Optimistic updates / state management approach | In discussion — at first save flow        | 2026-06-08 |
 | L-007 | Pre-push hook for `.claude/` vs `docs/` sync   | In discussion — at next consistency drift | 2026-06-08 |
 | L-009 | Mini drawer variant                            | Rejected for now — at rail content need   | 2026-06-08 |

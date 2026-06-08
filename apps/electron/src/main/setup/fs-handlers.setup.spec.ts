@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   listDirectory,
   readTextFile,
-  rootStateService,
   searchFiles,
   writeFileService,
 } from '../fs';
@@ -19,10 +18,6 @@ import { registerFsHandlers } from './fs-handlers.setup';
 vi.mock('../fs', () => ({
   listDirectory: vi.fn(),
   readTextFile: vi.fn(),
-  rootStateService: {
-    get: vi.fn(),
-    set: vi.fn(),
-  },
   searchFiles: vi.fn(),
   writeFileService: {
     writeBinary: vi.fn(),
@@ -46,8 +41,6 @@ describe('registerFsHandlers', () => {
     vi.mocked(dialog.showOpenDialog).mockReset();
     vi.mocked(listDirectory).mockReset();
     vi.mocked(readTextFile).mockReset();
-    vi.mocked(rootStateService.get).mockReset();
-    vi.mocked(rootStateService.set).mockReset();
     vi.mocked(searchFiles).mockReset();
     vi.mocked(writeFileService.writeBinary).mockReset();
     vi.mocked(writeFileService.writeText).mockReset();
@@ -55,7 +48,7 @@ describe('registerFsHandlers', () => {
   });
 
   describe('fs:openFolderDialog', () => {
-    it('returns the chosen folder and stores it as the new root', async () => {
+    it('returns the chosen folder without touching any root state', async () => {
       vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(
         null as unknown as BrowserWindow,
       );
@@ -66,10 +59,9 @@ describe('registerFsHandlers', () => {
 
       const handler = getCapturedHandler(IPC_CHANNELS.fs.openFolderDialog);
       await expect(handler(makeInvokeEvent())).resolves.toBe('/picked/folder');
-      expect(rootStateService.set).toHaveBeenCalledWith('/picked/folder');
     });
 
-    it('returns null and does not touch the root state when the user cancels', async () => {
+    it('returns null when the user cancels', async () => {
       vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(
         null as unknown as BrowserWindow,
       );
@@ -80,10 +72,9 @@ describe('registerFsHandlers', () => {
 
       const handler = getCapturedHandler(IPC_CHANNELS.fs.openFolderDialog);
       await expect(handler(makeInvokeEvent())).resolves.toBeNull();
-      expect(rootStateService.set).not.toHaveBeenCalled();
     });
 
-    it('returns null and does not touch the root state when no path is returned', async () => {
+    it('returns null when no path is returned', async () => {
       vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(
         null as unknown as BrowserWindow,
       );
@@ -93,21 +84,6 @@ describe('registerFsHandlers', () => {
       });
 
       const handler = getCapturedHandler(IPC_CHANNELS.fs.openFolderDialog);
-      await expect(handler(makeInvokeEvent())).resolves.toBeNull();
-      expect(rootStateService.set).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('fs:getCurrentRoot', () => {
-    it('returns whatever root-state reports', async () => {
-      vi.mocked(rootStateService.get).mockReturnValue('/current/root');
-      const handler = getCapturedHandler(IPC_CHANNELS.fs.getCurrentRoot);
-      await expect(handler(makeInvokeEvent())).resolves.toBe('/current/root');
-    });
-
-    it('returns null when no root is open', async () => {
-      vi.mocked(rootStateService.get).mockReturnValue(null);
-      const handler = getCapturedHandler(IPC_CHANNELS.fs.getCurrentRoot);
       await expect(handler(makeInvokeEvent())).resolves.toBeNull();
     });
   });

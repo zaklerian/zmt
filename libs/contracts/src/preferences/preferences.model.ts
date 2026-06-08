@@ -7,7 +7,6 @@ export interface PluginFeatureSettings {
 export type PreferenceKey = keyof Preferences;
 
 export interface Preferences {
-  readonly lastOpenedFolder: null | string;
   readonly locale: Locale | null;
   readonly pluginSettings: Readonly<
     Partial<Record<string, PluginFeatureSettings>>
@@ -15,7 +14,6 @@ export interface Preferences {
 }
 
 export const PREFERENCE_KEYS: readonly PreferenceKey[] = [
-  'lastOpenedFolder',
   'locale',
   'pluginSettings',
 ];

@@ -5,3 +5,4 @@ export * from './plugins-handlers.setup';
 export * from './preferences-handlers.setup';
 export * from './register-app-lifecycle.setup';
 export * from './system-handlers.setup';
+export * from './workspace-handlers.setup';

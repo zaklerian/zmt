@@ -85,7 +85,6 @@ handlers goes through the preload script.
 // libs/contracts/src/ipc/ipc-channel.const.ts
 export const IPC_CHANNELS = {
   fs: {
-    getCurrentRoot: 'fs:getCurrentRoot',
     listDirectory: 'fs:listDirectory',
     openFolderDialog: 'fs:openFolderDialog',
     readTextFile: 'fs:readTextFile',
@@ -103,6 +102,11 @@ export const IPC_CHANNELS = {
   },
   system: {
     ping: 'system:ping',
+  },
+  workspace: {
+    closeMod: 'workspace:closeMod',
+    get: 'workspace:get',
+    openMod: 'workspace:openMod',
   },
 } as const;
 ```
@@ -130,6 +134,7 @@ libs/contracts/src/
 ├── ipc/                          # wire identifiers (channels, error model)
 ├── plugin/                       # cross-process plugin contract
 ├── preferences/                  # preferences store types
+├── workspace/                    # open-mod workspace types
 └── index.ts
 ```
 
@@ -177,13 +182,19 @@ apps/electron/src/main/
 ├── plugins/                            # plugin registry
 ├── preferences/                        # preferences store
 ├── setup/                              # app-level wiring
+├── workspace/                          # persisted workspace store (open mods + active mod)
 └── main.ts                             # entry point
 ```
 
+The `workspace/` store holds the canonical `Workspace` (`openMods[]` + `activeModId`)
+in main, persisted to the same electron-store file as preferences under a `workspace`
+key and pruned of missing paths on load. The path guard reads the active mod's path
+from it.
+
 `main.ts` is the entry point and the visible startup sequence: `app.whenReady()`
 registers lifecycle handlers, then calls `bootstrap()`, which registers IPC handlers,
-installs CSP, initializes default root (dev-mode `ZMT_DEFAULT_MODS_PATH`), and creates
-the window in that order.
+installs CSP, loads the persisted workspace (pruning missing paths), seeds the default
+root in dev (`ZMT_DEFAULT_MODS_PATH`), and creates the window in that order.
 
 ## Renderer structure
 

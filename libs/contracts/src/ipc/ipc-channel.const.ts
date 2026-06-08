@@ -1,6 +1,5 @@
 export const IPC_CHANNELS = {
   fs: {
-    getCurrentRoot: 'fs:getCurrentRoot',
     listDirectory: 'fs:listDirectory',
     openFolderDialog: 'fs:openFolderDialog',
     readTextFile: 'fs:readTextFile',
@@ -18,5 +17,10 @@ export const IPC_CHANNELS = {
   },
   system: {
     ping: 'system:ping',
+  },
+  workspace: {
+    closeMod: 'workspace:closeMod',
+    get: 'workspace:get',
+    openMod: 'workspace:openMod',
   },
 } as const;

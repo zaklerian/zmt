@@ -2,8 +2,10 @@ import {
   AppApiModel,
   GamePlugin,
   IPC_CHANNELS,
+  ModId,
   PreferenceKey,
   Preferences,
+  Workspace,
 } from '@contracts';
 import { contextBridge } from 'electron';
 
@@ -11,8 +13,6 @@ import { invokeStructured } from './ipc-invoke.util';
 
 const API = {
   fs: {
-    getCurrentRoot: () =>
-      invokeStructured<null | string>(IPC_CHANNELS.fs.getCurrentRoot),
     listDirectory: (path: string) =>
       invokeStructured(IPC_CHANNELS.fs.listDirectory, path),
     openFolderDialog: () =>
@@ -42,6 +42,13 @@ const API = {
   },
   system: {
     ping: () => invokeStructured<string>(IPC_CHANNELS.system.ping),
+  },
+  workspace: {
+    closeMod: (id: ModId) =>
+      invokeStructured<Workspace>(IPC_CHANNELS.workspace.closeMod, id),
+    get: () => invokeStructured<Workspace>(IPC_CHANNELS.workspace.get),
+    openMod: (path: string) =>
+      invokeStructured<Workspace>(IPC_CHANNELS.workspace.openMod, path),
   },
 } satisfies AppApiModel;
 

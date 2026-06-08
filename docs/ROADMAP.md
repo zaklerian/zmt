@@ -33,12 +33,6 @@ Within-session expansion persists naturally (state in React); across-launch
 persistence is overkill for current value and risks pointing at stale paths.
 Revisit on user feedback.
 
-### Persisted last-opened folder — `In discussion (deferred) (2026-06-08)`
-
-`electron-store` or JSON file in `app.getPath('userData')`. Removes the "open folder
-every launch" friction. Lands when the right panel makes the cost of re-opening
-visible.
-
 ### Across-roots search (multi-root) — `Deferred`
 
 Requires multi-mod first. Part of the multi-mod entry below.

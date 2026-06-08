@@ -1,3 +1,4 @@
+import { Workspace } from '@contracts';
 import { Box, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
@@ -24,22 +25,26 @@ export function AppShell() {
   const location = useLocation();
 
   useEffect(() => {
-    window.api.fs
-      .getCurrentRoot()
-      .then(setCurrentRoot)
+    window.api.workspace
+      .get()
+      .then((workspace) => setCurrentRoot(activeRoot(workspace)))
       .catch(() => setCurrentRoot(null));
   }, []);
 
   const handleOpenFolder = async () => {
     try {
       const chosen = await window.api.fs.openFolderDialog();
-      if (chosen !== null) {
-        setCurrentRoot(chosen);
-        setSelectedPath(null);
-        setActiveModRootPath(null);
-        if (location.pathname !== '/') {
-          void navigate('/');
-        }
+      if (chosen === null) return;
+      const current = await window.api.workspace.get();
+      if (current.activeModId !== null) {
+        await window.api.workspace.closeMod(current.activeModId);
+      }
+      const workspace = await window.api.workspace.openMod(chosen);
+      setCurrentRoot(activeRoot(workspace));
+      setSelectedPath(null);
+      setActiveModRootPath(null);
+      if (location.pathname !== '/') {
+        void navigate('/');
       }
     } catch (error) {
       console.error('Failed to open folder dialog', error);
@@ -108,4 +113,11 @@ export function AppShell() {
       />
     </ShellContextProvider>
   );
+}
+
+function activeRoot(workspace: Workspace): null | string {
+  const active = workspace.openMods.find(
+    (mod) => mod.id === workspace.activeModId,
+  );
+  return active ? active.path : null;
 }

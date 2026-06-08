@@ -19,7 +19,6 @@ vi.mock('../preferences', () => ({
 }));
 
 const emptyPreferences: Preferences = {
-  lastOpenedFolder: null,
   locale: null,
   pluginSettings: {},
 };
@@ -35,12 +34,10 @@ describe('registerPreferencesHandlers', () => {
 
   describe('preferences:get', () => {
     it('returns the stored value for a known key', async () => {
-      vi.mocked(preferencesService.get).mockResolvedValue('/tmp/last');
+      vi.mocked(preferencesService.get).mockResolvedValue('de');
       const handler = getCapturedHandler(IPC_CHANNELS.preferences.get);
-      await expect(
-        handler(makeInvokeEvent(), 'lastOpenedFolder'),
-      ).resolves.toBe('/tmp/last');
-      expect(preferencesService.get).toHaveBeenCalledWith('lastOpenedFolder');
+      await expect(handler(makeInvokeEvent(), 'locale')).resolves.toBe('de');
+      expect(preferencesService.get).toHaveBeenCalledWith('locale');
     });
 
     it('rejects with code 400 when the key is not a recognised preference', async () => {
@@ -78,11 +75,8 @@ describe('registerPreferencesHandlers', () => {
     it('passes null through to clear a preference', async () => {
       vi.mocked(preferencesService.set).mockResolvedValue();
       const handler = getCapturedHandler(IPC_CHANNELS.preferences.set);
-      await handler(makeInvokeEvent(), 'lastOpenedFolder', null);
-      expect(preferencesService.set).toHaveBeenCalledWith(
-        'lastOpenedFolder',
-        null,
-      );
+      await handler(makeInvokeEvent(), 'locale', null);
+      expect(preferencesService.set).toHaveBeenCalledWith('locale', null);
     });
 
     it('rejects with code 400 when the key is not a recognised preference', async () => {

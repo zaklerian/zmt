@@ -2,10 +2,10 @@ import { IPC_ERROR_CODES, IpcError } from '@contracts';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
-import { rootStateService } from './root-state.service';
+import { workspaceStoreService } from '../workspace';
 
 export async function assertPathUnderRoot(target: string): Promise<void> {
-  const root = rootStateService.get();
+  const root = workspaceStoreService.getActiveModPath();
 
   if (!root) {
     throw {
