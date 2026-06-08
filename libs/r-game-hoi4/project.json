@@ -1,0 +1,19 @@
+{
+  "name": "r-game-hoi4",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/r-game-hoi4/src",
+  "projectType": "library",
+  "tags": ["scope:renderer", "type:lib"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/r-game-hoi4",
+        "main": "libs/r-game-hoi4/src/index.ts",
+        "tsConfig": "libs/r-game-hoi4/tsconfig.lib.json",
+        "assets": ["libs/r-game-hoi4/*.md"]
+      }
+    }
+  }
+}

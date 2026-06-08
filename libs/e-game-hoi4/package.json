@@ -1,0 +1,11 @@
+{
+  "name": "@e-game-hoi4",
+  "version": "0.0.1",
+  "private": true,
+  "type": "commonjs",
+  "dependencies": {
+    "@contracts": "*",
+    "@paradox-parser": "*",
+    "tslib": "2.8.1"
+  }
+}

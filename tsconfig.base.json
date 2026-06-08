@@ -1,0 +1,29 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "baseUrl": ".",
+    "declaration": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "lib": ["es2022", "dom"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "paths": {
+      "@contracts": ["libs/contracts/src/index.ts"],
+      "@e-game-hoi4": ["libs/e-game-hoi4/src/index.ts"],
+      "@main/*": ["apps/electron/src/main/*"],
+      "@paradox-parser": ["libs/paradox-parser/src/index.ts"],
+      "@preload/*": ["apps/electron/src/preload/*"],
+      "@r-game-hoi4": ["libs/r-game-hoi4/src/index.ts"],
+      "@renderer/*": ["apps/zmt/src/*"]
+    },
+    "rootDir": ".",
+    "skipDefaultLibCheck": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "es2022"
+  },
+  "exclude": ["node_modules", "tmp"]
+}

@@ -1,0 +1,9 @@
+name="Edge Mod"
+version=1.0
+release_date=2024.1.15
+multiplayer_compatible=yes
+ironman_compatible=no
+min_players<=4
+max_players>=2
+exclusion_count!=3
+unquoted_value=draft

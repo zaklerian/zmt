@@ -1,0 +1,9 @@
+{
+  "name": "@contracts",
+  "version": "0.0.1",
+  "private": true,
+  "type": "commonjs",
+  "dependencies": {
+    "tslib": "2.8.1"
+  }
+}

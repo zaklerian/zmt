@@ -1,0 +1,50 @@
+{
+  "name": "paradox-parser",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/paradox-parser/src",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:lib"],
+  "targets": {
+    "codegen": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/src/cst/paradox.grammar",
+        { "externalDependencies": ["@lezer/generator"] }
+      ],
+      "outputs": ["{projectRoot}/src/cst/__generated__"],
+      "options": {
+        "cwd": "libs/paradox-parser",
+        "commands": [
+          "node -e \"require('node:fs').mkdirSync('src/cst/__generated__', { recursive: true })\"",
+          "lezer-generator --typeScript --output src/cst/__generated__/paradox.ts src/cst/paradox.grammar"
+        ],
+        "parallel": false
+      }
+    },
+    "build": {
+      "executor": "@nx/js:tsc",
+      "dependsOn": ["codegen", "^build"],
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/paradox-parser",
+        "main": "libs/paradox-parser/src/index.ts",
+        "tsConfig": "libs/paradox-parser/tsconfig.lib.json",
+        "assets": ["libs/paradox-parser/*.md"]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": ["codegen"],
+      "inputs": ["default", "^default"],
+      "options": {
+        "cwd": "libs/paradox-parser",
+        "command": "tsc --noEmit -p tsconfig.lib.json"
+      }
+    },
+    "test": {
+      "dependsOn": ["codegen"]
+    }
+  }
+}

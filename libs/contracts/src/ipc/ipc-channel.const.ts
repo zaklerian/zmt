@@ -1,0 +1,22 @@
+export const IPC_CHANNELS = {
+  fs: {
+    getCurrentRoot: 'fs:getCurrentRoot',
+    listDirectory: 'fs:listDirectory',
+    openFolderDialog: 'fs:openFolderDialog',
+    readTextFile: 'fs:readTextFile',
+    searchFiles: 'fs:searchFiles',
+    writeBinaryFile: 'fs:writeBinaryFile',
+    writeTextFile: 'fs:writeTextFile',
+  },
+  plugins: {
+    list: 'plugins:list',
+  },
+  preferences: {
+    get: 'preferences:get',
+    getAll: 'preferences:getAll',
+    set: 'preferences:set',
+  },
+  system: {
+    ping: 'system:ping',
+  },
+} as const;

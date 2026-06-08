@@ -1,0 +1,110 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "electron",
+  "projectType": "application",
+  "sourceRoot": "apps/electron/src",
+  "tags": ["scope:main", "type:app"],
+  "targets": {
+    "build": {
+      "dependsOn": ["build-main", "build-preload"],
+      "executor": "nx:noop"
+    },
+    "build-main": {
+      "configurations": {
+        "development": {
+          "esbuildOptions": {
+            "outExtension": {
+              ".js": ".js"
+            },
+            "sourcemap": true
+          }
+        },
+        "production": {
+          "esbuildOptions": {
+            "outExtension": {
+              ".js": ".js"
+            },
+            "sourcemap": false
+          }
+        }
+      },
+      "defaultConfiguration": "production",
+      "executor": "@nx/esbuild:esbuild",
+      "options": {
+        "bundle": true,
+        "esbuildOptions": {
+          "outExtension": {
+            ".js": ".js"
+          },
+          "sourcemap": true
+        },
+        "format": ["cjs"],
+        "main": "apps/electron/src/main/main.ts",
+        "outputPath": "dist/apps/electron/main",
+        "platform": "node",
+        "tsConfig": "apps/electron/tsconfig.app.json"
+      },
+      "outputs": ["{options.outputPath}"]
+    },
+    "build-preload": {
+      "configurations": {
+        "development": {
+          "esbuildOptions": {
+            "outExtension": {
+              ".js": ".js"
+            },
+            "sourcemap": true
+          }
+        },
+        "production": {
+          "esbuildOptions": {
+            "outExtension": {
+              ".js": ".js"
+            },
+            "sourcemap": false
+          }
+        }
+      },
+      "defaultConfiguration": "production",
+      "executor": "@nx/esbuild:esbuild",
+      "options": {
+        "bundle": true,
+        "esbuildOptions": {
+          "outExtension": {
+            ".js": ".js"
+          },
+          "sourcemap": true
+        },
+        "format": ["cjs"],
+        "main": "apps/electron/src/preload/preload.ts",
+        "outputPath": "dist/apps/electron/preload",
+        "platform": "node",
+        "tsConfig": "apps/electron/tsconfig.app.json"
+      },
+      "outputs": ["{options.outputPath}"]
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "nx run zmt:serve",
+          "nx run electron:build-main --configuration=development --watch",
+          "nx run electron:build-preload --configuration=development --watch",
+          "npx wait-on dist/apps/electron/main/main.js dist/apps/electron/preload/preload.js tcp:4200 && electronmon dist/apps/electron/main/main.js"
+        ],
+        "parallel": true,
+        "env": {
+          "ZMT_RENDERER_URL": "http://localhost:4200"
+        }
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["default", "^default", "{workspaceRoot}/tsconfig.base.json"],
+      "options": {
+        "command": "tsc --noEmit -p apps/electron/tsconfig.app.json"
+      }
+    }
+  }
+}

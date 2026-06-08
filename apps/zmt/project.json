@@ -1,0 +1,61 @@
+{
+  "name": "zmt",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/zmt/src",
+  "projectType": "application",
+  "tags": ["scope:renderer", "type:app"],
+  "targets": {
+    "build": {
+      "executor": "@nx/vite:build",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/apps/zmt"
+      },
+      "configurations": {
+        "development": {},
+        "production": {}
+      }
+    },
+    "serve": {
+      "executor": "@nx/vite:dev-server",
+      "continuous": true,
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "zmt:build",
+        "port": 4200
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "zmt:build:development"
+        },
+        "production": {
+          "buildTarget": "zmt:build:production"
+        }
+      }
+    },
+    "preview": {
+      "executor": "@nx/vite:preview-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "zmt:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "zmt:build:development"
+        },
+        "production": {
+          "buildTarget": "zmt:build:production"
+        }
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["default", "^default", "{workspaceRoot}/tsconfig.base.json"],
+      "options": {
+        "command": "tsc --noEmit -p apps/zmt/tsconfig.app.json"
+      }
+    }
+  }
+}

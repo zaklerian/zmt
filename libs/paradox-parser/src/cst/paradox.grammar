@@ -1,0 +1,60 @@
+@top Script { Assignment* }
+
+Assignment { Key Operator Value }
+
+Key { Identifier | StringValue }
+
+Operator {
+  Equals | LessEq | LessThan | GreaterEq | GreaterThan | NotEqual
+}
+
+Value {
+  StringValue
+  | DateValue
+  | NumberValue
+  | BooleanValue
+  | Identifier
+  | Block
+  | BracketExpression
+}
+
+Block { LBrace BlockItem* RBrace }
+
+BlockItem { Assignment | Value }
+
+BooleanValue { @specialize<Identifier, "yes" | "no"> }
+
+BracketExpression { BracketExprToken }
+
+@dialects { hoi4_bracket_expr }
+
+@skip { whitespace | Comment }
+
+@tokens {
+  Identifier { $[A-Za-z_] $[A-Za-z0-9_]* }
+
+  StringValue { '"' ( !["\\] | "\\" _ )* '"' }
+
+  DateValue  { $[0-9]+ "." $[0-9]+ "." $[0-9]+ }
+  NumberValue { "-"? $[0-9]+ ("." $[0-9]+)? }
+
+  LBrace      { "{" }
+  RBrace      { "}" }
+
+  Equals      { "=" }
+  LessEq      { "<=" }
+  LessThan    { "<" }
+  GreaterEq   { ">=" }
+  GreaterThan { ">" }
+  NotEqual    { "!=" }
+
+  Comment { "#" ![\n]* }
+
+  BracketExprToken[@dialect=hoi4_bracket_expr] { "@[" ![\]]* "]" }
+
+  whitespace { $[ \t\r\n]+ }
+
+  @precedence { DateValue, NumberValue }
+  @precedence { LessEq, LessThan }
+  @precedence { GreaterEq, GreaterThan }
+}
