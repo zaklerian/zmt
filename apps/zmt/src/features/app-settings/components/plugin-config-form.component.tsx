@@ -28,11 +28,11 @@ export function PluginConfigForm({
   plugins,
   storedSettings,
 }: PluginConfigFormProps) {
-  const { t } = useTranslation(['feature.pluginConfig', 'app']);
+  const { t } = useTranslation(['feature.appSettings', 'app']);
   const modal = useModal();
   const { control, formState, reset } =
     useFormContext<PluginConfigFormValues>();
-  const gameLabel = t('feature.pluginConfig:form.game.label');
+  const gameLabel = t('feature.appSettings:form.game.label');
 
   const onlyOnePlugin = plugins.length <= 1;
 
@@ -44,7 +44,7 @@ export function PluginConfigForm({
     if (formState.isDirty) {
       const proceed = await modal.confirm({
         confirmLabel: t('app:actions.discard'),
-        message: t('feature.pluginConfig:gameSwitch.unsavedMessage'),
+        message: t('feature.appSettings:gameSwitch.unsavedMessage'),
         title: t('app:modals.unsavedChanges.title'),
       });
       if (!proceed) return;
@@ -80,7 +80,7 @@ export function PluginConfigForm({
 
       <Box>
         <Typography color="text.secondary" variant="overline">
-          {t('feature.pluginConfig:form.features.sectionLabel')}
+          {t('feature.appSettings:form.features.sectionLabel')}
         </Typography>
         <Stack>
           {activePlugin.features.map((feature) => (

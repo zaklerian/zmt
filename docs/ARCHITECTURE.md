@@ -209,7 +209,7 @@ apps/zmt/src/
 ├── features/
 │   ├── mod-content/                     # mod browsing
 │   ├── mod-info-edit/                   # descriptor.mod editing
-│   └── plugin-config/                   # per-game feature toggles
+│   └── app-settings/                    # app settings (per-game feature toggles)
 ├── i18n/                                # locale resources, locale provider
 ├── plugins/                             # renderer-side plugin registry
 ├── shared/                              # cross-feature primitives

@@ -1,4 +1,4 @@
-import type { en } from '../en/feature.plugin-config';
+import type { en } from '../en/feature.app-settings';
 
 export const uk: typeof en = {
   close: {
@@ -19,6 +19,6 @@ export const uk: typeof en = {
   },
   modal: {
     noPlugins: 'Плагіни не зареєстровано.',
-    title: 'Налаштування плагінів',
+    title: 'Налаштування застосунку',
   },
 };

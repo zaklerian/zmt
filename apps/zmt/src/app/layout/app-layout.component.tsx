@@ -14,8 +14,8 @@ interface AppLayoutProps {
   content: ReactNode;
   currentRoot: null | string;
   drawerOpen: boolean;
+  onOpenAppSettings: () => void;
   onOpenFolder: () => void;
-  onOpenPluginConfig: () => void;
   onToggleDrawer: () => void;
   sidebar: ReactNode;
 }
@@ -24,8 +24,8 @@ export function AppLayout({
   content,
   currentRoot,
   drawerOpen,
+  onOpenAppSettings,
   onOpenFolder,
-  onOpenPluginConfig,
   onToggleDrawer,
   sidebar,
 }: AppLayoutProps) {
@@ -36,8 +36,8 @@ export function AppLayout({
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <AppHeader
         currentRoot={currentRoot}
+        onOpenAppSettings={onOpenAppSettings}
         onOpenFolder={onOpenFolder}
-        onOpenPluginConfig={onOpenPluginConfig}
       />
       <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
         {currentRoot !== null && (

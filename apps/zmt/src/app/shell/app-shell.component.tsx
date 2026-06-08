@@ -3,12 +3,12 @@ import { Box, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 
+import { AppSettingsModal } from '../../features/app-settings';
 import {
   FileTreeSelection,
   ModContent,
   NoFolderState,
 } from '../../features/mod-content';
-import { PluginConfigModal } from '../../features/plugin-config';
 import { AppLayout } from '../layout';
 import { ShellContextProvider, ShellContextValue } from './shell-context';
 
@@ -19,7 +19,7 @@ export function AppShell() {
   const [activeModRootPath, setActiveModRootPath] = useState<null | string>(
     null,
   );
-  const [pluginConfigOpen, setPluginConfigOpen] = useState(false);
+  const [appSettingsOpen, setAppSettingsOpen] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -103,13 +103,13 @@ export function AppShell() {
         currentRoot={currentRoot}
         drawerOpen={drawerOpen}
         sidebar={sidebar}
+        onOpenAppSettings={() => setAppSettingsOpen(true)}
         onOpenFolder={handleOpenFolder}
-        onOpenPluginConfig={() => setPluginConfigOpen(true)}
         onToggleDrawer={() => setDrawerOpen((open) => !open)}
       />
-      <PluginConfigModal
-        open={pluginConfigOpen}
-        onClose={() => setPluginConfigOpen(false)}
+      <AppSettingsModal
+        open={appSettingsOpen}
+        onClose={() => setAppSettingsOpen(false)}
       />
     </ShellContextProvider>
   );

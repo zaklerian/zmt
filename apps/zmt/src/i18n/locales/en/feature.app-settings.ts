@@ -16,6 +16,6 @@ export const en = {
   },
   modal: {
     noPlugins: 'No plugins registered.',
-    title: 'Plugin configuration',
+    title: 'App Settings',
   },
 };
