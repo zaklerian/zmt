@@ -9,6 +9,12 @@ export const uk: typeof en = {
     features: {
       sectionLabel: 'Функції',
     },
+    fileDisplay: {
+      hideUnsupported: {
+        label: 'Приховати непідтримувані файли',
+      },
+      sectionLabel: 'Відображення файлів',
+    },
     game: {
       label: 'Гра',
     },

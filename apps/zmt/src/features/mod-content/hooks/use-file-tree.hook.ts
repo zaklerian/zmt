@@ -55,6 +55,7 @@ const initialState: FileTreeState = {
 };
 
 interface UseFileTreeOptions {
+  readonly hideUnsupportedFiles: boolean;
   readonly root: null | string;
 }
 
@@ -66,7 +67,10 @@ interface UseFileTreeResult {
   readonly rootChildren: readonly FsNode[];
 }
 
-export function useFileTree({ root }: UseFileTreeOptions): UseFileTreeResult {
+export function useFileTree({
+  hideUnsupportedFiles,
+  root,
+}: UseFileTreeOptions): UseFileTreeResult {
   const [state, dispatch] = useReducer(reducer, initialState);
   const fetchCounterRef = useRef(0);
 
@@ -77,7 +81,7 @@ export function useFileTree({ root }: UseFileTreeOptions): UseFileTreeResult {
     if (root === null) return;
 
     modContentService
-      .listDirectory(root)
+      .listDirectory(root, { hideUnsupportedFiles })
       .then((nodes) => dispatch({ fetchId, nodes, type: 'root-loaded' }))
       .catch((error: unknown) => {
         const ipcError: IpcError = isIpcError(error)
@@ -85,19 +89,19 @@ export function useFileTree({ root }: UseFileTreeOptions): UseFileTreeResult {
           : { code: 500, message: String(error) };
         dispatch({ error: ipcError, fetchId, type: 'root-failed' });
       });
-  }, [root]);
+  }, [hideUnsupportedFiles, root]);
 
   const loadChildren = useCallback(
     (path: string) => {
       if (state.childrenByPath.has(path)) return;
       modContentService
-        .listDirectory(path)
+        .listDirectory(path, { hideUnsupportedFiles })
         .then((nodes) => dispatch({ nodes, path, type: 'children-loaded' }))
         .catch(() => {
           dispatch({ nodes: [], path, type: 'children-loaded' });
         });
     },
-    [state.childrenByPath],
+    [hideUnsupportedFiles, state.childrenByPath],
   );
 
   return {

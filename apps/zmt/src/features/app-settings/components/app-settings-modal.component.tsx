@@ -9,6 +9,9 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
+  Switch,
+  Typography,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
@@ -26,26 +29,41 @@ import { pluginConfigService } from '../services/plugin-config.service';
 import { PluginConfigForm } from './plugin-config-form.component';
 
 interface AppSettingsModalContentProps {
+  hideUnsupportedFiles: boolean;
   onClose: () => void;
 }
 
 interface AppSettingsModalProps {
+  hideUnsupportedFiles: boolean;
   onClose: () => void;
   open: boolean;
 }
 
 interface AppSettingsReadyViewProps {
+  hideUnsupportedFiles: boolean;
   onClose: () => void;
   plugins: readonly GamePlugin[];
   storedSettings: Preferences['pluginSettings'];
 }
 
-export function AppSettingsModal({ onClose, open }: AppSettingsModalProps) {
+export function AppSettingsModal({
+  hideUnsupportedFiles,
+  onClose,
+  open,
+}: AppSettingsModalProps) {
   if (!open) return null;
-  return <AppSettingsModalContent onClose={onClose} />;
+  return (
+    <AppSettingsModalContent
+      hideUnsupportedFiles={hideUnsupportedFiles}
+      onClose={onClose}
+    />
+  );
 }
 
-function AppSettingsModalContent({ onClose }: AppSettingsModalContentProps) {
+function AppSettingsModalContent({
+  hideUnsupportedFiles,
+  onClose,
+}: AppSettingsModalContentProps) {
   const { t } = useTranslation(['feature.appSettings', 'app']);
   const { status } = usePluginConfig();
 
@@ -94,6 +112,7 @@ function AppSettingsModalContent({ onClose }: AppSettingsModalContentProps) {
 
   return (
     <AppSettingsReadyView
+      hideUnsupportedFiles={hideUnsupportedFiles}
       plugins={status.data.plugins}
       storedSettings={status.data.storedSettings}
       onClose={onClose}
@@ -102,12 +121,15 @@ function AppSettingsModalContent({ onClose }: AppSettingsModalContentProps) {
 }
 
 function AppSettingsReadyView({
+  hideUnsupportedFiles,
   onClose,
   plugins,
   storedSettings,
 }: AppSettingsReadyViewProps) {
   const { t } = useTranslation(['feature.appSettings', 'app']);
   const modal = useModal();
+  const [hideUnsupported, setHideUnsupported] = useState(hideUnsupportedFiles);
+  const toggleChanged = hideUnsupported !== hideUnsupportedFiles;
   const initialPlugin = plugins[0];
   const defaultValues = useMemo(
     () => buildInitialFormValues(initialPlugin, storedSettings),
@@ -132,12 +154,20 @@ function AppSettingsReadyView({
   const save = useAsyncCallback(async (values: PluginConfigFormValues) => {
     setSaveError(null);
     try {
-      const current = (await pluginConfigService.getPluginSettings()) ?? {};
-      const next = {
-        ...current,
-        [values.activeGameId]: { features: { ...values.features } },
-      };
-      await pluginConfigService.setPluginSettings(next);
+      if (methods.formState.isDirty) {
+        const current = (await pluginConfigService.getPluginSettings()) ?? {};
+        const next = {
+          ...current,
+          [values.activeGameId]: { features: { ...values.features } },
+        };
+        await pluginConfigService.setPluginSettings(next);
+      }
+      if (toggleChanged) {
+        await window.api.preferences.set(
+          'hideUnsupportedFiles',
+          hideUnsupported,
+        );
+      }
       onClose();
     } catch (rawError: unknown) {
       const error: IpcError = isIpcError(rawError)
@@ -148,7 +178,7 @@ function AppSettingsReadyView({
   });
 
   const requestClose = async () => {
-    if (methods.formState.isDirty) {
+    if (methods.formState.isDirty || toggleChanged) {
       const proceed = await modal.confirm({
         confirmLabel: t('app:actions.discard'),
         message: t('feature.appSettings:close.unsavedMessage'),
@@ -169,6 +199,22 @@ function AppSettingsReadyView({
             plugins={plugins}
             storedSettings={storedSettings}
           />
+          <Box sx={{ mt: 2 }}>
+            <Typography color="text.secondary" variant="overline">
+              {t('feature.appSettings:form.fileDisplay.sectionLabel')}
+            </Typography>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={hideUnsupported}
+                  onChange={(_, checked) => setHideUnsupported(checked)}
+                />
+              }
+              label={t(
+                'feature.appSettings:form.fileDisplay.hideUnsupported.label',
+              )}
+            />
+          </Box>
           {saveError !== null && (
             <Alert severity="error" sx={{ mt: 2 }}>
               {saveError.message}
@@ -180,7 +226,9 @@ function AppSettingsReadyView({
             {t('app:actions.cancel')}
           </Button>
           <Button
-            disabled={!methods.formState.isDirty || save.isPending}
+            disabled={
+              (!methods.formState.isDirty && !toggleChanged) || save.isPending
+            }
             startIcon={
               save.isPending ? (
                 <CircularProgress color="inherit" size={16} />

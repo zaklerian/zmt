@@ -33,7 +33,7 @@ describe('useFileTree', () => {
     // (stale) fetch must never be accepted once the second supersedes it.
     // A Date.now() fetchId collides here; a monotonic counter does not.
     const { rerender, result } = renderHook(
-      ({ root }) => useFileTree({ root }),
+      ({ root }) => useFileTree({ hideUnsupportedFiles: false, root }),
       {
         initialProps: { root: '/a' },
       },
