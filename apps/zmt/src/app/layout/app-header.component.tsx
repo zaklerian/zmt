@@ -11,13 +11,13 @@ import {
 import { useTranslation } from 'react-i18next';
 
 interface AppHeaderProps {
-  currentRoot: null | string;
+  hasSource: boolean;
   onOpenAppSettings: () => void;
   onOpenFolder: () => void;
 }
 
 export function AppHeader({
-  currentRoot,
+  hasSource,
   onOpenAppSettings,
   onOpenFolder,
 }: AppHeaderProps) {
@@ -32,7 +32,7 @@ export function AppHeader({
           {t('header.title')}
         </Typography>
         <Box sx={{ flexGrow: 1 }} />
-        {currentRoot !== null && (
+        {hasSource && (
           <Tooltip title={openFolderLabel}>
             <IconButton
               aria-label={openFolderLabel}

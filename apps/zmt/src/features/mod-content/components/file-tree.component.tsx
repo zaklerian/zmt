@@ -1,10 +1,15 @@
-import { DESCRIPTOR_FILENAME, FILE_SUPPORT, FsNode } from '@contracts';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { FILE_SUPPORT, ProjectedSource } from '@contracts';
+import { Typography } from '@mui/material';
 import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { useFileTree } from '../hooks';
+import { FsTreeItem } from './file-tree-item.model';
+import { basename } from './file-tree-item.util';
+import {
+  FileTreeRoot,
+  FileTreeRootContribution,
+} from './file-tree-root.component';
 
 export interface FileTreeSelection {
   readonly isModRoot: boolean;
@@ -14,68 +19,89 @@ export interface FileTreeSelection {
 interface FileTreeProps {
   hideUnsupportedFiles: boolean;
   onSelect: (selection: FileTreeSelection) => void;
-  root: null | string;
   selectedPath: null | string;
-}
-
-interface FsTreeItem {
-  readonly children?: readonly FsTreeItem[];
-  id: string;
-  label: string;
-  readonly node: FsNode | null;
+  sources: readonly ProjectedSource[];
 }
 
 export function FileTree({
   hideUnsupportedFiles,
   onSelect,
-  root,
   selectedPath,
+  sources,
 }: FileTreeProps) {
   const { t } = useTranslation(['feature.modContent']);
-  const { childrenByPath, error, loadChildren, loadingRoot, rootChildren } =
-    useFileTree({ hideUnsupportedFiles, root });
+  const [contributions, setContributions] = useState<
+    ReadonlyMap<string, FileTreeRootContribution>
+  >(new Map());
   const [userExpanded, setUserExpanded] = useState<readonly string[]>([]);
   const loadingLabel = t('feature.modContent:fileTree.loading');
 
-  const expanded = useMemo<readonly string[]>(() => {
-    if (root === null) return userExpanded;
-    return userExpanded.includes(root) ? userExpanded : [root, ...userExpanded];
-  }, [root, userExpanded]);
+  const handleContribution = useCallback(
+    (root: string, contribution: FileTreeRootContribution) => {
+      setContributions((prev) => {
+        const next = new Map(prev);
+        next.set(root, contribution);
+        return next;
+      });
+    },
+    [],
+  );
 
-  const modRootPaths = useMemo<ReadonlySet<string>>(() => {
-    const result = new Set<string>();
-    if (
-      root !== null &&
-      rootChildren.some((n) => n.name === DESCRIPTOR_FILENAME)
-    ) {
-      result.add(root);
-    }
-    for (const [parentPath, children] of childrenByPath.entries()) {
-      if (parentPath === root || parentPath === '') continue;
-      if (children.some((n) => n.name === DESCRIPTOR_FILENAME)) {
-        result.add(parentPath);
+  const rootPaths = useMemo<readonly string[]>(
+    () => sources.map((s) => s.path),
+    [sources],
+  );
+
+  const expanded = useMemo<readonly string[]>(() => {
+    const set = new Set<string>(rootPaths);
+    for (const id of userExpanded) set.add(id);
+    return [...set];
+  }, [rootPaths, userExpanded]);
+
+  const items = useMemo<readonly FsTreeItem[]>(
+    () =>
+      sources.map(
+        (s) =>
+          contributions.get(s.path)?.item ?? {
+            children: [
+              { id: `${s.path}::loading`, label: loadingLabel, node: null },
+            ],
+            id: s.path,
+            label: basename(s.path),
+            node: null,
+          },
+      ),
+    [contributions, loadingLabel, sources],
+  );
+
+  const isModRoot = useCallback(
+    (path: string): boolean => {
+      if (sources.some((s) => s.path === path && s.permission === 'editable')) {
+        return true;
+      }
+      for (const s of sources) {
+        if (contributions.get(s.path)?.modRootPaths.has(path)) return true;
+      }
+      return false;
+    },
+    [contributions, sources],
+  );
+
+  const loadOwnedChildren = (path: string): void => {
+    let owner: null | string = null;
+    for (const root of rootPaths) {
+      if (
+        isUnder(root, path) &&
+        (owner === null || root.length > owner.length)
+      ) {
+        owner = root;
       }
     }
-    return result;
-  }, [root, rootChildren, childrenByPath]);
-
-  const items = useMemo<readonly FsTreeItem[]>(() => {
-    if (root === null) return [];
-    const childItems = rootChildren.map((n) =>
-      nodeToItem(n, childrenByPath, loadingLabel),
-    );
-    const syntheticRoot: FsTreeItem = {
-      children: childItems.length > 0 ? childItems : undefined,
-      id: root,
-      label: basename(root),
-      node: null,
-    };
-    return [syntheticRoot];
-  }, [root, rootChildren, childrenByPath, loadingLabel]);
-
-  const isItemDisabled = (item: FsTreeItem): boolean => {
-    return item.node?.support === FILE_SUPPORT.unsupported;
+    if (owner !== null) contributions.get(owner)?.loadChildren(path);
   };
+
+  const isItemDisabled = (item: FsTreeItem): boolean =>
+    item.node?.support === FILE_SUPPORT.unsupported;
 
   const handleExpandedChange = (
     _event: null | React.SyntheticEvent,
@@ -83,10 +109,10 @@ export function FileTree({
   ) => {
     const newlyExpanded = nextExpanded.filter((id) => !expanded.includes(id));
     newlyExpanded.forEach((path) => {
-      if (path === root) return;
-      loadChildren(path);
+      if (rootPaths.includes(path)) return;
+      loadOwnedChildren(path);
     });
-    setUserExpanded(nextExpanded.filter((id) => id !== root));
+    setUserExpanded(nextExpanded.filter((id) => !rootPaths.includes(id)));
   };
 
   const handleSelectedChange = (
@@ -97,75 +123,45 @@ export function FileTree({
       onSelect({ isModRoot: false, path: null });
       return;
     }
-    if (itemId.endsWith('::loading')) return;
-    onSelect({ isModRoot: modRootPaths.has(itemId), path: itemId });
+    if (itemId.endsWith('::loading') || itemId.endsWith('::error')) return;
+    onSelect({ isModRoot: isModRoot(itemId), path: itemId });
   };
-
-  if (loadingRoot) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-        <CircularProgress size={20} />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Typography color="error" sx={{ p: 2 }} variant="body2">
-        {error.message}
-      </Typography>
-    );
-  }
-
-  if (items.length === 0) {
-    return (
-      <Typography color="text.secondary" sx={{ p: 2 }} variant="body2">
-        {t('feature.modContent:fileTree.empty')}
-      </Typography>
-    );
-  }
 
   return (
-    <RichTreeView<FsTreeItem>
-      expandedItems={[...expanded]}
-      isItemDisabled={isItemDisabled}
-      items={[...items]}
-      selectedItems={selectedPath}
-      sx={{
-        '& .Mui-disabled, & .Mui-disabled .MuiTreeItem-content': {
-          cursor: 'default',
-        },
-      }}
-      onExpandedItemsChange={handleExpandedChange}
-      onSelectedItemsChange={handleSelectedChange}
-    />
+    <>
+      {sources.map((s) => (
+        <FileTreeRoot
+          key={s.path}
+          hideUnsupportedFiles={hideUnsupportedFiles}
+          root={s.path}
+          onContribution={handleContribution}
+        />
+      ))}
+      {items.length === 0 ? (
+        <Typography color="text.secondary" sx={{ p: 2 }} variant="body2">
+          {t('feature.modContent:fileTree.empty')}
+        </Typography>
+      ) : (
+        <RichTreeView<FsTreeItem>
+          expandedItems={[...expanded]}
+          isItemDisabled={isItemDisabled}
+          items={[...items]}
+          selectedItems={selectedPath}
+          sx={{
+            '& .Mui-disabled, & .Mui-disabled .MuiTreeItem-content': {
+              cursor: 'default',
+            },
+          }}
+          onExpandedItemsChange={handleExpandedChange}
+          onSelectedItemsChange={handleSelectedChange}
+        />
+      )}
+    </>
   );
 }
 
-function basename(path: string): string {
-  const parts = path.split(/[/\\]/).filter((p) => p.length > 0);
-  return parts[parts.length - 1] ?? path;
-}
-
-function nodeToItem(
-  node: FsNode,
-  childrenByPath: ReadonlyMap<string, readonly FsNode[]>,
-  loadingLabel: string,
-): FsTreeItem {
-  const children = childrenByPath.get(node.path);
-  const childItems = children?.map((c) =>
-    nodeToItem(c, childrenByPath, loadingLabel),
-  );
-
-  return {
-    children:
-      node.type === 'directory' && node.hasChildren
-        ? (childItems ?? [
-            { id: `${node.path}::loading`, label: loadingLabel, node: null },
-          ])
-        : undefined,
-    id: node.path,
-    label: node.name,
-    node,
-  };
+function isUnder(parent: string, child: string): boolean {
+  if (!child.startsWith(parent)) return false;
+  const rest = child.slice(parent.length);
+  return rest.startsWith('/') || rest.startsWith('\\');
 }

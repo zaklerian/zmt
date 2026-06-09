@@ -12,8 +12,8 @@ const DRAWER_WIDTH_MINI = 56;
 
 interface AppLayoutProps {
   content: ReactNode;
-  currentRoot: null | string;
   drawerOpen: boolean;
+  hasSource: boolean;
   onOpenAppSettings: () => void;
   onOpenFolder: () => void;
   onToggleDrawer: () => void;
@@ -22,8 +22,8 @@ interface AppLayoutProps {
 
 export function AppLayout({
   content,
-  currentRoot,
   drawerOpen,
+  hasSource,
   onOpenAppSettings,
   onOpenFolder,
   onToggleDrawer,
@@ -35,12 +35,12 @@ export function AppLayout({
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <AppHeader
-        currentRoot={currentRoot}
+        hasSource={hasSource}
         onOpenAppSettings={onOpenAppSettings}
         onOpenFolder={onOpenFolder}
       />
       <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
-        {currentRoot !== null && (
+        {hasSource && (
           <Drawer
             sx={{
               '& .MuiDrawer-paper': {
