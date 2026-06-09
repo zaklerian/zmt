@@ -29,7 +29,6 @@ vi.mock('../workspace', async (importActual) => {
 });
 
 const fakeWorkspace: Workspace = {
-  activeModId: 'mod-1',
   openMods: [
     { id: 'mod-1', name: 'alpha', path: '/mods/alpha', permission: 'editable' },
   ],
@@ -60,7 +59,6 @@ describe('registerWorkspaceHandlers', () => {
       vi.mocked(activeGameFolderPath).mockResolvedValue('/games/hoi4');
       const handler = getCapturedHandler(IPC_CHANNELS.workspace.get);
       await expect(handler(makeInvokeEvent())).resolves.toEqual({
-        activeModId: 'mod-1',
         openMods: [
           {
             id: 'vanilla:hoi4',
@@ -100,7 +98,7 @@ describe('registerWorkspaceHandlers', () => {
 
   describe('workspace:closeMod', () => {
     it('closes the mod with the given id and returns the new workspace', async () => {
-      const empty: Workspace = { activeModId: null, openMods: [] };
+      const empty: Workspace = { openMods: [] };
       vi.mocked(workspaceStoreService.closeMod).mockReturnValue(empty);
       const handler = getCapturedHandler(IPC_CHANNELS.workspace.closeMod);
       await expect(handler(makeInvokeEvent(), 'mod-1')).resolves.toEqual(empty);

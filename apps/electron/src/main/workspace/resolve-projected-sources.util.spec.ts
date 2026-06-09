@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest';
 import { resolveProjectedSources } from './resolve-projected-sources.util';
 
 const workspace: Workspace = {
-  activeModId: 'mod-1',
   openMods: [
     { id: 'mod-1', name: 'alpha', path: '/mods/alpha', permission: 'editable' },
     { id: 'mod-2', name: 'beta', path: '/mods/beta', permission: 'editable' },

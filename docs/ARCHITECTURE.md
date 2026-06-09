@@ -182,14 +182,15 @@ apps/electron/src/main/
 ├── plugins/                            # plugin registry
 ├── preferences/                        # preferences store
 ├── setup/                              # app-level wiring
-├── workspace/                          # persisted workspace store (open mods + active mod)
+├── workspace/                          # persisted workspace store (open mods)
 └── main.ts                             # entry point
 ```
 
-The `workspace/` store holds the canonical `Workspace` (`openMods[]` + `activeModId`)
-in main, persisted to the same electron-store file as preferences under a `workspace`
-key and pruned of missing paths on load. The path guard reads the active mod's path
-from it.
+The `workspace/` store holds the canonical `Workspace` (`openMods[]`) in main,
+persisted to the same electron-store file as preferences under a `workspace`
+key and pruned of missing paths on load. The active mod — the editable mod whose
+root contains the open file — is derived in the renderer, not stored (ADR 013).
+The path guard authorizes by each source's `permission`, not by active mod.
 
 `main.ts` is the entry point and the visible startup sequence: `app.whenReady()`
 registers lifecycle handlers, then calls `bootstrap()`, which registers IPC handlers,
