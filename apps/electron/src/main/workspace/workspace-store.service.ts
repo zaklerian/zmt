@@ -1,4 +1,4 @@
-import { ModId, OpenMod, Workspace } from '@contracts';
+import { IncludedMod, ModId, Workspace } from '@contracts';
 import ElectronStore from 'electron-store';
 import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
@@ -17,31 +17,31 @@ let store: ElectronStore<WorkspaceShape> | null = null;
 let workspace: null | Workspace = null;
 
 export const workspaceStoreService = {
-  closeMod(id: ModId): Workspace {
+  addMod(path: string): Workspace {
     const current = ensureLoaded();
-    const openMods = current.openMods.filter((mod) => mod.id !== id);
-    return persist({ openMods });
+    if (current.includedMods.some((mod) => mod.path === path)) {
+      return current;
+    }
+    const mod: IncludedMod = {
+      id: randomUUID(),
+      name: basename(path),
+      path,
+      permission: 'editable',
+    };
+    return persist({ includedMods: [...current.includedMods, mod] });
   },
   get(): Workspace {
     return ensureLoaded();
   },
   async load(): Promise<Workspace> {
     const parsed = parseWorkspace(getStore().get(WORKSPACE_KEY));
-    const openMods = await pruneMissing(parsed.openMods);
-    return persist({ openMods });
+    const includedMods = await pruneMissing(parsed.includedMods);
+    return persist({ includedMods });
   },
-  openMod(path: string): Workspace {
+  removeMod(id: ModId): Workspace {
     const current = ensureLoaded();
-    if (current.openMods.some((mod) => mod.path === path)) {
-      return current;
-    }
-    const mod: OpenMod = {
-      id: randomUUID(),
-      name: basename(path),
-      path,
-      permission: 'editable',
-    };
-    return persist({ openMods: [...current.openMods, mod] });
+    const includedMods = current.includedMods.filter((mod) => mod.id !== id);
+    return persist({ includedMods });
   },
 };
 
@@ -78,8 +78,8 @@ function persist(next: Workspace): Workspace {
 }
 
 async function pruneMissing(
-  mods: readonly OpenMod[],
-): Promise<readonly OpenMod[]> {
+  mods: readonly IncludedMod[],
+): Promise<readonly IncludedMod[]> {
   const checks = await Promise.all(
     mods.map(async (mod) => ({ keep: await pathExists(mod.path), mod })),
   );

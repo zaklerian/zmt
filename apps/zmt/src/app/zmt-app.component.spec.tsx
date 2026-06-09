@@ -27,9 +27,9 @@ function installApiMock(): void {
       ping: vi.fn().mockResolvedValue('pong'),
     },
     workspace: {
-      closeMod: vi.fn().mockResolvedValue({ openMods: [] }),
-      get: vi.fn().mockResolvedValue({ openMods: [] }),
-      openMod: vi.fn().mockResolvedValue({ openMods: [] }),
+      addMod: vi.fn().mockResolvedValue({ includedMods: [] }),
+      get: vi.fn().mockResolvedValue({ includedMods: [] }),
+      removeMod: vi.fn().mockResolvedValue({ includedMods: [] }),
     },
   };
   Object.defineProperty(window, 'api', {

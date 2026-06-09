@@ -21,15 +21,15 @@ vi.mock('../workspace', async (importActual) => {
     activeGameFolderPath: vi.fn(),
     activeGameId: vi.fn(),
     workspaceStoreService: {
-      closeMod: vi.fn(),
+      addMod: vi.fn(),
       get: vi.fn(),
-      openMod: vi.fn(),
+      removeMod: vi.fn(),
     },
   };
 });
 
 const fakeWorkspace: Workspace = {
-  openMods: [
+  includedMods: [
     { id: 'mod-1', name: 'alpha', path: '/mods/alpha', permission: 'editable' },
   ],
 };
@@ -37,9 +37,9 @@ const fakeWorkspace: Workspace = {
 describe('registerWorkspaceHandlers', () => {
   beforeEach(() => {
     vi.mocked(ipcMain.handle).mockReset();
-    vi.mocked(workspaceStoreService.closeMod).mockReset();
+    vi.mocked(workspaceStoreService.addMod).mockReset();
     vi.mocked(workspaceStoreService.get).mockReset();
-    vi.mocked(workspaceStoreService.openMod).mockReset();
+    vi.mocked(workspaceStoreService.removeMod).mockReset();
     vi.mocked(activeGameId).mockReset();
     vi.mocked(activeGameFolderPath).mockReset();
     vi.mocked(activeGameId).mockReturnValue('hoi4');
@@ -54,12 +54,12 @@ describe('registerWorkspaceHandlers', () => {
       await expect(handler(makeInvokeEvent())).resolves.toEqual(fakeWorkspace);
     });
 
-    it('leads openMods with a synthetic readonly vanilla entry when a game folder path is set', async () => {
+    it('leads includedMods with a synthetic readonly vanilla entry when a game folder path is set', async () => {
       vi.mocked(workspaceStoreService.get).mockReturnValue(fakeWorkspace);
       vi.mocked(activeGameFolderPath).mockResolvedValue('/games/hoi4');
       const handler = getCapturedHandler(IPC_CHANNELS.workspace.get);
       await expect(handler(makeInvokeEvent())).resolves.toEqual({
-        openMods: [
+        includedMods: [
           {
             id: 'vanilla:hoi4',
             name: 'hoi4',
@@ -77,40 +77,40 @@ describe('registerWorkspaceHandlers', () => {
     });
   });
 
-  describe('workspace:openMod', () => {
-    it('opens the mod at the given path and returns the new workspace', async () => {
-      vi.mocked(workspaceStoreService.openMod).mockReturnValue(fakeWorkspace);
-      const handler = getCapturedHandler(IPC_CHANNELS.workspace.openMod);
+  describe('workspace:addMod', () => {
+    it('adds the mod at the given path and returns the new workspace', async () => {
+      vi.mocked(workspaceStoreService.addMod).mockReturnValue(fakeWorkspace);
+      const handler = getCapturedHandler(IPC_CHANNELS.workspace.addMod);
       await expect(handler(makeInvokeEvent(), '/mods/alpha')).resolves.toEqual(
         fakeWorkspace,
       );
-      expect(workspaceStoreService.openMod).toHaveBeenCalledWith('/mods/alpha');
+      expect(workspaceStoreService.addMod).toHaveBeenCalledWith('/mods/alpha');
     });
 
     it('rejects with code 400 when the path is not a string', async () => {
-      const handler = getCapturedHandler(IPC_CHANNELS.workspace.openMod);
+      const handler = getCapturedHandler(IPC_CHANNELS.workspace.addMod);
       await expect(handler(makeInvokeEvent(), 42)).rejects.toSatisfy(
         (error) => extractIpcError(error).code === 400,
       );
-      expect(workspaceStoreService.openMod).not.toHaveBeenCalled();
+      expect(workspaceStoreService.addMod).not.toHaveBeenCalled();
     });
   });
 
-  describe('workspace:closeMod', () => {
-    it('closes the mod with the given id and returns the new workspace', async () => {
-      const empty: Workspace = { openMods: [] };
-      vi.mocked(workspaceStoreService.closeMod).mockReturnValue(empty);
-      const handler = getCapturedHandler(IPC_CHANNELS.workspace.closeMod);
+  describe('workspace:removeMod', () => {
+    it('removes the mod with the given id and returns the new workspace', async () => {
+      const empty: Workspace = { includedMods: [] };
+      vi.mocked(workspaceStoreService.removeMod).mockReturnValue(empty);
+      const handler = getCapturedHandler(IPC_CHANNELS.workspace.removeMod);
       await expect(handler(makeInvokeEvent(), 'mod-1')).resolves.toEqual(empty);
-      expect(workspaceStoreService.closeMod).toHaveBeenCalledWith('mod-1');
+      expect(workspaceStoreService.removeMod).toHaveBeenCalledWith('mod-1');
     });
 
     it('rejects with code 400 when the id is not a string', async () => {
-      const handler = getCapturedHandler(IPC_CHANNELS.workspace.closeMod);
+      const handler = getCapturedHandler(IPC_CHANNELS.workspace.removeMod);
       await expect(handler(makeInvokeEvent(), null)).rejects.toSatisfy(
         (error) => extractIpcError(error).code === 400,
       );
-      expect(workspaceStoreService.closeMod).not.toHaveBeenCalled();
+      expect(workspaceStoreService.removeMod).not.toHaveBeenCalled();
     });
   });
 });

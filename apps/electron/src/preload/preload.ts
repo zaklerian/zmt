@@ -45,11 +45,11 @@ const API = {
     ping: () => invokeStructured<string>(IPC_CHANNELS.system.ping),
   },
   workspace: {
-    closeMod: (id: ModId) =>
-      invokeStructured<Workspace>(IPC_CHANNELS.workspace.closeMod, id),
+    addMod: (path: string) =>
+      invokeStructured<Workspace>(IPC_CHANNELS.workspace.addMod, path),
     get: () => invokeStructured<Workspace>(IPC_CHANNELS.workspace.get),
-    openMod: (path: string) =>
-      invokeStructured<Workspace>(IPC_CHANNELS.workspace.openMod, path),
+    removeMod: (id: ModId) =>
+      invokeStructured<Workspace>(IPC_CHANNELS.workspace.removeMod, id),
   },
 } satisfies AppApiModel;
 

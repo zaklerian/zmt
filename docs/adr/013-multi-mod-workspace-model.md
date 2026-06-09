@@ -3,9 +3,9 @@
 - **Status**: Accepted
 - **Date**: 2026-06-08
 
-> **Update (2026-06-09, superseded in part by ADR 014):** The `hidden` axis described below was dropped before implementation. Entry visibility is handled by global App Settings toggles (hide vanilla, hide unsupported files), not a per-entry field; `OpenMod` carries `permission` only. The orthogonal-axes reasoning below is retained as the original rationale — the `hidden` field was never built. See ADR 014.
+> **Update (2026-06-09, superseded in part by ADR 014):** The `hidden` axis described below was dropped before implementation. Entry visibility is handled by global App Settings toggles (hide vanilla, hide unsupported files), not a per-entry field; `IncludedMod` carries `permission` only. The orthogonal-axes reasoning below is retained as the original rationale — the `hidden` field was never built. See ADR 014.
 
-> **Update (2026-06-09, active mod is derived, not stored):** `activeModId` was removed from the persisted `Workspace` and from the IPC shape. The active mod — the mod whose file is currently being edited — is derived in the renderer as the included editable mod whose root contains the open file. Storing it duplicated state already implied by the open file and the included-mods list; deriving it removes that desync class (the same principle this ADR applies to reference-ness and ADR 014 applies to the vanilla projection). The store holds membership (`openMods`) only; focus is computed. Included mods are not nested, so the containing-mod lookup is an unambiguous single prefix match.
+> **Update (2026-06-09, active mod is derived, not stored):** `activeModId` was removed from the persisted `Workspace` and from the IPC shape. The active mod — the mod whose file is currently being edited — is derived in the renderer as the included editable mod whose root contains the open file. Storing it duplicated state already implied by the open file and the included-mods list; deriving it removes that desync class (the same principle this ADR applies to reference-ness and ADR 014 applies to the vanilla projection). The store holds membership (`includedMods`) only; focus is computed. Included mods are not nested, so the containing-mod lookup is an unambiguous single prefix match.
 
 ## Context
 
@@ -27,10 +27,10 @@ makes the workspace a persisted artifact rather than session state.
 
 ## Decision
 
-**Ownership.** Canonical `openMods[]`, `activeMod`, and `activeFile` live in main. The
+**Ownership.** Canonical `includedMods[]`, `activeMod`, and `activeFile` live in main. The
 renderer receives a read-only projection over IPC and never holds write-capable state.
 
-**Collection.** A single ordered `openMods[]`. Order _is_ load-order. The resolution
+**Collection.** A single ordered `includedMods[]`. Order _is_ load-order. The resolution
 semantics that consume that order (override merge, conflict handling) are a separate
 decision and are not settled here.
 
@@ -64,7 +64,7 @@ parent reference, per-mod state — keys off a mutable value.
 shows a popup; main does not silently substitute another target.
 
 **Persistence.** Workspace state is a `workspace` section in the existing preferences
-store (electron-store, `version` and `migrations` already wired): `openMods[]`,
+store (electron-store, `version` and `migrations` already wired): `includedMods[]`,
 `activeMod`, `activeFile`, active features. The existing `preferences` section is
 untouched. The two are split by lifecycle so a future reset-preferences or
 multi-workspace feature cannot entangle global config with open-mod state.

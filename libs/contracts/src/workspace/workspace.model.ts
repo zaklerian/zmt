@@ -1,5 +1,5 @@
-import { OpenMod } from './open-mod.model';
+import { IncludedMod } from './included-mod.model';
 
 export interface Workspace {
-  readonly openMods: readonly OpenMod[];
+  readonly includedMods: readonly IncludedMod[];
 }

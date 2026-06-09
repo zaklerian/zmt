@@ -1,18 +1,18 @@
-import { OpenMod, Workspace } from '@contracts';
+import { IncludedMod, Workspace } from '@contracts';
 
-const EMPTY_WORKSPACE: Workspace = { openMods: [] };
+const EMPTY_WORKSPACE: Workspace = { includedMods: [] };
 
 export function parseWorkspace(raw: unknown): Workspace {
-  if (!isRecord(raw) || !Array.isArray(raw.openMods)) {
+  if (!isRecord(raw) || !Array.isArray(raw.includedMods)) {
     return EMPTY_WORKSPACE;
   }
 
-  const openMods: OpenMod[] = [];
-  for (const candidate of raw.openMods) {
-    if (!isOpenMod(candidate)) {
+  const includedMods: IncludedMod[] = [];
+  for (const candidate of raw.includedMods) {
+    if (!isIncludedMod(candidate)) {
       return EMPTY_WORKSPACE;
     }
-    openMods.push({
+    includedMods.push({
       id: candidate.id,
       name: candidate.name,
       path: candidate.path,
@@ -20,10 +20,10 @@ export function parseWorkspace(raw: unknown): Workspace {
     });
   }
 
-  return { openMods };
+  return { includedMods };
 }
 
-function isOpenMod(value: unknown): value is OpenMod {
+function isIncludedMod(value: unknown): value is IncludedMod {
   return (
     isRecord(value) &&
     typeof value.id === 'string' &&

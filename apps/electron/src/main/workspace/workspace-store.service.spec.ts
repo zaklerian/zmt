@@ -40,23 +40,23 @@ describe('workspaceStoreService', () => {
     existingPaths = new Set();
   });
 
-  describe('openMod', () => {
+  describe('addMod', () => {
     it('appends a new mod and names it by basename', async () => {
       const service = await loadService();
-      const result = service.openMod('/mods/alpha');
+      const result = service.addMod('/mods/alpha');
 
-      expect(result.openMods).toHaveLength(1);
-      expect(result.openMods[0].name).toBe('alpha');
-      expect(result.openMods[0].path).toBe('/mods/alpha');
-      expect(result.openMods[0].permission).toBe('editable');
+      expect(result.includedMods).toHaveLength(1);
+      expect(result.includedMods[0].name).toBe('alpha');
+      expect(result.includedMods[0].path).toBe('/mods/alpha');
+      expect(result.includedMods[0].permission).toBe('editable');
     });
 
     it('appends a second mod without replacing the first', async () => {
       const service = await loadService();
-      service.openMod('/mods/alpha');
-      const result = service.openMod('/mods/beta');
+      service.addMod('/mods/alpha');
+      const result = service.addMod('/mods/beta');
 
-      expect(result.openMods.map((mod) => mod.path)).toEqual([
+      expect(result.includedMods.map((mod) => mod.path)).toEqual([
         '/mods/alpha',
         '/mods/beta',
       ]);
@@ -64,39 +64,41 @@ describe('workspaceStoreService', () => {
 
     it('dedupes by path as a no-op, leaving the collection unchanged', async () => {
       const service = await loadService();
-      service.openMod('/mods/alpha');
-      const before = service.openMod('/mods/beta');
-      const again = service.openMod('/mods/alpha');
+      service.addMod('/mods/alpha');
+      const before = service.addMod('/mods/beta');
+      const again = service.addMod('/mods/alpha');
 
-      expect(again.openMods.map((mod) => mod.path)).toEqual(
-        before.openMods.map((mod) => mod.path),
+      expect(again.includedMods.map((mod) => mod.path)).toEqual(
+        before.includedMods.map((mod) => mod.path),
       );
     });
 
     it('persists the workspace through to the store', async () => {
       const service = await loadService();
-      service.openMod('/mods/alpha');
+      service.addMod('/mods/alpha');
 
-      expect((storeData.workspace as Workspace).openMods).toHaveLength(1);
+      expect((storeData.workspace as Workspace).includedMods).toHaveLength(1);
     });
   });
 
-  describe('closeMod', () => {
+  describe('removeMod', () => {
     it('removes the mod with the given id', async () => {
       const service = await loadService();
-      const opened = service.openMod('/mods/alpha');
-      const result = service.closeMod(opened.openMods[0].id);
+      const opened = service.addMod('/mods/alpha');
+      const result = service.removeMod(opened.includedMods[0].id);
 
-      expect(result.openMods).toHaveLength(0);
+      expect(result.includedMods).toHaveLength(0);
     });
 
     it('removes only the targeted mod, leaving the rest', async () => {
       const service = await loadService();
-      const alpha = service.openMod('/mods/alpha');
-      service.openMod('/mods/beta');
-      const result = service.closeMod(alpha.openMods[0].id);
+      const alpha = service.addMod('/mods/alpha');
+      service.addMod('/mods/beta');
+      const result = service.removeMod(alpha.includedMods[0].id);
 
-      expect(result.openMods.map((mod) => mod.path)).toEqual(['/mods/beta']);
+      expect(result.includedMods.map((mod) => mod.path)).toEqual([
+        '/mods/beta',
+      ]);
     });
   });
 
@@ -104,7 +106,7 @@ describe('workspaceStoreService', () => {
     it('prunes mods whose path no longer exists', async () => {
       // On-disk shape carries no permission; reconstruction coerces it.
       storeData.workspace = {
-        openMods: [
+        includedMods: [
           { id: 'gone', name: 'gone', path: '/mods/gone' },
           { id: 'here', name: 'here', path: '/mods/here' },
         ],
@@ -114,28 +116,28 @@ describe('workspaceStoreService', () => {
       const service = await loadService();
       const result = await service.load();
 
-      expect(result.openMods).toHaveLength(1);
-      expect(result.openMods[0].id).toBe('here');
-      expect(result.openMods[0].permission).toBe('editable');
+      expect(result.includedMods).toHaveLength(1);
+      expect(result.includedMods[0].id).toBe('here');
+      expect(result.includedMods[0].permission).toBe('editable');
     });
 
     it('keeps still-present mods through a prune', async () => {
       storeData.workspace = {
-        openMods: [{ id: 'here', name: 'here', path: '/mods/here' }],
+        includedMods: [{ id: 'here', name: 'here', path: '/mods/here' }],
       };
       existingPaths = new Set(['/mods/here']);
 
       const service = await loadService();
       const result = await service.load();
 
-      expect(result.openMods.map((mod) => mod.id)).toEqual(['here']);
+      expect(result.includedMods.map((mod) => mod.id)).toEqual(['here']);
     });
 
     it('returns the default workspace when the stored value is absent', async () => {
       const service = await loadService();
       const result = await service.load();
 
-      expect(result).toEqual({ openMods: [] });
+      expect(result).toEqual({ includedMods: [] });
     });
 
     it('returns the default workspace when the stored value is corrupt', async () => {
@@ -144,7 +146,7 @@ describe('workspaceStoreService', () => {
       const service = await loadService();
       const result = await service.load();
 
-      expect(result).toEqual({ openMods: [] });
+      expect(result).toEqual({ includedMods: [] });
     });
   });
 });

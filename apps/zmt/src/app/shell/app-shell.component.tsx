@@ -1,4 +1,4 @@
-import { OpenMod, ProjectedSource } from '@contracts';
+import { IncludedMod, ProjectedSource } from '@contracts';
 import { Box, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
@@ -13,7 +13,7 @@ import { AppLayout } from '../layout';
 import { ShellContextProvider, ShellContextValue } from './shell-context';
 
 export function AppShell() {
-  const [openMods, setOpenMods] = useState<readonly OpenMod[]>([]);
+  const [includedMods, setIncludedMods] = useState<readonly IncludedMod[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedPath, setSelectedPath] = useState<null | string>(null);
   const [appSettingsOpen, setAppSettingsOpen] = useState(false);
@@ -26,8 +26,8 @@ export function AppShell() {
   useEffect(() => {
     window.api.workspace
       .get()
-      .then((workspace) => setOpenMods(workspace.openMods))
-      .catch(() => setOpenMods([]));
+      .then((workspace) => setIncludedMods(workspace.includedMods))
+      .catch(() => setIncludedMods([]));
   }, []);
 
   useEffect(() => {
@@ -44,34 +44,34 @@ export function AppShell() {
       .catch(() => setHideVanilla(false));
   }, []);
 
-  const hasSource = openMods.length > 0;
+  const hasSource = includedMods.length > 0;
 
   const activeModRootPath = useMemo<null | string>(() => {
     if (selectedPath === null) return null;
-    const containing = openMods.find(
+    const containing = includedMods.find(
       (mod) =>
         mod.permission === 'editable' && containsPath(mod.path, selectedPath),
     );
     return containing ? containing.path : null;
-  }, [openMods, selectedPath]);
+  }, [includedMods, selectedPath]);
 
   const sources = useMemo<readonly ProjectedSource[]>(() => {
     const visible = hideVanilla
-      ? openMods.filter((mod) => mod.permission !== 'readonly')
-      : openMods;
+      ? includedMods.filter((mod) => mod.permission !== 'readonly')
+      : includedMods;
     return visible.map((mod) => ({
       path: mod.path,
       permission: mod.permission,
     }));
-  }, [hideVanilla, openMods]);
+  }, [hideVanilla, includedMods]);
 
   const handleOpenFolder = async () => {
     try {
       const chosen = await window.api.fs.openFolderDialog();
       if (chosen === null) return;
-      await window.api.workspace.openMod(chosen);
+      await window.api.workspace.addMod(chosen);
       const workspace = await window.api.workspace.get();
-      setOpenMods(workspace.openMods);
+      setIncludedMods(workspace.includedMods);
       setSelectedPath(null);
       if (location.pathname !== '/') {
         void navigate('/');

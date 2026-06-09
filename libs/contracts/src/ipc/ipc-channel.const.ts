@@ -19,8 +19,8 @@ export const IPC_CHANNELS = {
     ping: 'system:ping',
   },
   workspace: {
-    closeMod: 'workspace:closeMod',
+    addMod: 'workspace:addMod',
     get: 'workspace:get',
-    openMod: 'workspace:openMod',
+    removeMod: 'workspace:removeMod',
   },
 } as const;

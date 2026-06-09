@@ -104,9 +104,9 @@ export const IPC_CHANNELS = {
     ping: 'system:ping',
   },
   workspace: {
-    closeMod: 'workspace:closeMod',
+    addMod: 'workspace:addMod',
     get: 'workspace:get',
-    openMod: 'workspace:openMod',
+    removeMod: 'workspace:removeMod',
   },
 } as const;
 ```
@@ -182,11 +182,11 @@ apps/electron/src/main/
 ├── plugins/                            # plugin registry
 ├── preferences/                        # preferences store
 ├── setup/                              # app-level wiring
-├── workspace/                          # persisted workspace store (open mods)
+├── workspace/                          # persisted workspace store (included mods)
 └── main.ts                             # entry point
 ```
 
-The `workspace/` store holds the canonical `Workspace` (`openMods[]`) in main,
+The `workspace/` store holds the canonical `Workspace` (`includedMods[]`) in main,
 persisted to the same electron-store file as preferences under a `workspace`
 key and pruned of missing paths on load. The active mod — the editable mod whose
 root contains the open file — is derived in the renderer, not stored (ADR 013).
