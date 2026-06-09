@@ -1,12 +1,43 @@
-import { IPC_CHANNELS, IPC_ERROR_CODES, IpcError, Workspace } from '@contracts';
+import {
+  GameId,
+  IPC_CHANNELS,
+  IPC_ERROR_CODES,
+  IpcError,
+  OpenMod,
+  Workspace,
+} from '@contracts';
+import { basename } from 'node:path';
 
 import { ipcHandle } from '../ipc';
-import { workspaceStoreService } from '../workspace';
+import {
+  activeGameFolderPath,
+  activeGameId,
+  resolveProjectedSources,
+  workspaceStoreService,
+} from '../workspace';
 
 export function registerWorkspaceHandlers(): void {
-  ipcHandle<Workspace>(IPC_CHANNELS.workspace.get, async () =>
-    workspaceStoreService.get(),
-  );
+  ipcHandle<Workspace>(IPC_CHANNELS.workspace.get, async () => {
+    const workspace = workspaceStoreService.get();
+    const gameId = activeGameId();
+    const sources = resolveProjectedSources(
+      gameId,
+      workspace,
+      await activeGameFolderPath(),
+    );
+
+    // resolveProjectedSources only ever prepends a single readonly vanilla
+    // source; when none was added the projection equals the persisted shape.
+    if (sources.length === workspace.openMods.length) {
+      return workspace;
+    }
+
+    const vanilla = vanillaEntry(gameId, sources[0].path);
+    return {
+      activeModId: workspace.activeModId,
+      openMods: [vanilla, ...workspace.openMods],
+    };
+  });
 
   ipcHandle<Workspace>(
     IPC_CHANNELS.workspace.openMod,
@@ -33,4 +64,13 @@ function requireString(value: unknown, field: string): string {
     } satisfies IpcError;
   }
   return value;
+}
+
+function vanillaEntry(gameId: GameId | null, path: string): OpenMod {
+  return {
+    id: `vanilla:${gameId ?? ''}`,
+    name: basename(path),
+    path,
+    permission: 'readonly',
+  };
 }

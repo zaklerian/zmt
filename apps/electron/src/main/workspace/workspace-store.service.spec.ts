@@ -48,6 +48,7 @@ describe('workspaceStoreService', () => {
       expect(result.openMods).toHaveLength(1);
       expect(result.openMods[0].name).toBe('alpha');
       expect(result.openMods[0].path).toBe('/mods/alpha');
+      expect(result.openMods[0].permission).toBe('editable');
       expect(result.activeModId).toBe(result.openMods[0].id);
     });
 
@@ -108,13 +109,14 @@ describe('workspaceStoreService', () => {
 
   describe('load', () => {
     it('prunes mods whose path no longer exists and nulls a dangling active id', async () => {
+      // On-disk shape carries no permission; reconstruction coerces it.
       storeData.workspace = {
         activeModId: 'gone',
         openMods: [
           { id: 'gone', name: 'gone', path: '/mods/gone' },
           { id: 'here', name: 'here', path: '/mods/here' },
         ],
-      } satisfies Workspace;
+      };
       existingPaths = new Set(['/mods/here']);
 
       const service = await loadService();
@@ -122,6 +124,7 @@ describe('workspaceStoreService', () => {
 
       expect(result.openMods).toHaveLength(1);
       expect(result.openMods[0].id).toBe('here');
+      expect(result.openMods[0].permission).toBe('editable');
       expect(result.activeModId).toBeNull();
     });
 
@@ -129,7 +132,7 @@ describe('workspaceStoreService', () => {
       storeData.workspace = {
         activeModId: 'here',
         openMods: [{ id: 'here', name: 'here', path: '/mods/here' }],
-      } satisfies Workspace;
+      };
       existingPaths = new Set(['/mods/here']);
 
       const service = await loadService();

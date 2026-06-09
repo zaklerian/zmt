@@ -9,13 +9,13 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
 import { classifyFile } from './classify-file.util';
-import { assertPathUnderRoot } from './path-guard.util';
+import { assertReadable } from './path-guard.util';
 
 export async function listDirectory(
   targetPath: string,
   options?: ListOptions,
 ): Promise<FsNode[]> {
-  await assertPathUnderRoot(targetPath);
+  await assertReadable(targetPath);
 
   let entries;
   try {

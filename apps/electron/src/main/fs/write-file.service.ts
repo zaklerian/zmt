@@ -8,7 +8,7 @@ import { randomBytes } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
-import { assertPathUnderRoot } from './path-guard.util';
+import { assertWritable } from './path-guard.util';
 
 async function assertParentDirectoryExists(targetPath: string): Promise<void> {
   const parent = path.dirname(targetPath);
@@ -44,7 +44,7 @@ async function atomicWrite(
   payload: Readonly<Uint8Array> | string,
   byteLength: number,
 ): Promise<void> {
-  await assertPathUnderRoot(targetPath);
+  await assertWritable(targetPath);
 
   if (byteLength > MAX_PAYLOAD_BYTES) {
     throw {

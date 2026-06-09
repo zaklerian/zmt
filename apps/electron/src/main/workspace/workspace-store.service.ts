@@ -47,7 +47,12 @@ export const workspaceStoreService = {
     if (existing) {
       return persist({ ...current, activeModId: existing.id });
     }
-    const mod: OpenMod = { id: randomUUID(), name: basename(path), path };
+    const mod: OpenMod = {
+      id: randomUUID(),
+      name: basename(path),
+      path,
+      permission: 'editable',
+    };
     return persist({
       activeModId: mod.id,
       openMods: [...current.openMods, mod],

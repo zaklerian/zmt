@@ -6,10 +6,10 @@ import {
 } from '@contracts';
 import { promises as fs } from 'node:fs';
 
-import { assertPathUnderRoot } from './path-guard.util';
+import { assertReadable } from './path-guard.util';
 
 export async function readTextFile(targetPath: string): Promise<string> {
-  await assertPathUnderRoot(targetPath);
+  await assertReadable(targetPath);
 
   let stat;
   try {

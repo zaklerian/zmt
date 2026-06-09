@@ -2,6 +2,7 @@ import { Locale } from '../plugin';
 
 export interface PluginFeatureSettings {
   readonly features: Readonly<Record<string, boolean>>;
+  readonly gameFolderPath?: string;
 }
 
 export type PreferenceKey = keyof Preferences;

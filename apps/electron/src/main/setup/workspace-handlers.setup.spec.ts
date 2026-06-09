@@ -2,7 +2,11 @@ import { IPC_CHANNELS, Workspace } from '@contracts';
 import { ipcMain } from 'electron';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { workspaceStoreService } from '../workspace';
+import {
+  activeGameFolderPath,
+  activeGameId,
+  workspaceStoreService,
+} from '../workspace';
 import {
   extractIpcError,
   getCapturedHandler,
@@ -10,17 +14,25 @@ import {
 } from './__test-utils__/capture-ipc-handler';
 import { registerWorkspaceHandlers } from './workspace-handlers.setup';
 
-vi.mock('../workspace', () => ({
-  workspaceStoreService: {
-    closeMod: vi.fn(),
-    get: vi.fn(),
-    openMod: vi.fn(),
-  },
-}));
+vi.mock('../workspace', async (importActual) => {
+  const actual = await importActual<typeof import('../workspace')>();
+  return {
+    ...actual,
+    activeGameFolderPath: vi.fn(),
+    activeGameId: vi.fn(),
+    workspaceStoreService: {
+      closeMod: vi.fn(),
+      get: vi.fn(),
+      openMod: vi.fn(),
+    },
+  };
+});
 
 const fakeWorkspace: Workspace = {
   activeModId: 'mod-1',
-  openMods: [{ id: 'mod-1', name: 'alpha', path: '/mods/alpha' }],
+  openMods: [
+    { id: 'mod-1', name: 'alpha', path: '/mods/alpha', permission: 'editable' },
+  ],
 };
 
 describe('registerWorkspaceHandlers', () => {
@@ -29,14 +41,41 @@ describe('registerWorkspaceHandlers', () => {
     vi.mocked(workspaceStoreService.closeMod).mockReset();
     vi.mocked(workspaceStoreService.get).mockReset();
     vi.mocked(workspaceStoreService.openMod).mockReset();
+    vi.mocked(activeGameId).mockReset();
+    vi.mocked(activeGameFolderPath).mockReset();
+    vi.mocked(activeGameId).mockReturnValue('hoi4');
+    vi.mocked(activeGameFolderPath).mockResolvedValue(null);
     registerWorkspaceHandlers();
   });
 
   describe('workspace:get', () => {
-    it('returns the current workspace from the store', async () => {
+    it('returns mods only when no game folder path is set', async () => {
       vi.mocked(workspaceStoreService.get).mockReturnValue(fakeWorkspace);
       const handler = getCapturedHandler(IPC_CHANNELS.workspace.get);
       await expect(handler(makeInvokeEvent())).resolves.toEqual(fakeWorkspace);
+    });
+
+    it('leads openMods with a synthetic readonly vanilla entry when a game folder path is set', async () => {
+      vi.mocked(workspaceStoreService.get).mockReturnValue(fakeWorkspace);
+      vi.mocked(activeGameFolderPath).mockResolvedValue('/games/hoi4');
+      const handler = getCapturedHandler(IPC_CHANNELS.workspace.get);
+      await expect(handler(makeInvokeEvent())).resolves.toEqual({
+        activeModId: 'mod-1',
+        openMods: [
+          {
+            id: 'vanilla:hoi4',
+            name: 'hoi4',
+            path: '/games/hoi4',
+            permission: 'readonly',
+          },
+          {
+            id: 'mod-1',
+            name: 'alpha',
+            path: '/mods/alpha',
+            permission: 'editable',
+          },
+        ],
+      });
     });
   });
 
