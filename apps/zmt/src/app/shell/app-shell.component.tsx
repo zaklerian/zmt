@@ -1,4 +1,4 @@
-import { Workspace } from '@contracts';
+import { OpenMod, ProjectedSource } from '@contracts';
 import { Box, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
@@ -13,7 +13,7 @@ import { AppLayout } from '../layout';
 import { ShellContextProvider, ShellContextValue } from './shell-context';
 
 export function AppShell() {
-  const [currentRoot, setCurrentRoot] = useState<null | string>(null);
+  const [openMods, setOpenMods] = useState<readonly OpenMod[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedPath, setSelectedPath] = useState<null | string>(null);
   const [activeModRootPath, setActiveModRootPath] = useState<null | string>(
@@ -29,8 +29,8 @@ export function AppShell() {
   useEffect(() => {
     window.api.workspace
       .get()
-      .then((workspace) => setCurrentRoot(activeRoot(workspace)))
-      .catch(() => setCurrentRoot(null));
+      .then((workspace) => setOpenMods(workspace.openMods))
+      .catch(() => setOpenMods([]));
   }, []);
 
   useEffect(() => {
@@ -47,6 +47,18 @@ export function AppShell() {
       .catch(() => setHideVanilla(false));
   }, []);
 
+  const hasSource = openMods.length > 0;
+
+  const sources = useMemo<readonly ProjectedSource[]>(() => {
+    const visible = hideVanilla
+      ? openMods.filter((mod) => mod.permission !== 'readonly')
+      : openMods;
+    return visible.map((mod) => ({
+      path: mod.path,
+      permission: mod.permission,
+    }));
+  }, [hideVanilla, openMods]);
+
   const handleOpenFolder = async () => {
     try {
       const chosen = await window.api.fs.openFolderDialog();
@@ -55,8 +67,9 @@ export function AppShell() {
       if (current.activeModId !== null) {
         await window.api.workspace.closeMod(current.activeModId);
       }
-      const workspace = await window.api.workspace.openMod(chosen);
-      setCurrentRoot(activeRoot(workspace));
+      await window.api.workspace.openMod(chosen);
+      const workspace = await window.api.workspace.get();
+      setOpenMods(workspace.openMods);
       setSelectedPath(null);
       setActiveModRootPath(null);
       if (location.pathname !== '/') {
@@ -82,43 +95,41 @@ export function AppShell() {
     }
   };
 
-  const sidebar =
-    currentRoot === null ? null : (
-      <ModContent
-        hideUnsupportedFiles={hideUnsupportedFiles}
-        root={currentRoot}
-        selectedPath={selectedPath}
-        onSelect={handleSelect}
-      />
-    );
+  const sidebar = !hasSource ? null : (
+    <ModContent
+      hideUnsupportedFiles={hideUnsupportedFiles}
+      selectedPath={selectedPath}
+      sources={sources}
+      onSelect={handleSelect}
+    />
+  );
 
-  const content =
-    currentRoot === null ? (
-      <NoFolderState onOpenFolder={handleOpenFolder} />
-    ) : (
-      <Box sx={{ height: '100%' }}>
-        <Outlet />
-        {selectedPath !== null && location.pathname === '/' && (
-          <Box sx={{ p: 3 }}>
-            <Typography color="text.secondary" variant="body2">
-              {selectedPath}
-            </Typography>
-          </Box>
-        )}
-      </Box>
-    );
+  const content = !hasSource ? (
+    <NoFolderState onOpenFolder={handleOpenFolder} />
+  ) : (
+    <Box sx={{ height: '100%' }}>
+      <Outlet />
+      {selectedPath !== null && location.pathname === '/' && (
+        <Box sx={{ p: 3 }}>
+          <Typography color="text.secondary" variant="body2">
+            {selectedPath}
+          </Typography>
+        </Box>
+      )}
+    </Box>
+  );
 
   const shellValue = useMemo<ShellContextValue>(
-    () => ({ activeModRootPath, currentRoot, selectedPath }),
-    [currentRoot, selectedPath, activeModRootPath],
+    () => ({ activeModRootPath, selectedPath }),
+    [activeModRootPath, selectedPath],
   );
 
   return (
     <ShellContextProvider value={shellValue}>
       <AppLayout
         content={content}
-        currentRoot={currentRoot}
         drawerOpen={drawerOpen}
+        hasSource={hasSource}
         sidebar={sidebar}
         onOpenAppSettings={() => setAppSettingsOpen(true)}
         onOpenFolder={handleOpenFolder}
@@ -142,11 +153,4 @@ export function AppShell() {
       />
     </ShellContextProvider>
   );
-}
-
-function activeRoot(workspace: Workspace): null | string {
-  const active = workspace.openMods.find(
-    (mod) => mod.id === workspace.activeModId,
-  );
-  return active ? active.path : null;
 }
