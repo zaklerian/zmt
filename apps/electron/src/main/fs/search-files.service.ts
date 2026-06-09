@@ -9,7 +9,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
 import { classifyFile } from './classify-file.util';
-import { assertPathUnderRoot } from './path-guard.util';
+import { assertReadable } from './path-guard.util';
 
 const SEARCH_RESULT_LIMIT = 50;
 const SEARCH_MAX_DEPTH = 12;
@@ -19,7 +19,7 @@ export async function searchFiles(
   query: string,
   options?: ListOptions,
 ): Promise<FsNode[]> {
-  await assertPathUnderRoot(root);
+  await assertReadable(root);
 
   const normalizedQuery = query.trim().toLowerCase();
   if (!normalizedQuery) return [];

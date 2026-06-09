@@ -16,6 +16,7 @@ export function parseWorkspace(raw: unknown): Workspace {
       id: candidate.id,
       name: candidate.name,
       path: candidate.path,
+      permission: 'editable',
     });
   }
 

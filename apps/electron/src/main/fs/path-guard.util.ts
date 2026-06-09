@@ -1,25 +1,58 @@
-import { IPC_ERROR_CODES, IpcError } from '@contracts';
+import { IPC_ERROR_CODES, IpcError, ProjectedSource } from '@contracts';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
-import { workspaceStoreService } from '../workspace';
+import {
+  activeGameFolderPath,
+  activeGameId,
+  resolveProjectedSources,
+  workspaceStoreService,
+} from '../workspace';
 
-export async function assertPathUnderRoot(target: string): Promise<void> {
-  const root = workspaceStoreService.getActiveModPath();
+export async function assertReadable(target: string): Promise<void> {
+  await assertUnderSource(target, () => true);
+}
 
-  if (!root) {
+export async function assertWritable(target: string): Promise<void> {
+  await assertUnderSource(target, (source) => source.permission === 'editable');
+}
+
+async function assertUnderSource(
+  target: string,
+  permits: (source: ProjectedSource) => boolean,
+): Promise<void> {
+  const sources = resolveProjectedSources(
+    activeGameId(),
+    workspaceStoreService.get(),
+    await activeGameFolderPath(),
+  );
+
+  if (sources.length === 0) {
     throw {
       code: IPC_ERROR_CODES.FORBIDDEN,
       message: 'No root folder is open',
     } satisfies IpcError;
   }
 
-  const resolvedRoot = await resolveRealPath(path.resolve(root));
   const resolvedTarget = await resolveRealPath(path.resolve(target));
+  const containing = await findContainingSource(sources, resolvedTarget);
 
-  if (!isContained(resolvedTarget, resolvedRoot)) {
+  if (containing === null || !permits(containing)) {
     throw forbidden(target);
   }
+}
+
+async function findContainingSource(
+  sources: readonly ProjectedSource[],
+  resolvedTarget: string,
+): Promise<null | ProjectedSource> {
+  for (const source of sources) {
+    const resolvedRoot = await resolveRealPath(path.resolve(source.path));
+    if (isContained(resolvedTarget, resolvedRoot)) {
+      return source;
+    }
+  }
+  return null;
 }
 
 function forbidden(target: string): IpcError {
