@@ -23,8 +23,8 @@ export const en = {
     },
   },
   header: {
-    pluginConfig: {
-      label: 'Plugin configuration',
+    appSettings: {
+      label: 'App Settings',
     },
     title: 'ZMT',
   },

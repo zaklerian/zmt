@@ -26,8 +26,8 @@ export const uk: typeof en = {
     },
   },
   header: {
-    pluginConfig: {
-      label: 'Налаштування плагінів',
+    appSettings: {
+      label: 'Налаштування застосунку',
     },
     title: 'ZMT',
   },

@@ -26,8 +26,8 @@ export const de: typeof en = {
     },
   },
   header: {
-    pluginConfig: {
-      label: 'Plugin-Konfiguration',
+    appSettings: {
+      label: 'App-Einstellungen',
     },
     title: 'ZMT',
   },

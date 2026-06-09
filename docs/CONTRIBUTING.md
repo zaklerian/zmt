@@ -139,7 +139,7 @@ Three kinds of namespaces:
 - `app` — host application strings (header, footer, modals, locale switcher labels,
   common errors). Owned by `apps/zmt/src/i18n/locales/`.
 - `feature.<featureName>` — per-feature strings. `<featureName>` is the feature
-  folder name in camelCase. Examples: `feature.pluginConfig`, `feature.modInfoEdit`.
+  folder name in camelCase. Examples: `feature.appSettings`, `feature.modInfoEdit`.
   Owned by `apps/zmt/src/i18n/locales/`.
 - `plugin.<gameId>` — per-plugin strings. Examples: `plugin.hoi4`, `plugin.v3`.
   Owned by the corresponding `libs/r-game-<gameId>/` package.
@@ -153,7 +153,7 @@ Examples:
 
 - `app:header.title`
 - `app:footer.localeSwitcher.label`
-- `feature.pluginConfig:form.fields.activeGameId.label`
+- `feature.appSettings:form.fields.activeGameId.label`
 - `feature.modInfoEdit:form.fields.name.label`
 - `feature.modInfoEdit:warnings.parser.title`
 - `plugin.hoi4:features.traits.label`

@@ -1,4 +1,4 @@
-import type { en } from '../en/feature.plugin-config';
+import type { en } from '../en/feature.app-settings';
 
 export const de: typeof en = {
   close: {
@@ -19,6 +19,6 @@ export const de: typeof en = {
   },
   modal: {
     noPlugins: 'Keine Plugins registriert.',
-    title: 'Plugin-Konfiguration',
+    title: 'App-Einstellungen',
   },
 };

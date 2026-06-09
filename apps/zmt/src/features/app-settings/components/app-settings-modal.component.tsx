@@ -25,34 +25,34 @@ import { pluginConfigSchema } from '../plugin-config.schema';
 import { pluginConfigService } from '../services/plugin-config.service';
 import { PluginConfigForm } from './plugin-config-form.component';
 
-interface PluginConfigModalContentProps {
+interface AppSettingsModalContentProps {
   onClose: () => void;
 }
 
-interface PluginConfigModalProps {
+interface AppSettingsModalProps {
   onClose: () => void;
   open: boolean;
 }
 
-interface PluginConfigReadyViewProps {
+interface AppSettingsReadyViewProps {
   onClose: () => void;
   plugins: readonly GamePlugin[];
   storedSettings: Preferences['pluginSettings'];
 }
 
-export function PluginConfigModal({ onClose, open }: PluginConfigModalProps) {
+export function AppSettingsModal({ onClose, open }: AppSettingsModalProps) {
   if (!open) return null;
-  return <PluginConfigModalContent onClose={onClose} />;
+  return <AppSettingsModalContent onClose={onClose} />;
 }
 
-function PluginConfigModalContent({ onClose }: PluginConfigModalContentProps) {
-  const { t } = useTranslation(['feature.pluginConfig', 'app']);
+function AppSettingsModalContent({ onClose }: AppSettingsModalContentProps) {
+  const { t } = useTranslation(['feature.appSettings', 'app']);
   const { status } = usePluginConfig();
 
   if (status.kind === 'loading') {
     return (
       <Dialog fullWidth maxWidth="sm" open onClose={onClose}>
-        <DialogTitle>{t('feature.pluginConfig:modal.title')}</DialogTitle>
+        <DialogTitle>{t('feature.appSettings:modal.title')}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
             <CircularProgress />
@@ -65,7 +65,7 @@ function PluginConfigModalContent({ onClose }: PluginConfigModalContentProps) {
   if (status.kind === 'error') {
     return (
       <Dialog fullWidth maxWidth="sm" open onClose={onClose}>
-        <DialogTitle>{t('feature.pluginConfig:modal.title')}</DialogTitle>
+        <DialogTitle>{t('feature.appSettings:modal.title')}</DialogTitle>
         <DialogContent>
           <Alert severity="error">{status.error.message}</Alert>
         </DialogContent>
@@ -79,10 +79,10 @@ function PluginConfigModalContent({ onClose }: PluginConfigModalContentProps) {
   if (status.data.plugins.length === 0) {
     return (
       <Dialog fullWidth maxWidth="sm" open onClose={onClose}>
-        <DialogTitle>{t('feature.pluginConfig:modal.title')}</DialogTitle>
+        <DialogTitle>{t('feature.appSettings:modal.title')}</DialogTitle>
         <DialogContent>
           <Alert severity="info">
-            {t('feature.pluginConfig:modal.noPlugins')}
+            {t('feature.appSettings:modal.noPlugins')}
           </Alert>
         </DialogContent>
         <DialogActions>
@@ -93,7 +93,7 @@ function PluginConfigModalContent({ onClose }: PluginConfigModalContentProps) {
   }
 
   return (
-    <PluginConfigReadyView
+    <AppSettingsReadyView
       plugins={status.data.plugins}
       storedSettings={status.data.storedSettings}
       onClose={onClose}
@@ -101,12 +101,12 @@ function PluginConfigModalContent({ onClose }: PluginConfigModalContentProps) {
   );
 }
 
-function PluginConfigReadyView({
+function AppSettingsReadyView({
   onClose,
   plugins,
   storedSettings,
-}: PluginConfigReadyViewProps) {
-  const { t } = useTranslation(['feature.pluginConfig', 'app']);
+}: AppSettingsReadyViewProps) {
+  const { t } = useTranslation(['feature.appSettings', 'app']);
   const modal = useModal();
   const initialPlugin = plugins[0];
   const defaultValues = useMemo(
@@ -151,7 +151,7 @@ function PluginConfigReadyView({
     if (methods.formState.isDirty) {
       const proceed = await modal.confirm({
         confirmLabel: t('app:actions.discard'),
-        message: t('feature.pluginConfig:close.unsavedMessage'),
+        message: t('feature.appSettings:close.unsavedMessage'),
         title: t('app:modals.unsavedChanges.title'),
       });
       if (!proceed) return;
@@ -161,7 +161,7 @@ function PluginConfigReadyView({
 
   return (
     <Dialog fullWidth maxWidth="sm" open onClose={() => void requestClose()}>
-      <DialogTitle>{t('feature.pluginConfig:modal.title')}</DialogTitle>
+      <DialogTitle>{t('feature.appSettings:modal.title')}</DialogTitle>
       <FormProvider {...methods}>
         <DialogContent>
           <PluginConfigForm

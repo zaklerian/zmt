@@ -12,18 +12,18 @@ import { useTranslation } from 'react-i18next';
 
 interface AppHeaderProps {
   currentRoot: null | string;
+  onOpenAppSettings: () => void;
   onOpenFolder: () => void;
-  onOpenPluginConfig: () => void;
 }
 
 export function AppHeader({
   currentRoot,
+  onOpenAppSettings,
   onOpenFolder,
-  onOpenPluginConfig,
 }: AppHeaderProps) {
   const { t } = useTranslation(['app']);
   const openFolderLabel = t('actions.openFolder');
-  const pluginConfigLabel = t('header.pluginConfig.label');
+  const appSettingsLabel = t('header.appSettings.label');
 
   return (
     <AppBar color="default" elevation={1} position="static">
@@ -43,11 +43,11 @@ export function AppHeader({
             </IconButton>
           </Tooltip>
         )}
-        <Tooltip title={pluginConfigLabel}>
+        <Tooltip title={appSettingsLabel}>
           <IconButton
-            aria-label={pluginConfigLabel}
+            aria-label={appSettingsLabel}
             size="small"
-            onClick={onOpenPluginConfig}
+            onClick={onOpenAppSettings}
           >
             <SettingsIcon fontSize="small" />
           </IconButton>
