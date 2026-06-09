@@ -10,10 +10,17 @@ export const en = {
       hideUnsupported: {
         label: 'Hide unsupported files',
       },
+      hideVanilla: {
+        label: 'Hide vanilla files',
+      },
       sectionLabel: 'File display',
     },
     game: {
       label: 'Game',
+    },
+    gameFolder: {
+      browse: 'Browse…',
+      label: 'Game folder',
     },
   },
   gameSwitch: {

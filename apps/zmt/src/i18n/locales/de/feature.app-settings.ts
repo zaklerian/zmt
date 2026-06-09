@@ -13,10 +13,17 @@ export const de: typeof en = {
       hideUnsupported: {
         label: 'Nicht unterstützte Dateien ausblenden',
       },
+      hideVanilla: {
+        label: 'Vanilla-Dateien ausblenden',
+      },
       sectionLabel: 'Dateianzeige',
     },
     game: {
       label: 'Spiel',
+    },
+    gameFolder: {
+      browse: 'Durchsuchen…',
+      label: 'Spielordner',
     },
   },
   gameSwitch: {

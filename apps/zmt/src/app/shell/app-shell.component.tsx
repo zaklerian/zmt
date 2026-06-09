@@ -21,6 +21,7 @@ export function AppShell() {
   );
   const [appSettingsOpen, setAppSettingsOpen] = useState(false);
   const [hideUnsupportedFiles, setHideUnsupportedFiles] = useState(false);
+  const [hideVanilla, setHideVanilla] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,6 +38,13 @@ export function AppShell() {
       .get('hideUnsupportedFiles')
       .then((value) => setHideUnsupportedFiles(value ?? false))
       .catch(() => setHideUnsupportedFiles(false));
+  }, []);
+
+  useEffect(() => {
+    window.api.preferences
+      .get('hideVanilla')
+      .then((value) => setHideVanilla(value ?? false))
+      .catch(() => setHideVanilla(false));
   }, []);
 
   const handleOpenFolder = async () => {
@@ -118,12 +126,17 @@ export function AppShell() {
       />
       <AppSettingsModal
         hideUnsupportedFiles={hideUnsupportedFiles}
+        hideVanilla={hideVanilla}
         open={appSettingsOpen}
         onClose={() => {
           setAppSettingsOpen(false);
           window.api.preferences
             .get('hideUnsupportedFiles')
             .then((value) => setHideUnsupportedFiles(value ?? false))
+            .catch(() => undefined);
+          window.api.preferences
+            .get('hideVanilla')
+            .then((value) => setHideVanilla(value ?? false))
             .catch(() => undefined);
         }}
       />

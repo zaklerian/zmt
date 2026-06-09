@@ -9,6 +9,7 @@ export type PreferenceKey = keyof Preferences;
 
 export interface Preferences {
   readonly hideUnsupportedFiles: boolean;
+  readonly hideVanilla: boolean;
   readonly locale: Locale | null;
   readonly pluginSettings: Readonly<
     Partial<Record<string, PluginFeatureSettings>>
@@ -17,6 +18,7 @@ export interface Preferences {
 
 export const PREFERENCE_KEYS: readonly PreferenceKey[] = [
   'hideUnsupportedFiles',
+  'hideVanilla',
   'locale',
   'pluginSettings',
 ];

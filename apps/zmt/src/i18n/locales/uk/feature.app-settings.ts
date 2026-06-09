@@ -13,10 +13,17 @@ export const uk: typeof en = {
       hideUnsupported: {
         label: 'Приховати непідтримувані файли',
       },
+      hideVanilla: {
+        label: 'Приховати ванільні файли',
+      },
       sectionLabel: 'Відображення файлів',
     },
     game: {
       label: 'Гра',
+    },
+    gameFolder: {
+      browse: 'Огляд…',
+      label: 'Тека гри',
     },
   },
   gameSwitch: {
