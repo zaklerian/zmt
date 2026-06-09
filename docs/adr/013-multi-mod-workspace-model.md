@@ -5,6 +5,8 @@
 
 > **Update (2026-06-09, superseded in part by ADR 014):** The `hidden` axis described below was dropped before implementation. Entry visibility is handled by global App Settings toggles (hide vanilla, hide unsupported files), not a per-entry field; `OpenMod` carries `permission` only. The orthogonal-axes reasoning below is retained as the original rationale — the `hidden` field was never built. See ADR 014.
 
+> **Update (2026-06-09, active mod is derived, not stored):** `activeModId` was removed from the persisted `Workspace` and from the IPC shape. The active mod — the mod whose file is currently being edited — is derived in the renderer as the included editable mod whose root contains the open file. Storing it duplicated state already implied by the open file and the included-mods list; deriving it removes that desync class (the same principle this ADR applies to reference-ness and ADR 014 applies to the vanilla projection). The store holds membership (`openMods`) only; focus is computed. Included mods are not nested, so the containing-mod lookup is an unambiguous single prefix match.
+
 ## Context
 
 The application opens a single mod root (`currentRoot`) at a time. The next phase

@@ -39,7 +39,6 @@ describe('path guard read/write split', () => {
     await fs.mkdir(outside);
 
     const workspace: Workspace = {
-      activeModId: 'mod-1',
       openMods: [
         { id: 'mod-1', name: 'mod', path: mod, permission: 'editable' },
       ],

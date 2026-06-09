@@ -34,7 +34,6 @@ export function registerWorkspaceHandlers(): void {
 
     const vanilla = vanillaEntry(gameId, sources[0].path);
     return {
-      activeModId: workspace.activeModId,
       openMods: [vanilla, ...workspace.openMods],
     };
   });

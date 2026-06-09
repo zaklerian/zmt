@@ -16,9 +16,6 @@ export function AppShell() {
   const [openMods, setOpenMods] = useState<readonly OpenMod[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedPath, setSelectedPath] = useState<null | string>(null);
-  const [activeModRootPath, setActiveModRootPath] = useState<null | string>(
-    null,
-  );
   const [appSettingsOpen, setAppSettingsOpen] = useState(false);
   const [hideUnsupportedFiles, setHideUnsupportedFiles] = useState(false);
   const [hideVanilla, setHideVanilla] = useState(false);
@@ -49,6 +46,15 @@ export function AppShell() {
 
   const hasSource = openMods.length > 0;
 
+  const activeModRootPath = useMemo<null | string>(() => {
+    if (selectedPath === null) return null;
+    const containing = openMods.find(
+      (mod) =>
+        mod.permission === 'editable' && containsPath(mod.path, selectedPath),
+    );
+    return containing ? containing.path : null;
+  }, [openMods, selectedPath]);
+
   const sources = useMemo<readonly ProjectedSource[]>(() => {
     const visible = hideVanilla
       ? openMods.filter((mod) => mod.permission !== 'readonly')
@@ -63,15 +69,10 @@ export function AppShell() {
     try {
       const chosen = await window.api.fs.openFolderDialog();
       if (chosen === null) return;
-      const current = await window.api.workspace.get();
-      if (current.activeModId !== null) {
-        await window.api.workspace.closeMod(current.activeModId);
-      }
       await window.api.workspace.openMod(chosen);
       const workspace = await window.api.workspace.get();
       setOpenMods(workspace.openMods);
       setSelectedPath(null);
-      setActiveModRootPath(null);
       if (location.pathname !== '/') {
         void navigate('/');
       }
@@ -83,13 +84,11 @@ export function AppShell() {
   const handleSelect = (selection: FileTreeSelection) => {
     setSelectedPath(selection.path);
     if (selection.path !== null && selection.isModRoot) {
-      setActiveModRootPath(selection.path);
       if (location.pathname !== '/mod/info') {
         void navigate('/mod/info');
       }
       return;
     }
-    setActiveModRootPath(null);
     if (location.pathname !== '/') {
       void navigate('/');
     }
@@ -153,4 +152,11 @@ export function AppShell() {
       />
     </ShellContextProvider>
   );
+}
+
+function containsPath(root: string, target: string): boolean {
+  if (target === root) return true;
+  if (!target.startsWith(root)) return false;
+  const rest = target.slice(root.length);
+  return rest.startsWith('/') || rest.startsWith('\\');
 }

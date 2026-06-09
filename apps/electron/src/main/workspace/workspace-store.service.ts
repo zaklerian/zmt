@@ -20,32 +20,20 @@ export const workspaceStoreService = {
   closeMod(id: ModId): Workspace {
     const current = ensureLoaded();
     const openMods = current.openMods.filter((mod) => mod.id !== id);
-    const activeModId = current.activeModId === id ? null : current.activeModId;
-    return persist({ activeModId, openMods });
+    return persist({ openMods });
   },
   get(): Workspace {
     return ensureLoaded();
   },
-  getActiveModPath(): null | string {
-    const current = ensureLoaded();
-    const active = current.openMods.find(
-      (mod) => mod.id === current.activeModId,
-    );
-    return active ? active.path : null;
-  },
   async load(): Promise<Workspace> {
     const parsed = parseWorkspace(getStore().get(WORKSPACE_KEY));
     const openMods = await pruneMissing(parsed.openMods);
-    const activeModId = openMods.some((mod) => mod.id === parsed.activeModId)
-      ? parsed.activeModId
-      : null;
-    return persist({ activeModId, openMods });
+    return persist({ openMods });
   },
   openMod(path: string): Workspace {
     const current = ensureLoaded();
-    const existing = current.openMods.find((mod) => mod.path === path);
-    if (existing) {
-      return persist({ ...current, activeModId: existing.id });
+    if (current.openMods.some((mod) => mod.path === path)) {
+      return current;
     }
     const mod: OpenMod = {
       id: randomUUID(),
@@ -53,10 +41,7 @@ export const workspaceStoreService = {
       path,
       permission: 'editable',
     };
-    return persist({
-      activeModId: mod.id,
-      openMods: [...current.openMods, mod],
-    });
+    return persist({ openMods: [...current.openMods, mod] });
   },
 };
 

@@ -1,6 +1,6 @@
 import { OpenMod, Workspace } from '@contracts';
 
-const EMPTY_WORKSPACE: Workspace = { activeModId: null, openMods: [] };
+const EMPTY_WORKSPACE: Workspace = { openMods: [] };
 
 export function parseWorkspace(raw: unknown): Workspace {
   if (!isRecord(raw) || !Array.isArray(raw.openMods)) {
@@ -20,13 +20,7 @@ export function parseWorkspace(raw: unknown): Workspace {
     });
   }
 
-  const activeModId =
-    typeof raw.activeModId === 'string' &&
-    openMods.some((mod) => mod.id === raw.activeModId)
-      ? raw.activeModId
-      : null;
-
-  return { activeModId, openMods };
+  return { openMods };
 }
 
 function isOpenMod(value: unknown): value is OpenMod {
