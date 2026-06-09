@@ -9,6 +9,12 @@ export const de: typeof en = {
     features: {
       sectionLabel: 'Funktionen',
     },
+    fileDisplay: {
+      hideUnsupported: {
+        label: 'Nicht unterstützte Dateien ausblenden',
+      },
+      sectionLabel: 'Dateianzeige',
+    },
     game: {
       label: 'Spiel',
     },

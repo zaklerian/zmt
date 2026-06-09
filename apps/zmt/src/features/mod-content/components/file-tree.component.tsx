@@ -12,6 +12,7 @@ export interface FileTreeSelection {
 }
 
 interface FileTreeProps {
+  hideUnsupportedFiles: boolean;
   onSelect: (selection: FileTreeSelection) => void;
   root: null | string;
   selectedPath: null | string;
@@ -24,10 +25,15 @@ interface FsTreeItem {
   readonly node: FsNode | null;
 }
 
-export function FileTree({ onSelect, root, selectedPath }: FileTreeProps) {
+export function FileTree({
+  hideUnsupportedFiles,
+  onSelect,
+  root,
+  selectedPath,
+}: FileTreeProps) {
   const { t } = useTranslation(['feature.modContent']);
   const { childrenByPath, error, loadChildren, loadingRoot, rootChildren } =
-    useFileTree({ root });
+    useFileTree({ hideUnsupportedFiles, root });
   const [userExpanded, setUserExpanded] = useState<readonly string[]>([]);
   const loadingLabel = t('feature.modContent:fileTree.loading');
 

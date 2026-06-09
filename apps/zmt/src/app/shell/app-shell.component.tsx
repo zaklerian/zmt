@@ -20,6 +20,7 @@ export function AppShell() {
     null,
   );
   const [appSettingsOpen, setAppSettingsOpen] = useState(false);
+  const [hideUnsupportedFiles, setHideUnsupportedFiles] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -29,6 +30,13 @@ export function AppShell() {
       .get()
       .then((workspace) => setCurrentRoot(activeRoot(workspace)))
       .catch(() => setCurrentRoot(null));
+  }, []);
+
+  useEffect(() => {
+    window.api.preferences
+      .get('hideUnsupportedFiles')
+      .then((value) => setHideUnsupportedFiles(value ?? false))
+      .catch(() => setHideUnsupportedFiles(false));
   }, []);
 
   const handleOpenFolder = async () => {
@@ -69,6 +77,7 @@ export function AppShell() {
   const sidebar =
     currentRoot === null ? null : (
       <ModContent
+        hideUnsupportedFiles={hideUnsupportedFiles}
         root={currentRoot}
         selectedPath={selectedPath}
         onSelect={handleSelect}
@@ -108,8 +117,15 @@ export function AppShell() {
         onToggleDrawer={() => setDrawerOpen((open) => !open)}
       />
       <AppSettingsModal
+        hideUnsupportedFiles={hideUnsupportedFiles}
         open={appSettingsOpen}
-        onClose={() => setAppSettingsOpen(false)}
+        onClose={() => {
+          setAppSettingsOpen(false);
+          window.api.preferences
+            .get('hideUnsupportedFiles')
+            .then((value) => setHideUnsupportedFiles(value ?? false))
+            .catch(() => undefined);
+        }}
       />
     </ShellContextProvider>
   );

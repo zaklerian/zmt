@@ -6,14 +6,23 @@ import { useTranslation } from 'react-i18next';
 import { useFileSearch } from '../hooks';
 
 interface FileTreeSearchProps {
+  hideUnsupportedFiles: boolean;
   onSelect: (path: string) => void;
   root: null | string;
 }
 
-export function FileTreeSearch({ onSelect, root }: FileTreeSearchProps) {
+export function FileTreeSearch({
+  hideUnsupportedFiles,
+  onSelect,
+  root,
+}: FileTreeSearchProps) {
   const { t } = useTranslation(['feature.modContent']);
   const [inputValue, setInputValue] = useState('');
-  const { loading, results } = useFileSearch({ query: inputValue, root });
+  const { loading, results } = useFileSearch({
+    hideUnsupportedFiles,
+    query: inputValue,
+    root,
+  });
 
   const handleChange = (
     _event: null | React.SyntheticEvent,

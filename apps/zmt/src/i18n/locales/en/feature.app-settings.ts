@@ -6,6 +6,12 @@ export const en = {
     features: {
       sectionLabel: 'Features',
     },
+    fileDisplay: {
+      hideUnsupported: {
+        label: 'Hide unsupported files',
+      },
+      sectionLabel: 'File display',
+    },
     game: {
       label: 'Game',
     },

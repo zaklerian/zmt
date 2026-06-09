@@ -6,6 +6,7 @@ import { modContentService } from '../services/mod-content.service';
 const DEBOUNCE_MS = 250;
 
 interface UseFileSearchOptions {
+  readonly hideUnsupportedFiles: boolean;
   readonly query: string;
   readonly root: null | string;
 }
@@ -19,6 +20,7 @@ interface UseFileSearchResult {
 const EMPTY_RESULTS: readonly FsNode[] = [];
 
 export function useFileSearch({
+  hideUnsupportedFiles,
   query,
   root,
 }: UseFileSearchOptions): UseFileSearchResult {
@@ -39,7 +41,7 @@ export function useFileSearch({
       if (cancelled) return;
       setAsyncState((prev) => ({ ...prev, loading: true }));
       modContentService
-        .searchFiles(root, query)
+        .searchFiles(root, query, { hideUnsupportedFiles })
         .then((nodes) => {
           if (cancelled) return;
           setAsyncState({ error: null, loading: false, results: nodes });
@@ -61,7 +63,7 @@ export function useFileSearch({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [isIdle, root, query]);
+  }, [hideUnsupportedFiles, isIdle, root, query]);
 
   if (isIdle) {
     return { error: null, loading: false, results: EMPTY_RESULTS };
