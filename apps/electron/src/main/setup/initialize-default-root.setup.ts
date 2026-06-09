@@ -6,12 +6,12 @@ export async function initializeDefaultRoot(): Promise<void> {
   if (!process.env.ZMT_RENDERER_URL) return;
   const envPath = process.env.ZMT_DEFAULT_MODS_PATH;
   if (!envPath) return;
-  if (workspaceStoreService.get().openMods.length > 0) return;
+  if (workspaceStoreService.get().includedMods.length > 0) return;
 
   try {
     const stat = await fs.stat(envPath);
     if (stat.isDirectory()) {
-      workspaceStoreService.openMod(envPath);
+      workspaceStoreService.addMod(envPath);
     }
   } catch {
     return;

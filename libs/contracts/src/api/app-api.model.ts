@@ -39,8 +39,8 @@ export interface AppApiModel {
     readonly ping: () => Promise<string>;
   };
   readonly workspace: {
-    readonly closeMod: (id: ModId) => Promise<Workspace>;
+    readonly addMod: (path: string) => Promise<Workspace>;
     readonly get: () => Promise<Workspace>;
-    readonly openMod: (path: string) => Promise<Workspace>;
+    readonly removeMod: (id: ModId) => Promise<Workspace>;
   };
 }

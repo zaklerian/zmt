@@ -5,7 +5,7 @@
 
 ## Context
 
-ADR 013 established `openMods[]` + `activeMod` owned in main, a single editable mod, and a path-guard checking every filesystem target against that one active root. The next phase opens other sources **read-only** — primarily vanilla game files — viewable but never writable. Editing a mod will later resolve against the sources above it in load order (override/merge, deferred to its own decision); this change only establishes the read-only source model and the guard asymmetry that resolution depends on.
+ADR 013 established `includedMods[]` + `activeMod` owned in main, a single editable mod, and a path-guard checking every filesystem target against that one active root. The next phase opens other sources **read-only** — primarily vanilla game files — viewable but never writable. Editing a mod will later resolve against the sources above it in load order (override/merge, deferred to its own decision); this change only establishes the read-only source model and the guard asymmetry that resolution depends on.
 
 Three problems:
 
@@ -15,7 +15,7 @@ Three problems:
 
 ## Decision
 
-### 1. `permission` axis on `OpenMod`
+### 1. `permission` axis on `IncludedMod`
 
 Add `permission: 'editable' | 'readonly'`. Every _persisted_ entry is `'editable'` — users open editable mods only. The axis earns its place by giving the persisted and projected shapes one type; the derived vanilla entry is the only `'readonly'` carrier. (This drops the `hidden` axis ADR 013 specced — see Supersession.)
 
@@ -25,15 +25,15 @@ The game-folder path is stored per game under `pluginSettings.{gameId}.gameFolde
 
 ### 3. Vanilla is derived, not persisted
 
-`openMods[]` in the store stays mod-only. Main synthesizes the vanilla entry from the configured path when it **projects** the workspace; it is never written into the persisted collection. This mirrors `activeMod` being derived rather than stored — one source of truth for the path (App Settings), no stale entry when the path changes.
+`includedMods[]` in the store stays mod-only. Main synthesizes the vanilla entry from the configured path when it **projects** the workspace; it is never written into the persisted collection. This mirrors `activeMod` being derived rather than stored — one source of truth for the path (App Settings), no stale entry when the path changes.
 
 ### 4. Persisted vs projected `Workspace`
 
-Two shapes. **Persisted** (`workspace` store key) = mods only. **Projected** (`workspace.get()` over IPC) = vanilla-first (`permission: 'readonly'`) then `openMods`. The projection is authored in main and consumed by both the renderer and the read-guard. `workspace.get()`'s contract becomes "current workspace including derived vanilla," dependent on App Settings game-path state.
+Two shapes. **Persisted** (`workspace` store key) = mods only. **Projected** (`workspace.get()` over IPC) = vanilla-first (`permission: 'readonly'`) then `includedMods`. The projection is authored in main and consumed by both the renderer and the read-guard. `workspace.get()`'s contract becomes "current workspace including derived vanilla," dependent on App Settings game-path state.
 
 ### 5. Single-game projection
 
-Vanilla projects for the active game. Exactly one plugin is registered today, and the app already assumes single-game (`plugins[0]`), so "active game" is that plugin. Multi-game — vanilla matching the edited mod's game — requires `OpenMod.gameId`, an additive modification not a redesign (A-PROJ-3), so it is not built now.
+Vanilla projects for the active game. Exactly one plugin is registered today, and the app already assumes single-game (`plugins[0]`), so "active game" is that plugin. Multi-game — vanilla matching the edited mod's game — requires `IncludedMod.gameId`, an additive modification not a redesign (A-PROJ-3), so it is not built now.
 
 ### 6. Path-guard splits into read and write
 
@@ -58,12 +58,12 @@ Two independent App Settings toggles: **hide vanilla** (hides the whole read-onl
 **Negative / accepted**
 
 - `workspace.get()` now depends on preferences state (the per-game path), coupling the workspace projection to the preferences store. Accepted — main owns both stores; the alternative splits projection across the IPC boundary.
-- Single-game projection is a known temporary simplification; multi-game needs `OpenMod.gameId` later.
+- Single-game projection is a known temporary simplification; multi-game needs `IncludedMod.gameId` later.
 - `hide-unsupported` applied to vanilla filters only after main lists the folder; per-feature vanilla curation (loading only the files a given enabled feature needs, rather than the whole game folder) is deferred and depends on the entity extractor existing first.
 
 ## Alternatives considered
 
-- **Persist vanilla as a real `OpenMod`.** Rejected — duplicates the configured path, drifts when it changes.
+- **Persist vanilla as a real `IncludedMod`.** Rejected — duplicates the configured path, drifts when it changes.
 - **`hidden` field per entry (ADR 013's original).** Superseded — global toggles cover visibility; a per-entry field has no consumer and would need a restore surface.
 - **Renderer composes vanilla from a separate path fetch.** Rejected — splits the projection; the renderer's view could disagree with what the guard authorizes.
 - **Defer write-rejection until multiple editable roots exist.** Rejected — without it this change permits writes into vanilla. A hole, not a deferral.
