@@ -36,6 +36,7 @@ Each ADR follows a consistent structure:
 | 013 | [Multi-mod workspace model](013-multi-mod-workspace-model.md)                        | Accepted |
 | 014 | [Reference / read-only sources](014-reference-readonly-sources.md)                   | Accepted |
 | 015 | [Business actions: availability-driven interaction pattern](015-business-actions.md) | Accepted |
+| 016 | [Load-order file resolution and provenance](016-load-order-resolution.md)            | Accepted |
 
 ## When to write an ADR
 
