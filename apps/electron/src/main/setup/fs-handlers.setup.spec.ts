@@ -95,7 +95,20 @@ describe('registerFsHandlers', () => {
       await expect(handler(makeInvokeEvent(), '/root/sub')).resolves.toEqual([
         fakeNode,
       ]);
-      expect(listDirectory).toHaveBeenCalledWith('/root/sub');
+      expect(listDirectory).toHaveBeenCalledWith('/root/sub', {
+        hideUnsupportedFiles: false,
+      });
+    });
+
+    it('forwards hideUnsupportedFiles to the list-directory service', async () => {
+      vi.mocked(listDirectory).mockResolvedValue([fakeNode]);
+      const handler = getCapturedHandler(IPC_CHANNELS.fs.listDirectory);
+      await handler(makeInvokeEvent(), '/root/sub', {
+        hideUnsupportedFiles: true,
+      });
+      expect(listDirectory).toHaveBeenCalledWith('/root/sub', {
+        hideUnsupportedFiles: true,
+      });
     });
 
     it('rejects with code 400 when path is not a string', async () => {
@@ -144,7 +157,20 @@ describe('registerFsHandlers', () => {
       await expect(
         handler(makeInvokeEvent(), '/root', 'readme'),
       ).resolves.toEqual([fakeNode]);
-      expect(searchFiles).toHaveBeenCalledWith('/root', 'readme');
+      expect(searchFiles).toHaveBeenCalledWith('/root', 'readme', {
+        hideUnsupportedFiles: false,
+      });
+    });
+
+    it('forwards hideUnsupportedFiles to the search service', async () => {
+      vi.mocked(searchFiles).mockResolvedValue([fakeNode]);
+      const handler = getCapturedHandler(IPC_CHANNELS.fs.searchFiles);
+      await handler(makeInvokeEvent(), '/root', 'readme', {
+        hideUnsupportedFiles: true,
+      });
+      expect(searchFiles).toHaveBeenCalledWith('/root', 'readme', {
+        hideUnsupportedFiles: true,
+      });
     });
 
     it('rejects with code 400 when root is not a string', async () => {

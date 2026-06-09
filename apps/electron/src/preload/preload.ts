@@ -2,6 +2,7 @@ import {
   AppApiModel,
   GamePlugin,
   IPC_CHANNELS,
+  ListOptions,
   ModId,
   PreferenceKey,
   Preferences,
@@ -13,14 +14,14 @@ import { invokeStructured } from './ipc-invoke.util';
 
 const API = {
   fs: {
-    listDirectory: (path: string) =>
-      invokeStructured(IPC_CHANNELS.fs.listDirectory, path),
+    listDirectory: (path: string, options?: ListOptions) =>
+      invokeStructured(IPC_CHANNELS.fs.listDirectory, path, options),
     openFolderDialog: () =>
       invokeStructured<null | string>(IPC_CHANNELS.fs.openFolderDialog),
     readTextFile: (path: string) =>
       invokeStructured<string>(IPC_CHANNELS.fs.readTextFile, path),
-    searchFiles: (root: string, query: string) =>
-      invokeStructured(IPC_CHANNELS.fs.searchFiles, root, query),
+    searchFiles: (root: string, query: string, options?: ListOptions) =>
+      invokeStructured(IPC_CHANNELS.fs.searchFiles, root, query, options),
     writeBinaryFile: (path: string, content: Readonly<Uint8Array>) =>
       invokeStructured<void>(IPC_CHANNELS.fs.writeBinaryFile, path, content),
     writeTextFile: (path: string, content: string) =>

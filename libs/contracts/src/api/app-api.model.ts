@@ -1,16 +1,20 @@
-import { FsNode } from '../fs';
+import { FsNode, ListOptions } from '../fs';
 import { GamePlugin } from '../plugin';
 import { PreferenceKey, Preferences } from '../preferences';
 import { ModId, Workspace } from '../workspace';
 
 export interface AppApiModel {
   readonly fs: {
-    readonly listDirectory: (path: string) => Promise<readonly FsNode[]>;
+    readonly listDirectory: (
+      path: string,
+      options?: ListOptions,
+    ) => Promise<readonly FsNode[]>;
     readonly openFolderDialog: () => Promise<null | string>;
     readonly readTextFile: (path: string) => Promise<string>;
     readonly searchFiles: (
       root: string,
       query: string,
+      options?: ListOptions,
     ) => Promise<readonly FsNode[]>;
     readonly writeBinaryFile: (
       path: string,
