@@ -3,6 +3,8 @@
 - **Status**: Accepted
 - **Date**: 2026-06-08
 
+> **Update (2026-06-09, superseded in part by ADR 014):** The `hidden` axis described below was dropped before implementation. Entry visibility is handled by global App Settings toggles (hide vanilla, hide unsupported files), not a per-entry field; `OpenMod` carries `permission` only. The orthogonal-axes reasoning below is retained as the original rationale — the `hidden` field was never built. See ADR 014.
+
 ## Context
 
 The application opens a single mod root (`currentRoot`) at a time. The next phase
