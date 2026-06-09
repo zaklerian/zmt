@@ -1,4 +1,10 @@
-import { FsNode, IPC_CHANNELS, IPC_ERROR_CODES, IpcError } from '@contracts';
+import {
+  FsNode,
+  IPC_CHANNELS,
+  IPC_ERROR_CODES,
+  IpcError,
+  ListOptions,
+} from '@contracts';
 import { BrowserWindow, dialog } from 'electron';
 
 import {
@@ -24,18 +30,18 @@ export function registerFsHandlers(): void {
 
   ipcHandle<FsNode[]>(
     IPC_CHANNELS.fs.listDirectory,
-    async (_event, rawPath) => {
+    async (_event, rawPath, rawOptions) => {
       const target = requireString(rawPath, 'path');
-      return listDirectory(target);
+      return listDirectory(target, coerceListOptions(rawOptions));
     },
   );
 
   ipcHandle<FsNode[]>(
     IPC_CHANNELS.fs.searchFiles,
-    async (_event, rawRoot, rawQuery) => {
+    async (_event, rawRoot, rawQuery, rawOptions) => {
       const root = requireString(rawRoot, 'root');
       const query = requireString(rawQuery, 'query');
-      return searchFiles(root, query);
+      return searchFiles(root, query, coerceListOptions(rawOptions));
     },
   );
 
@@ -71,6 +77,14 @@ export function registerFsHandlers(): void {
       await writeFileService.writeBinary(target, rawContent);
     },
   );
+}
+
+function coerceListOptions(value: unknown): ListOptions {
+  const hideUnsupportedFiles =
+    typeof value === 'object' &&
+    value !== null &&
+    (value as Record<string, unknown>).hideUnsupportedFiles === true;
+  return { hideUnsupportedFiles };
 }
 
 function requireString(value: unknown, field: string): string {

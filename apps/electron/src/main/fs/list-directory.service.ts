@@ -1,11 +1,20 @@
-import { FILE_SUPPORT, FsNode, IPC_ERROR_CODES, IpcError } from '@contracts';
+import {
+  FILE_SUPPORT,
+  FsNode,
+  IPC_ERROR_CODES,
+  IpcError,
+  ListOptions,
+} from '@contracts';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
 import { classifyFile } from './classify-file.util';
 import { assertPathUnderRoot } from './path-guard.util';
 
-export async function listDirectory(targetPath: string): Promise<FsNode[]> {
+export async function listDirectory(
+  targetPath: string,
+  options?: ListOptions,
+): Promise<FsNode[]> {
   await assertPathUnderRoot(targetPath);
 
   let entries;
@@ -55,8 +64,13 @@ export async function listDirectory(targetPath: string): Promise<FsNode[]> {
     });
   }
 
-  nodes.sort(compareNodes);
-  return nodes;
+  const filtered =
+    options?.hideUnsupportedFiles === true
+      ? nodes.filter((node) => node.support !== FILE_SUPPORT.unsupported)
+      : nodes;
+
+  filtered.sort(compareNodes);
+  return filtered;
 }
 
 function compareNodes(a: FsNode, b: FsNode): number {

@@ -1,4 +1,10 @@
-import { FILE_SUPPORT, FsNode, IPC_ERROR_CODES, IpcError } from '@contracts';
+import {
+  FILE_SUPPORT,
+  FsNode,
+  IPC_ERROR_CODES,
+  IpcError,
+  ListOptions,
+} from '@contracts';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
@@ -11,6 +17,7 @@ const SEARCH_MAX_DEPTH = 12;
 export async function searchFiles(
   root: string,
   query: string,
+  options?: ListOptions,
 ): Promise<FsNode[]> {
   await assertPathUnderRoot(root);
 
@@ -46,7 +53,11 @@ export async function searchFiles(
 
       const extension = path.extname(entry.name).toLowerCase() || null;
       const support = classifyFile(extension);
-      if (support === FILE_SUPPORT.unsupported) continue;
+      if (
+        options?.hideUnsupportedFiles === true &&
+        support === FILE_SUPPORT.unsupported
+      )
+        continue;
       if (!entry.name.toLowerCase().includes(normalizedQuery)) continue;
 
       results.push({

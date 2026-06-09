@@ -27,6 +27,7 @@ export const preferencesService = {
   async getAll(): Promise<Preferences> {
     const current = getStore().store;
     return {
+      hideUnsupportedFiles: current.hideUnsupportedFiles ?? false,
       locale: current.locale ?? null,
       pluginSettings: current.pluginSettings ?? {},
     };
