@@ -10,7 +10,9 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
+  Stack,
   Switch,
+  TextField,
   Typography,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
@@ -30,17 +32,20 @@ import { PluginConfigForm } from './plugin-config-form.component';
 
 interface AppSettingsModalContentProps {
   hideUnsupportedFiles: boolean;
+  hideVanilla: boolean;
   onClose: () => void;
 }
 
 interface AppSettingsModalProps {
   hideUnsupportedFiles: boolean;
+  hideVanilla: boolean;
   onClose: () => void;
   open: boolean;
 }
 
 interface AppSettingsReadyViewProps {
   hideUnsupportedFiles: boolean;
+  hideVanilla: boolean;
   onClose: () => void;
   plugins: readonly GamePlugin[];
   storedSettings: Preferences['pluginSettings'];
@@ -48,6 +53,7 @@ interface AppSettingsReadyViewProps {
 
 export function AppSettingsModal({
   hideUnsupportedFiles,
+  hideVanilla,
   onClose,
   open,
 }: AppSettingsModalProps) {
@@ -55,6 +61,7 @@ export function AppSettingsModal({
   return (
     <AppSettingsModalContent
       hideUnsupportedFiles={hideUnsupportedFiles}
+      hideVanilla={hideVanilla}
       onClose={onClose}
     />
   );
@@ -62,6 +69,7 @@ export function AppSettingsModal({
 
 function AppSettingsModalContent({
   hideUnsupportedFiles,
+  hideVanilla,
   onClose,
 }: AppSettingsModalContentProps) {
   const { t } = useTranslation(['feature.appSettings', 'app']);
@@ -113,6 +121,7 @@ function AppSettingsModalContent({
   return (
     <AppSettingsReadyView
       hideUnsupportedFiles={hideUnsupportedFiles}
+      hideVanilla={hideVanilla}
       plugins={status.data.plugins}
       storedSettings={status.data.storedSettings}
       onClose={onClose}
@@ -122,6 +131,7 @@ function AppSettingsModalContent({
 
 function AppSettingsReadyView({
   hideUnsupportedFiles,
+  hideVanilla: hideVanillaProp,
   onClose,
   plugins,
   storedSettings,
@@ -129,8 +139,14 @@ function AppSettingsReadyView({
   const { t } = useTranslation(['feature.appSettings', 'app']);
   const modal = useModal();
   const [hideUnsupported, setHideUnsupported] = useState(hideUnsupportedFiles);
-  const toggleChanged = hideUnsupported !== hideUnsupportedFiles;
+  const [hideVanilla, setHideVanilla] = useState(hideVanillaProp);
   const initialPlugin = plugins[0];
+  const storedGameFolderPath =
+    storedSettings[initialPlugin.gameId]?.gameFolderPath ?? '';
+  const [gameFolderPath, setGameFolderPath] = useState(storedGameFolderPath);
+  const toggleChanged = hideUnsupported !== hideUnsupportedFiles;
+  const hideVanillaChanged = hideVanilla !== hideVanillaProp;
+  const gameFolderPathChanged = gameFolderPath !== storedGameFolderPath;
   const defaultValues = useMemo(
     () => buildInitialFormValues(initialPlugin, storedSettings),
     [initialPlugin, storedSettings],
@@ -154,11 +170,22 @@ function AppSettingsReadyView({
   const save = useAsyncCallback(async (values: PluginConfigFormValues) => {
     setSaveError(null);
     try {
-      if (methods.formState.isDirty) {
+      const pluginFormDirty = methods.formState.isDirty;
+      if (pluginFormDirty || gameFolderPathChanged) {
         const current = (await pluginConfigService.getPluginSettings()) ?? {};
+        const stored = current[values.activeGameId];
+        const features = pluginFormDirty
+          ? { ...values.features }
+          : (stored?.features ?? {});
+        const resolvedGameFolderPath = gameFolderPathChanged
+          ? gameFolderPath
+          : stored?.gameFolderPath;
         const next = {
           ...current,
-          [values.activeGameId]: { features: { ...values.features } },
+          [values.activeGameId]:
+            resolvedGameFolderPath === undefined
+              ? { features }
+              : { features, gameFolderPath: resolvedGameFolderPath },
         };
         await pluginConfigService.setPluginSettings(next);
       }
@@ -167,6 +194,9 @@ function AppSettingsReadyView({
           'hideUnsupportedFiles',
           hideUnsupported,
         );
+      }
+      if (hideVanillaChanged) {
+        await window.api.preferences.set('hideVanilla', hideVanilla);
       }
       onClose();
     } catch (rawError: unknown) {
@@ -177,8 +207,25 @@ function AppSettingsReadyView({
     }
   });
 
+  const browse = useAsyncCallback(async () => {
+    try {
+      const picked = await window.api.fs.openFolderDialog();
+      if (picked !== null) setGameFolderPath(picked);
+    } catch (rawError: unknown) {
+      const error: IpcError = isIpcError(rawError)
+        ? rawError
+        : { code: 500, message: String(rawError) };
+      setSaveError(error);
+    }
+  });
+
   const requestClose = async () => {
-    if (methods.formState.isDirty || toggleChanged) {
+    if (
+      methods.formState.isDirty ||
+      toggleChanged ||
+      hideVanillaChanged ||
+      gameFolderPathChanged
+    ) {
       const proceed = await modal.confirm({
         confirmLabel: t('app:actions.discard'),
         message: t('feature.appSettings:close.unsavedMessage'),
@@ -200,20 +247,51 @@ function AppSettingsReadyView({
             storedSettings={storedSettings}
           />
           <Box sx={{ mt: 2 }}>
+            <Stack alignItems="flex-end" direction="row" spacing={1}>
+              <TextField
+                fullWidth
+                label={t('feature.appSettings:form.gameFolder.label')}
+                size="small"
+                slotProps={{ input: { readOnly: true } }}
+                value={gameFolderPath}
+              />
+              <Button
+                disabled={browse.isPending}
+                variant="outlined"
+                onClick={() => void browse.execute()}
+              >
+                {t('feature.appSettings:form.gameFolder.browse')}
+              </Button>
+            </Stack>
+          </Box>
+          <Box sx={{ mt: 2 }}>
             <Typography color="text.secondary" variant="overline">
               {t('feature.appSettings:form.fileDisplay.sectionLabel')}
             </Typography>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={hideUnsupported}
-                  onChange={(_, checked) => setHideUnsupported(checked)}
-                />
-              }
-              label={t(
-                'feature.appSettings:form.fileDisplay.hideUnsupported.label',
-              )}
-            />
+            <Stack>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={hideUnsupported}
+                    onChange={(_, checked) => setHideUnsupported(checked)}
+                  />
+                }
+                label={t(
+                  'feature.appSettings:form.fileDisplay.hideUnsupported.label',
+                )}
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={hideVanilla}
+                    onChange={(_, checked) => setHideVanilla(checked)}
+                  />
+                }
+                label={t(
+                  'feature.appSettings:form.fileDisplay.hideVanilla.label',
+                )}
+              />
+            </Stack>
           </Box>
           {saveError !== null && (
             <Alert severity="error" sx={{ mt: 2 }}>
@@ -227,7 +305,11 @@ function AppSettingsReadyView({
           </Button>
           <Button
             disabled={
-              (!methods.formState.isDirty && !toggleChanged) || save.isPending
+              (!methods.formState.isDirty &&
+                !toggleChanged &&
+                !hideVanillaChanged &&
+                !gameFolderPathChanged) ||
+              save.isPending
             }
             startIcon={
               save.isPending ? (

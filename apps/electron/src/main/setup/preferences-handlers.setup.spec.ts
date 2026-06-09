@@ -20,6 +20,7 @@ vi.mock('../preferences', () => ({
 
 const emptyPreferences: Preferences = {
   hideUnsupportedFiles: false,
+  hideVanilla: false,
   locale: null,
   pluginSettings: {},
 };

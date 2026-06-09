@@ -28,6 +28,7 @@ export const preferencesService = {
     const current = getStore().store;
     return {
       hideUnsupportedFiles: current.hideUnsupportedFiles ?? false,
+      hideVanilla: current.hideVanilla ?? false,
       locale: current.locale ?? null,
       pluginSettings: current.pluginSettings ?? {},
     };
