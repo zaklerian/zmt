@@ -1,5 +1,6 @@
 import {
   EntityDeleteRequest,
+  EntityField,
   EntityWriteRequest,
   IPC_ERROR_CODES,
   IpcError,
@@ -18,6 +19,11 @@ import { pluginRegistryService } from '../plugins';
 import { workspaceStoreService } from '../workspace';
 import { assertWritable } from './path-guard.util';
 import { writeFileService } from './write-file.service';
+
+interface LineRange {
+  readonly from: number;
+  readonly to: number;
+}
 
 interface LocatedEntity {
   readonly absolutePath: string;
@@ -55,12 +61,28 @@ async function deleteEntity(request: EntityDeleteRequest): Promise<void> {
     request.entityName,
   );
 
-  const from = lineStartOf(source, node.from);
-  const newline = source.indexOf('\n', node.to);
-  const to = newline === -1 ? source.length : newline + 1;
+  const { from, to } = lineRangeOf(source, node);
   const patched = source.slice(0, from) + source.slice(to);
 
   await writeFileService.writeText(absolutePath, patched);
+}
+
+function indentFor(
+  source: string,
+  firstChildFrom: null | number,
+  blockTo: number,
+): string {
+  if (firstChildFrom !== null) {
+    return source.slice(lineStartOf(source, firstChildFrom), firstChildFrom);
+  }
+  const braceIndex = blockTo - 1;
+  return source.slice(lineStartOf(source, braceIndex), braceIndex) + '\t';
+}
+
+function lineRangeOf(source: string, node: LineRange): LineRange {
+  const from = lineStartOf(source, node.from);
+  const newline = source.indexOf('\n', node.to);
+  return { from, to: newline === -1 ? source.length : newline + 1 };
 }
 
 function lineStartOf(source: string, offset: number): number {
@@ -128,67 +150,152 @@ async function readSource(absolutePath: string): Promise<string> {
   }
 }
 
+function renderFields(indent: string, fields: readonly EntityField[]): string {
+  let text = '';
+  for (const field of fields) {
+    text += `${indent}${field.key} = ${field.value}\n`;
+  }
+  return text;
+}
+
 async function writeEntity(request: EntityWriteRequest): Promise<void> {
-  const { absolutePath, block, source } = await loadAndLocate(
+  // AST nodes from @paradox-parser are mutable, so descent stays inline on
+  // locals: prefer-readonly-parameter-types (P-1) bars node-typed helper params.
+  const {
+    absolutePath,
+    block: entityBlock,
+    source,
+  } = await loadAndLocate(
     request.modId,
     request.relativePath,
     request.entityName,
   );
-  const { delta } = request;
-
-  const scalarByKey = new Map<string, AssignmentNode>();
-  const allKeys = new Set<string>();
-  for (const child of block.children) {
-    if (child.kind !== 'Assignment') continue;
-    const name =
-      child.key.kind === 'Identifier' ? child.key.name : child.key.value;
-    allKeys.add(name);
-    if (child.value.kind !== 'Block' && !scalarByKey.has(name)) {
-      scalarByKey.set(name, child);
-    }
-  }
 
   const edits: SourceEdit[] = [];
 
-  for (const field of delta.changed) {
-    const node = scalarByKey.get(field.key);
-    if (node === undefined) throw conflict(field.key);
-    edits.push({ from: node.value.from, text: field.value, to: node.value.to });
-  }
+  for (const delta of request.deltas) {
+    let target: BlockNode = entityBlock;
+    let childAssignment: AssignmentNode | null = null;
 
-  for (const key of delta.removed) {
-    const node = scalarByKey.get(key);
-    if (node === undefined) throw conflict(key);
-    const from = lineStartOf(source, node.from);
-    const newline = source.indexOf('\n', node.to);
-    edits.push({
-      from,
-      text: '',
-      to: newline === -1 ? source.length : newline + 1,
-    });
-  }
+    if (delta.block !== null) {
+      let childBlock: BlockNode | null = null;
+      for (const child of entityBlock.children) {
+        if (child.kind !== 'Assignment' || child.value.kind !== 'Block') {
+          continue;
+        }
+        const name =
+          child.key.kind === 'Identifier' ? child.key.name : child.key.value;
+        if (name === delta.block) {
+          childAssignment = child;
+          childBlock = child.value;
+          break;
+        }
+      }
 
-  for (const field of delta.added) {
-    if (allKeys.has(field.key)) throw conflict(field.key);
-  }
-  if (delta.added.length > 0) {
-    const braceIndex = block.to - 1;
-    const insertAt = lineStartOf(source, braceIndex);
-    let indent: null | string = null;
-    for (const child of block.children) {
-      if (child.kind === 'Assignment') {
-        indent = source.slice(lineStartOf(source, child.from), child.from);
-        break;
+      if (childAssignment === null || childBlock === null) {
+        if (delta.changed.length > 0) throw conflict(delta.changed[0].key);
+        if (delta.removed.length > 0) throw conflict(delta.removed[0]);
+        if (delta.added.length > 0) {
+          let firstFrom: null | number = null;
+          for (const child of entityBlock.children) {
+            if (child.kind === 'Assignment') {
+              firstFrom = child.from;
+              break;
+            }
+          }
+          const indent = indentFor(source, firstFrom, entityBlock.to);
+          const open = `${indent}${delta.block} = {\n`;
+          const text = `${open}${renderFields(indent + '\t', delta.added)}${indent}}\n`;
+          const insertAt = lineStartOf(source, entityBlock.to - 1);
+          edits.push({ from: insertAt, text, to: insertAt });
+        }
+        continue;
+      }
+
+      target = childBlock;
+    }
+
+    // Build this delta's edits locally first: the scalar passes below validate
+    // (409 on a stale key) before the emptied-block decision discards them.
+    const deltaEdits: SourceEdit[] = [];
+
+    const scalarByKey = new Map<string, AssignmentNode>();
+    const allKeys = new Set<string>();
+    for (const child of target.children) {
+      if (child.kind !== 'Assignment') continue;
+      const name =
+        child.key.kind === 'Identifier' ? child.key.name : child.key.value;
+      allKeys.add(name);
+      if (child.value.kind !== 'Block' && !scalarByKey.has(name)) {
+        scalarByKey.set(name, child);
       }
     }
-    if (indent === null) {
-      indent = source.slice(lineStartOf(source, braceIndex), braceIndex) + '\t';
+
+    for (const field of delta.changed) {
+      const node = scalarByKey.get(field.key);
+      if (node === undefined) throw conflict(field.key);
+      deltaEdits.push({
+        from: node.value.from,
+        text: field.value,
+        to: node.value.to,
+      });
     }
-    let text = '';
+
+    const removed = new Set<string>();
+    for (const key of delta.removed) {
+      const node = scalarByKey.get(key);
+      if (node === undefined) throw conflict(key);
+      removed.add(key);
+      const { from, to } = lineRangeOf(source, node);
+      deltaEdits.push({ from, text: '', to });
+    }
+
     for (const field of delta.added) {
-      text += `${indent}${field.key} = ${field.value}\n`;
+      if (allKeys.has(field.key)) throw conflict(field.key);
     }
-    edits.push({ from: insertAt, text, to: insertAt });
+    if (delta.added.length > 0) {
+      let firstFrom: null | number = null;
+      for (const child of target.children) {
+        if (child.kind === 'Assignment') {
+          firstFrom = child.from;
+          break;
+        }
+      }
+      const insertAt = lineStartOf(source, target.to - 1);
+      const indent = indentFor(source, firstFrom, target.to);
+      deltaEdits.push({
+        from: insertAt,
+        text: renderFields(indent, delta.added),
+        to: insertAt,
+      });
+    }
+
+    // A removal that clears the last surviving child of a named block drops the
+    // whole block rather than leaving `name = { }` behind.
+    let emptied =
+      childAssignment !== null &&
+      delta.added.length === 0 &&
+      delta.removed.length > 0;
+    if (emptied) {
+      for (const child of target.children) {
+        const name =
+          child.kind === 'Assignment'
+            ? child.key.kind === 'Identifier'
+              ? child.key.name
+              : child.key.value
+            : null;
+        if (name === null || !removed.has(name)) {
+          emptied = false;
+          break;
+        }
+      }
+    }
+    if (emptied && childAssignment !== null) {
+      const { from, to } = lineRangeOf(source, childAssignment);
+      edits.push({ from, text: '', to });
+    } else {
+      edits.push(...deltaEdits);
+    }
   }
 
   await writeFileService.writeText(absolutePath, applyEdits(source, edits));

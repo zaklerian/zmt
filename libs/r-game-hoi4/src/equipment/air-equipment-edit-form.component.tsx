@@ -102,7 +102,12 @@ export function AirEquipmentEditForm({
       }));
       const delta = computeScalarDelta(snapshot, rows);
       const { api } = window as unknown as { readonly api: AppApiModel };
-      await api.entity.write({ delta, entityName: name, modId, relativePath });
+      await api.entity.write({
+        deltas: [{ block: null, ...delta }],
+        entityName: name,
+        modId,
+        relativePath,
+      });
       onClose();
       onSaved();
     } catch (rawError: unknown) {

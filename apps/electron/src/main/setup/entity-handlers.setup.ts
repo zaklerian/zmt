@@ -1,7 +1,7 @@
 import {
+  EntityBlockDelta,
   EntityDeleteRequest,
   EntityField,
-  EntityScalarDelta,
   EntityWriteRequest,
   IPC_CHANNELS,
   IPC_ERROR_CODES,
@@ -25,6 +25,16 @@ function badRequest(message: string): IpcError {
   return { code: IPC_ERROR_CODES.BAD_REQUEST, message };
 }
 
+function coerceBlockDelta(value: unknown, field: string): EntityBlockDelta {
+  const record = requireRecord(value, field);
+  return {
+    added: requireFields(record.added, `${field}.added`),
+    block: requireBlockName(record.block, `${field}.block`),
+    changed: requireFields(record.changed, `${field}.changed`),
+    removed: requireStrings(record.removed, `${field}.removed`),
+  };
+}
+
 function coerceDeleteRequest(value: unknown): EntityDeleteRequest {
   const record = requireRecord(value, 'request');
   return {
@@ -34,23 +44,29 @@ function coerceDeleteRequest(value: unknown): EntityDeleteRequest {
   };
 }
 
-function coerceDelta(value: unknown): EntityScalarDelta {
-  const record = requireRecord(value, 'delta');
-  return {
-    added: requireFields(record.added, 'added'),
-    changed: requireFields(record.changed, 'changed'),
-    removed: requireStrings(record.removed, 'removed'),
-  };
+function coerceDeltas(value: unknown): readonly EntityBlockDelta[] {
+  if (!Array.isArray(value)) {
+    throw badRequest('deltas must be an array');
+  }
+  return value.map((entry, index) =>
+    coerceBlockDelta(entry, `deltas[${String(index)}]`),
+  );
 }
 
 function coerceWriteRequest(value: unknown): EntityWriteRequest {
   const record = requireRecord(value, 'request');
   return {
-    delta: coerceDelta(record.delta),
+    deltas: coerceDeltas(record.deltas),
     entityName: requireString(record.entityName, 'entityName'),
     modId: requireString(record.modId, 'modId'),
     relativePath: requireString(record.relativePath, 'relativePath'),
   };
+}
+
+function requireBlockName(value: unknown, field: string): null | string {
+  if (value === null) return null;
+  if (typeof value === 'string') return value;
+  throw badRequest(`${field} must be a string or null`);
 }
 
 function requireFields(value: unknown, field: string): readonly EntityField[] {

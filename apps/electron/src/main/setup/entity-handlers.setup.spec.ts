@@ -55,6 +55,23 @@ const FIXTURE = `equipments = {
 \t\ttype = artillery
 \t\treliability = 0.5
 \t}
+\tengine_module = {
+\t\tname = engine
+\t\tadd_stats = {
+\t\t\t# tuned for range
+\t\t\tair_range = 100
+\t\t\treliability = 0.4
+\t\t}
+\t}
+\tarmor_module = {
+\t\tname = armor
+\t}
+\tfuel_module = {
+\t\tname = fuel
+\t\tadd_stats = {
+\t\t\tair_range = 50
+\t\t}
+\t}
 }
 `;
 
@@ -97,13 +114,16 @@ describe('registerEntityHandlers', () => {
     await rm(modRoot, { force: true, recursive: true });
   });
 
-  it('patches only the changed field, leaving siblings, nested blocks, and comments byte-identical', async () => {
+  it('patches only the changed field via a root-scoped delta, leaving siblings, nested blocks, and comments byte-identical', async () => {
     await writeVia({
-      delta: {
-        added: [],
-        changed: [{ key: 'reliability', value: '0.9' }],
-        removed: [],
-      },
+      deltas: [
+        {
+          added: [],
+          block: null,
+          changed: [{ key: 'reliability', value: '0.9' }],
+          removed: [],
+        },
+      ],
       entityName: 'infantry_equipment',
       modId: MOD_ID,
       relativePath: RELATIVE_PATH,
@@ -116,11 +136,14 @@ describe('registerEntityHandlers', () => {
 
   it('inserts an added field at the indentation of existing scalars before the closing brace', async () => {
     await writeVia({
-      delta: {
-        added: [{ key: 'cost', value: '10' }],
-        changed: [],
-        removed: [],
-      },
+      deltas: [
+        {
+          added: [{ key: 'cost', value: '10' }],
+          block: null,
+          changed: [],
+          removed: [],
+        },
+      ],
       entityName: 'infantry_equipment',
       modId: MOD_ID,
       relativePath: RELATIVE_PATH,
@@ -136,11 +159,14 @@ describe('registerEntityHandlers', () => {
 
   it('removes a field with no blank line left behind', async () => {
     await writeVia({
-      delta: {
-        added: [],
-        changed: [],
-        removed: ['max_organisation'],
-      },
+      deltas: [
+        {
+          added: [],
+          block: null,
+          changed: [],
+          removed: ['max_organisation'],
+        },
+      ],
       entityName: 'infantry_equipment',
       modId: MOD_ID,
       relativePath: RELATIVE_PATH,
@@ -148,6 +174,69 @@ describe('registerEntityHandlers', () => {
 
     expect(await readFile(filePath, 'utf8')).toBe(
       FIXTURE.replace('\t\tmax_organisation = 60\n', ''),
+    );
+  });
+
+  it('patches a stat inside a named child block, leaving sibling stats, comments, and other blocks byte-identical', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [],
+          block: 'add_stats',
+          changed: [{ key: 'reliability', value: '0.45' }],
+          removed: [],
+        },
+      ],
+      entityName: 'engine_module',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    expect(await readFile(filePath, 'utf8')).toBe(
+      FIXTURE.replace('reliability = 0.4\n', 'reliability = 0.45\n'),
+    );
+  });
+
+  it('creates the child block at the entity child indentation when adding the first stat', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [{ key: 'air_attack', value: '7' }],
+          block: 'add_stats',
+          changed: [],
+          removed: [],
+        },
+      ],
+      entityName: 'armor_module',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    expect(await readFile(filePath, 'utf8')).toBe(
+      FIXTURE.replace(
+        '\t\tname = armor\n\t}',
+        '\t\tname = armor\n\t\tadd_stats = {\n\t\t\tair_attack = 7\n\t\t}\n\t}',
+      ),
+    );
+  });
+
+  it('drops the whole child block when its last stat is removed, leaving no empty braces', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [],
+          block: 'add_stats',
+          changed: [],
+          removed: ['air_range'],
+        },
+      ],
+      entityName: 'fuel_module',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    expect(await readFile(filePath, 'utf8')).toBe(
+      FIXTURE.replace('\t\tadd_stats = {\n\t\t\tair_range = 50\n\t\t}\n', ''),
     );
   });
 
@@ -169,7 +258,7 @@ describe('registerEntityHandlers', () => {
   it('rejects with 404 when the entity is absent', async () => {
     await expect(
       writeVia({
-        delta: { added: [], changed: [], removed: [] },
+        deltas: [{ added: [], block: null, changed: [], removed: [] }],
         entityName: 'tank_equipment',
         modId: MOD_ID,
         relativePath: RELATIVE_PATH,
@@ -180,11 +269,14 @@ describe('registerEntityHandlers', () => {
   it('rejects with 409 when a changed key is absent from the block', async () => {
     await expect(
       writeVia({
-        delta: {
-          added: [],
-          changed: [{ key: 'unknown_field', value: '1' }],
-          removed: [],
-        },
+        deltas: [
+          {
+            added: [],
+            block: null,
+            changed: [{ key: 'unknown_field', value: '1' }],
+            removed: [],
+          },
+        ],
         entityName: 'infantry_equipment',
         modId: MOD_ID,
         relativePath: RELATIVE_PATH,
@@ -195,7 +287,9 @@ describe('registerEntityHandlers', () => {
   it('rejects with 409 when a removed key is absent from the block', async () => {
     await expect(
       writeVia({
-        delta: { added: [], changed: [], removed: ['unknown_field'] },
+        deltas: [
+          { added: [], block: null, changed: [], removed: ['unknown_field'] },
+        ],
         entityName: 'infantry_equipment',
         modId: MOD_ID,
         relativePath: RELATIVE_PATH,
@@ -206,12 +300,51 @@ describe('registerEntityHandlers', () => {
   it('rejects with 409 when an added key already exists in the block', async () => {
     await expect(
       writeVia({
-        delta: {
-          added: [{ key: 'reliability', value: '0.9' }],
-          changed: [],
-          removed: [],
-        },
+        deltas: [
+          {
+            added: [{ key: 'reliability', value: '0.9' }],
+            block: null,
+            changed: [],
+            removed: [],
+          },
+        ],
         entityName: 'infantry_equipment',
+        modId: MOD_ID,
+        relativePath: RELATIVE_PATH,
+      }),
+    ).rejects.toSatisfy((error) => extractIpcError(error).code === 409);
+  });
+
+  it('rejects with 409 when a removed key is absent from a named child block', async () => {
+    await expect(
+      writeVia({
+        deltas: [
+          {
+            added: [],
+            block: 'add_stats',
+            changed: [],
+            removed: ['unknown_stat'],
+          },
+        ],
+        entityName: 'engine_module',
+        modId: MOD_ID,
+        relativePath: RELATIVE_PATH,
+      }),
+    ).rejects.toSatisfy((error) => extractIpcError(error).code === 409);
+  });
+
+  it('rejects with 409 when a changed key targets an absent child block', async () => {
+    await expect(
+      writeVia({
+        deltas: [
+          {
+            added: [],
+            block: 'add_stats',
+            changed: [{ key: 'air_attack', value: '7' }],
+            removed: [],
+          },
+        ],
+        entityName: 'armor_module',
         modId: MOD_ID,
         relativePath: RELATIVE_PATH,
       }),
@@ -223,11 +356,14 @@ describe('registerEntityHandlers', () => {
 
     await expect(
       writeVia({
-        delta: {
-          added: [],
-          changed: [{ key: 'reliability', value: '0.9' }],
-          removed: [],
-        },
+        deltas: [
+          {
+            added: [],
+            block: null,
+            changed: [{ key: 'reliability', value: '0.9' }],
+            removed: [],
+          },
+        ],
         entityName: 'infantry_equipment',
         modId: MOD_ID,
         relativePath: RELATIVE_PATH,
