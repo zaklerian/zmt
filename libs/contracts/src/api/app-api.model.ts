@@ -1,9 +1,13 @@
+import { EquipmentEntity } from '../equipment';
 import { FsNode, ListOptions } from '../fs';
 import { GamePlugin } from '../plugin';
 import { PreferenceKey, Preferences } from '../preferences';
 import { ModId, Workspace } from '../workspace';
 
 export interface AppApiModel {
+  readonly equipment: {
+    readonly list: (filePath: string) => Promise<readonly EquipmentEntity[]>;
+  };
   readonly fs: {
     readonly listDirectory: (
       path: string,

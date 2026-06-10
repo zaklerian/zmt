@@ -1,4 +1,5 @@
 export * from './api';
+export * from './equipment';
 export * from './fs';
 export * from './ipc';
 export * from './plugin';

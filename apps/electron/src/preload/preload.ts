@@ -1,5 +1,6 @@
 import {
   AppApiModel,
+  EquipmentEntity,
   GamePlugin,
   IPC_CHANNELS,
   ListOptions,
@@ -13,6 +14,13 @@ import { contextBridge } from 'electron';
 import { invokeStructured } from './ipc-invoke.util';
 
 const API = {
+  equipment: {
+    list: (filePath: string) =>
+      invokeStructured<readonly EquipmentEntity[]>(
+        IPC_CHANNELS.equipment.list,
+        filePath,
+      ),
+  },
   fs: {
     listDirectory: (path: string, options?: ListOptions) =>
       invokeStructured(IPC_CHANNELS.fs.listDirectory, path, options),
