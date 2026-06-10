@@ -50,4 +50,23 @@ describe('useFileTree', () => {
     await waitFor(() => expect(result.current.loadingRoot).toBe(false));
     expect(result.current.rootChildren).toEqual(fresh);
   });
+
+  it('returns a stable rootChildren reference across rerenders while loading', () => {
+    vi.spyOn(modContentService, 'listDirectory').mockImplementation(
+      () => new Promise<readonly FsNode[]>(() => undefined),
+    );
+
+    const { rerender, result } = renderHook(
+      ({ root }) => useFileTree({ hideUnsupportedFiles: false, root }),
+      {
+        initialProps: { root: '/a' },
+      },
+    );
+
+    const first = result.current.rootChildren;
+    rerender({ root: '/a' });
+
+    expect(result.current.loadingRoot).toBe(true);
+    expect(result.current.rootChildren).toBe(first);
+  });
 });

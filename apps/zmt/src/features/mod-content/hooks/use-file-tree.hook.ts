@@ -46,6 +46,8 @@ function reducer(state: FileTreeState, action: FileTreeAction): FileTreeState {
   }
 }
 
+const EMPTY_CHILDREN: readonly FsNode[] = [];
+
 const initialState: FileTreeState = {
   childrenByPath: new Map(),
   error: null,
@@ -109,6 +111,6 @@ export function useFileTree({
     error: state.error,
     loadChildren,
     loadingRoot: state.loadingRoot,
-    rootChildren: state.childrenByPath.get(state.root ?? '') ?? [],
+    rootChildren: state.childrenByPath.get(state.root ?? '') ?? EMPTY_CHILDREN,
   };
 }
