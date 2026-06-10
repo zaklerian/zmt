@@ -59,4 +59,17 @@ export const en = {
       unresolved: 'Archetype not found',
     },
   },
+  module: {
+    columns: {
+      category: 'Category',
+      domain: 'Domain',
+      name: 'Name',
+    },
+    domain: {
+      air: 'Air',
+      land: 'Land',
+      naval: 'Naval',
+      unclassified: 'Unclassified',
+    },
+  },
 };
