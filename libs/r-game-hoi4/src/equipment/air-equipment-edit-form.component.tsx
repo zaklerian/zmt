@@ -7,8 +7,6 @@ import {
 } from '@contracts';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  Autocomplete,
-  Box,
   Button,
   Chip,
   CircularProgress,
@@ -17,19 +15,18 @@ import {
   DialogContent,
   DialogTitle,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
 import { ModalService } from '@r-core';
 import { useCallback, useMemo, useState } from 'react';
-import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { Control, FieldValues, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
+import { computeScalarDelta, ScalarBag } from '../scalar-bag';
 import {
   AirEquipmentFormValues,
   buildAirEquipmentSchema,
 } from './air-equipment-edit.schema';
-import { computeScalarDelta } from './equipment-delta.util';
 import { equipmentErrorMessageKey } from './equipment-error.util';
 import { KNOWN_AIR_EQUIPMENT_KEYS } from './known-air-equipment-keys.const';
 
@@ -80,7 +77,6 @@ export function AirEquipmentEditForm({
     mode: 'onChange',
     resolver: zodResolver(schema),
   });
-  const { append, fields, remove } = useFieldArray({ control, name: 'rows' });
   const [pending, setPending] = useState(false);
 
   const surfaceError = async (rawError: unknown): Promise<void> => {
@@ -150,69 +146,18 @@ export function AirEquipmentEditForm({
         )}
       </DialogTitle>
       <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
-          {fields.map((field, index) => (
-            <Stack
-              key={field.id}
-              alignItems="flex-start"
-              direction="row"
-              spacing={1}
-            >
-              <Controller
-                control={control}
-                name={`rows.${index}.key`}
-                render={({ field: keyField, fieldState }) => (
-                  <Autocomplete
-                    freeSolo
-                    inputValue={
-                      typeof keyField.value === 'string' ? keyField.value : ''
-                    }
-                    options={[...KNOWN_AIR_EQUIPMENT_KEYS]}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        error={fieldState.error !== undefined}
-                        helperText={fieldState.error?.message}
-                        label={translate(
-                          'plugin.hoi4:equipment.form.fields.key.label',
-                        )}
-                      />
-                    )}
-                    size="small"
-                    sx={{ flex: 1 }}
-                    onInputChange={(_event, next) => keyField.onChange(next)}
-                  />
-                )}
-              />
-              <Controller
-                control={control}
-                name={`rows.${index}.value`}
-                render={({ field: valueField }) => (
-                  <TextField
-                    {...valueField}
-                    label={translate(
-                      'plugin.hoi4:equipment.form.fields.value.label',
-                    )}
-                    size="small"
-                    sx={{ flex: 1 }}
-                    value={
-                      typeof valueField.value === 'string'
-                        ? valueField.value
-                        : ''
-                    }
-                  />
-                )}
-              />
-              <Button color="error" onClick={() => remove(index)}>
-                {translate('plugin.hoi4:equipment.form.removeField')}
-              </Button>
-            </Stack>
-          ))}
-          <Box>
-            <Button onClick={() => append({ key: '', value: '' })}>
-              {translate('plugin.hoi4:equipment.form.addField')}
-            </Button>
-          </Box>
+        <Stack sx={{ mt: 1 }}>
+          <ScalarBag
+            addLabel={translate('plugin.hoi4:equipment.form.addField')}
+            control={control as unknown as Control<FieldValues>}
+            keyLabel={translate('plugin.hoi4:equipment.form.fields.key.label')}
+            keySuggestions={KNOWN_AIR_EQUIPMENT_KEYS}
+            name="rows"
+            removeLabel={translate('plugin.hoi4:equipment.form.removeField')}
+            valueLabel={translate(
+              'plugin.hoi4:equipment.form.fields.value.label',
+            )}
+          />
         </Stack>
       </DialogContent>
       <DialogActions>

@@ -1,19 +1,16 @@
-import { EntityScalarDelta, EquipmentScalar } from '@contracts';
+import { EntityField, EntityScalarDelta } from '@contracts';
 
-export interface ScalarRow {
-  readonly key: string;
-  readonly value: string;
-}
+import { ScalarRow } from './scalar-bag.model';
 
-// Diffs the edited rows against the snapshot taken when the form opened. Keys
+// Diffs the edited rows against the snapshot taken when the bag opened. Keys
 // present only after the edit are added; keys gone after the edit are removed;
 // keys in both whose value moved are changed. Row keys are assumed normalized
 // and unique by the caller (form validation guarantees both before save).
 export function computeScalarDelta(
-  snapshot: readonly EquipmentScalar[],
+  snapshot: readonly EntityField[],
   rows: readonly ScalarRow[],
 ): EntityScalarDelta {
-  const before = new Map(snapshot.map((scalar) => [scalar.key, scalar.value]));
+  const before = new Map(snapshot.map((field) => [field.key, field.value]));
   const after = new Map(rows.map((row) => [row.key, row.value]));
 
   return {

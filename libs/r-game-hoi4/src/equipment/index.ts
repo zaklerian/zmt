@@ -2,7 +2,6 @@ export * from './air-equipment-edit-form.component';
 export * from './air-equipment-edit.schema';
 export * from './equipment-actions';
 export * from './equipment-columns.const';
-export * from './equipment-delta.util';
 export * from './equipment-error.util';
 export * from './equipment-recognizer';
 export * from './equipment-row.util';
