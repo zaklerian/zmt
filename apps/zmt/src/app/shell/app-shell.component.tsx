@@ -1,21 +1,28 @@
-import { IncludedMod, ProjectedSource } from '@contracts';
+import { FileSupport, IncludedMod, ProjectedSource } from '@contracts';
 import { Box } from '@mui/material';
+import { recognizerRegistry } from '@r-core';
 import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 
 import { AppSettingsModal } from '../../features/app-settings';
 import {
+  ContentModeToggle,
   FileTreeSelection,
   ModContent,
   NoFolderState,
 } from '../../features/mod-content';
 import { AppLayout } from '../layout';
 import { ShellContextProvider, ShellContextValue } from './shell-context';
+import { useContentViewMode } from './use-content-view-mode.hook';
 
 export function AppShell() {
   const [includedMods, setIncludedMods] = useState<readonly IncludedMod[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedPath, setSelectedPath] = useState<null | string>(null);
+  const [selectedSupport, setSelectedSupport] = useState<FileSupport | null>(
+    null,
+  );
+  const { setViewMode, viewMode } = useContentViewMode(selectedPath);
   const [appSettingsOpen, setAppSettingsOpen] = useState(false);
   const [hideUnsupportedFiles, setHideUnsupportedFiles] = useState(false);
   const [hideVanilla, setHideVanilla] = useState(false);
@@ -73,6 +80,7 @@ export function AppShell() {
       const workspace = await window.api.workspace.get();
       setIncludedMods(workspace.includedMods);
       setSelectedPath(null);
+      setSelectedSupport(null);
       if (location.pathname !== '/') {
         void navigate('/');
       }
@@ -83,6 +91,7 @@ export function AppShell() {
 
   const handleSelect = (selection: FileTreeSelection) => {
     setSelectedPath(selection.path);
+    setSelectedSupport(selection.support);
     if (selection.path !== null && selection.isModRoot) {
       if (location.pathname !== '/mod/info') {
         void navigate('/mod/info');
@@ -111,9 +120,19 @@ export function AppShell() {
     </Box>
   );
 
+  const isEntityFile =
+    selectedPath !== null &&
+    recognizerRegistry.recognize(selectedPath) !== null;
+
   const shellValue = useMemo<ShellContextValue>(
-    () => ({ activeModRootPath, selectedPath }),
-    [activeModRootPath, selectedPath],
+    () => ({
+      activeModRootPath,
+      selectedPath,
+      selectedSupport,
+      setViewMode,
+      viewMode,
+    }),
+    [activeModRootPath, selectedPath, selectedSupport, setViewMode, viewMode],
   );
 
   return (
@@ -122,6 +141,11 @@ export function AppShell() {
         content={content}
         drawerOpen={drawerOpen}
         hasSource={hasSource}
+        panelToolbarRight={
+          isEntityFile ? (
+            <ContentModeToggle mode={viewMode} onChange={setViewMode} />
+          ) : null
+        }
         selectedPath={selectedPath}
         sidebar={sidebar}
         sources={sources}

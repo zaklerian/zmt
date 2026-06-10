@@ -1,3 +1,4 @@
+import { FILE_SUPPORT } from '@contracts';
 import {
   Alert,
   Box,
@@ -14,7 +15,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { EntityTable } from '../../features/mod-content';
+import { EntityTable, PlainEditor } from '../../features/mod-content';
 import { SelectSomethingPlaceholder } from './select-something-placeholder.component';
 import { useShell } from './shell-context';
 
@@ -34,19 +35,33 @@ type Settled =
   | { error: Error; filePath: string; kind: 'error'; version: number };
 
 export function ContentPanel() {
-  const { activeModRootPath, selectedPath } = useShell();
+  const { activeModRootPath, selectedPath, selectedSupport, viewMode } =
+    useShell();
   if (selectedPath === null) return <SelectSomethingPlaceholder />;
 
+  const writable = activeModRootPath !== null;
   const recognizer = recognizerRegistry.recognize(selectedPath);
-  if (recognizer === null) return <UnrecognizedFile path={selectedPath} />;
 
-  return (
-    <RecognizedEntityPanel
-      filePath={selectedPath}
-      recognizer={recognizer}
-      writable={activeModRootPath !== null}
-    />
-  );
+  // Entity-bearing file: table is the natural view, code mode shows raw text.
+  if (recognizer !== null) {
+    return viewMode === 'code' ? (
+      <PlainEditor filePath={selectedPath} writable={writable} />
+    ) : (
+      <RecognizedEntityPanel
+        filePath={selectedPath}
+        recognizer={recognizer}
+        writable={writable}
+      />
+    );
+  }
+
+  // Plain supported file: the editor is its natural view. Images (readonly
+  // support) and unsupported files keep their current behavior.
+  if (selectedSupport === FILE_SUPPORT.editable) {
+    return <PlainEditor filePath={selectedPath} writable={writable} />;
+  }
+
+  return <UnrecognizedFile path={selectedPath} />;
 }
 
 function RecognizedEntityPanel({
