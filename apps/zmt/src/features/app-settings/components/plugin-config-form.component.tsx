@@ -78,31 +78,33 @@ export function PluginConfigForm({
         )}
       />
 
-      <Box>
-        <Typography color="text.secondary" variant="overline">
-          {t('feature.appSettings:form.features.sectionLabel')}
-        </Typography>
-        <Stack>
-          {activePlugin.features.map((feature) => (
-            <Controller
-              key={feature.featureId}
-              control={control}
-              name={`features.${feature.featureId}`}
-              render={({ field }) => (
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={field.value === true}
-                      onChange={(_, checked) => field.onChange(checked)}
-                    />
-                  }
-                  label={feature.label}
-                />
-              )}
-            />
-          ))}
-        </Stack>
-      </Box>
+      {activePlugin.features.length > 0 && (
+        <Box>
+          <Typography color="text.secondary" variant="overline">
+            {t('feature.appSettings:form.features.sectionLabel')}
+          </Typography>
+          <Stack>
+            {activePlugin.features.map((feature) => (
+              <Controller
+                key={feature.featureId}
+                control={control}
+                name={`features.${feature.featureId}`}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={field.value === true}
+                        onChange={(_, checked) => field.onChange(checked)}
+                      />
+                    }
+                    label={feature.label}
+                  />
+                )}
+              />
+            ))}
+          </Stack>
+        </Box>
+      )}
     </Stack>
   );
 }
