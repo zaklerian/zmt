@@ -60,14 +60,17 @@ export function AppShell() {
 
   const hasSource = includedMods.length > 0;
 
-  const activeModRootPath = useMemo<null | string>(() => {
+  const activeMod = useMemo<IncludedMod | null>(() => {
     if (selectedPath === null) return null;
-    const containing = includedMods.find(
-      (mod) =>
-        mod.permission === 'editable' && containsPath(mod.path, selectedPath),
+    return (
+      includedMods.find(
+        (mod) =>
+          mod.permission === 'editable' && containsPath(mod.path, selectedPath),
+      ) ?? null
     );
-    return containing ? containing.path : null;
   }, [includedMods, selectedPath]);
+  const activeModId = activeMod?.id ?? null;
+  const activeModRootPath = activeMod?.path ?? null;
 
   const sources = useMemo<readonly ProjectedSource[]>(() => {
     const visible = hideVanilla
@@ -143,6 +146,7 @@ export function AppShell() {
 
   const shellValue = useMemo<ShellContextValue>(
     () => ({
+      activeModId,
       activeModRootPath,
       confirmLeaveIfDirty,
       consumeLeaveConfirmed,
@@ -154,6 +158,7 @@ export function AppShell() {
       viewMode,
     }),
     [
+      activeModId,
       activeModRootPath,
       confirmLeaveIfDirty,
       consumeLeaveConfirmed,

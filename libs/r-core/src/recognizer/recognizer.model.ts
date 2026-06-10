@@ -1,4 +1,21 @@
+import type { ReactNode } from 'react';
+
 import { Action } from '../action';
+import { ModalService } from '../modal';
+
+// Renderer capabilities an entity action needs at execute time but cannot reach
+// from a plugin lib: the active file's location for a write/delete, the modal
+// service, a list refresh, and a slot to mount a plugin-owned edit form. Carried
+// on the toolbar context per ADR 015 (capabilities ride the context, not the
+// action signature).
+export interface EntityActionEnvironment {
+  readonly dismissForm: () => void;
+  readonly modal: ModalService;
+  readonly modId: null | string;
+  readonly presentForm: (node: ReactNode) => void;
+  readonly refresh: () => void;
+  readonly relativePath: string;
+}
 
 export interface EntityColumn {
   headerKey: string;
@@ -30,7 +47,7 @@ export interface EntityTableRecognizer {
   matches: (filePath: string) => boolean;
 }
 
-export interface EntityToolbarContext {
+export interface EntityToolbarContext extends EntityActionEnvironment {
   readonly selectedRowId: null | string;
   readonly writable: boolean;
 }

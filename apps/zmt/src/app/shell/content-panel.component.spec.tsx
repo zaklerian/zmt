@@ -57,6 +57,7 @@ function shell(
   viewMode: ViewMode,
 ): ShellContextValue {
   return {
+    activeModId: null,
     activeModRootPath: null,
     confirmLeaveIfDirty: () => Promise.resolve(true),
     consumeLeaveConfirmed: () => false,

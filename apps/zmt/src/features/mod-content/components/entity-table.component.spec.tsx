@@ -1,5 +1,5 @@
 import { createTheme, ThemeProvider } from '@mui/material';
-import { EntityTableData } from '@r-core';
+import { EntityActionEnvironment, EntityTableData } from '@r-core';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { ReactNode } from 'react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,6 +8,18 @@ import { initI18n } from '../../../i18n';
 import { EntityTable } from './entity-table.component';
 
 const theme = createTheme();
+
+const actionEnv: EntityActionEnvironment = {
+  dismissForm: () => undefined,
+  modal: {
+    confirm: () => Promise.resolve(false),
+    info: () => Promise.resolve(),
+  },
+  modId: null,
+  presentForm: () => undefined,
+  refresh: () => undefined,
+  relativePath: '',
+};
 
 function makeData(): EntityTableData {
   return {
@@ -61,6 +73,7 @@ describe('EntityTable', () => {
   it('renders the given columns and rows', () => {
     render(
       <EntityTable
+        actionEnv={actionEnv}
         data={data}
         selectedRowId={null}
         writable={false}
@@ -83,6 +96,7 @@ describe('EntityTable', () => {
     const onSelectRow = vi.fn();
     render(
       <EntityTable
+        actionEnv={actionEnv}
         data={data}
         selectedRowId={null}
         writable={false}
@@ -98,6 +112,7 @@ describe('EntityTable', () => {
   it('applies a distinct row class for each entity state', () => {
     const { container } = render(
       <EntityTable
+        actionEnv={actionEnv}
         data={data}
         selectedRowId={null}
         writable={false}
@@ -115,6 +130,7 @@ describe('EntityTable', () => {
   it('reorders the displayed rows on sort without mutating the data', () => {
     render(
       <EntityTable
+        actionEnv={actionEnv}
         data={data}
         selectedRowId={null}
         writable={false}

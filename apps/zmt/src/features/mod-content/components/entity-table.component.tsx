@@ -9,6 +9,7 @@ import {
 } from '@mui/x-data-grid';
 import {
   Action,
+  EntityActionEnvironment,
   EntityRow,
   EntitySortKey,
   EntityTableData,
@@ -30,6 +31,7 @@ interface EntityGridRow {
 }
 
 interface EntityTableProps {
+  readonly actionEnv: EntityActionEnvironment;
   readonly data: EntityTableData;
   onSelectRow: (rowId: null | string) => void;
   selectedRowId: null | string;
@@ -51,6 +53,7 @@ const ROW_STATE_SX = {
 } as const;
 
 export function EntityTable({
+  actionEnv,
   data,
   onSelectRow,
   selectedRowId,
@@ -61,8 +64,8 @@ export function EntityTable({
   const translateHeader = t as (key: string) => string;
 
   const toolbarContext = useMemo<EntityToolbarContext>(
-    () => ({ selectedRowId, writable }),
-    [selectedRowId, writable],
+    () => ({ ...actionEnv, selectedRowId, writable }),
+    [actionEnv, selectedRowId, writable],
   );
 
   const sortedRows = useMemo(
