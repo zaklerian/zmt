@@ -1,4 +1,4 @@
-import { FILE_SUPPORT, ProjectedSource } from '@contracts';
+import { FILE_SUPPORT, FileSupport, ProjectedSource } from '@contracts';
 import { Typography } from '@mui/material';
 import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
 import { useCallback, useMemo, useState } from 'react';
@@ -14,6 +14,7 @@ import {
 export interface FileTreeSelection {
   readonly isModRoot: boolean;
   readonly path: null | string;
+  support: FileSupport | null;
 }
 
 interface FileTreeProps {
@@ -74,6 +75,18 @@ export function FileTree({
     [contributions, loadingLabel, sources],
   );
 
+  const supportByPath = useMemo<ReadonlyMap<string, FileSupport>>(() => {
+    const map = new Map<string, FileSupport>();
+    const walk = (nodes: readonly FsTreeItem[]): void => {
+      for (const item of nodes) {
+        if (item.node !== null) map.set(item.id, item.node.support);
+        if (item.children !== undefined) walk(item.children);
+      }
+    };
+    walk(items);
+    return map;
+  }, [items]);
+
   const isModRoot = useCallback(
     (path: string): boolean => {
       if (sources.some((s) => s.path === path && s.permission === 'editable')) {
@@ -120,11 +133,15 @@ export function FileTree({
     itemId: null | string,
   ) => {
     if (itemId === null) {
-      onSelect({ isModRoot: false, path: null });
+      onSelect({ isModRoot: false, path: null, support: null });
       return;
     }
     if (itemId.endsWith('::loading') || itemId.endsWith('::error')) return;
-    onSelect({ isModRoot: isModRoot(itemId), path: itemId });
+    onSelect({
+      isModRoot: isModRoot(itemId),
+      path: itemId,
+      support: supportByPath.get(itemId) ?? null,
+    });
   };
 
   return (

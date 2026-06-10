@@ -7,7 +7,7 @@ import { useFileSearch } from '../hooks';
 
 interface FileTreeSearchProps {
   hideUnsupportedFiles: boolean;
-  onSelect: (path: string) => void;
+  onSelect: (node: FsNode) => void;
   root: null | string;
 }
 
@@ -29,7 +29,7 @@ export function FileTreeSearch({
     value: FsNode | null,
   ) => {
     if (value === null) return;
-    onSelect(value.path);
+    onSelect(value);
     setInputValue('');
   };
 

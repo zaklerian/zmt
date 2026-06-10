@@ -1,6 +1,13 @@
 import type { en } from '../en/feature.mod-content';
 
 export const uk: typeof en = {
+  editor: {
+    codeView: 'Перегляд коду',
+    label: 'Вміст файлу',
+    saved: 'Збережено',
+    tableView: 'Перегляд таблиці',
+    unsavedMessage: 'Є незбережені зміни. Відхилити їх?',
+  },
   entityTable: {
     columns: 'Стовпці',
   },

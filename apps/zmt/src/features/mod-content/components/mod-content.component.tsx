@@ -25,7 +25,13 @@ export function ModContent({
       <FileTreeSearch
         hideUnsupportedFiles={hideUnsupportedFiles}
         root={searchRoot}
-        onSelect={(path) => onSelect({ isModRoot: false, path })}
+        onSelect={(node) =>
+          onSelect({
+            isModRoot: false,
+            path: node.path,
+            support: node.support,
+          })
+        }
       />
       <FileTree
         hideUnsupportedFiles={hideUnsupportedFiles}

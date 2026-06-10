@@ -20,6 +20,7 @@ interface AppLayoutProps {
   onOpenAppSettings: () => void;
   onOpenFolder: () => void;
   onToggleDrawer: () => void;
+  panelToolbarRight?: ReactNode;
   selectedPath: null | string;
   sidebar: ReactNode;
   readonly sources: readonly ProjectedSource[];
@@ -32,6 +33,7 @@ export function AppLayout({
   onOpenAppSettings,
   onOpenFolder,
   onToggleDrawer,
+  panelToolbarRight,
   selectedPath,
   sidebar,
   sources,
@@ -106,7 +108,7 @@ export function AppLayout({
           {hasSource && (
             <PanelBreadcrumbs selectedPath={selectedPath} sources={sources} />
           )}
-          {hasSource && <PanelToolbar />}
+          {hasSource && <PanelToolbar right={panelToolbarRight} />}
           <Box sx={{ flexGrow: 1, overflow: 'auto' }}>{content}</Box>
         </Box>
       </Box>

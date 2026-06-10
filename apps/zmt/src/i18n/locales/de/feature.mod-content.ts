@@ -1,6 +1,13 @@
 import type { en } from '../en/feature.mod-content';
 
 export const de: typeof en = {
+  editor: {
+    codeView: 'Code-Ansicht',
+    label: 'Dateiinhalt',
+    saved: 'Gespeichert',
+    tableView: 'Tabellenansicht',
+    unsavedMessage: 'Sie haben ungespeicherte Änderungen. Verwerfen?',
+  },
   entityTable: {
     columns: 'Spalten',
   },

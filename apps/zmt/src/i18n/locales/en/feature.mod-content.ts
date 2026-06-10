@@ -1,4 +1,11 @@
 export const en = {
+  editor: {
+    codeView: 'Code view',
+    label: 'File contents',
+    saved: 'Saved',
+    tableView: 'Table view',
+    unsavedMessage: 'You have unsaved changes. Discard them?',
+  },
   entityTable: {
     columns: 'Columns',
   },
