@@ -1,4 +1,4 @@
-import { Box, Button } from '@mui/material';
+import { Box, Button, type Theme } from '@mui/material';
 import {
   ColumnsPanelTrigger,
   DataGrid,
@@ -40,6 +40,14 @@ const ROW_STATE_SX = {
   '& .entity-row--error': { color: 'error.main' },
   '& .entity-row--muted': { color: 'text.secondary' },
   '& .entity-row--warning': { color: 'warning.main' },
+  '& .MuiDataGrid-cell:focus': { outline: 'none' },
+  '& .MuiDataGrid-cell:focus-within': { outline: 'none' },
+  '& .MuiDataGrid-columnHeader:focus': { outline: 'none' },
+  '& .MuiDataGrid-columnHeader:focus-within': { outline: 'none' },
+  '& .MuiDataGrid-row.Mui-selected': {
+    outline: ({ palette }: Theme) => `2px solid ${palette.primary.main}`,
+    outlineOffset: '-2px',
+  },
 } as const;
 
 export function EntityTable({
