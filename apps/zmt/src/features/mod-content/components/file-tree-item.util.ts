@@ -53,6 +53,15 @@ export function descriptorScanModRoots(
   return result;
 }
 
+export function mergeNewRoots(
+  prior: readonly string[],
+  newRoots: readonly string[],
+): readonly string[] {
+  const merged = new Set(prior);
+  for (const root of newRoots) merged.add(root);
+  return [...merged];
+}
+
 function nodeToItem(
   node: FsNode,
   childrenByPath: ReadonlyMap<string, readonly FsNode[]>,
