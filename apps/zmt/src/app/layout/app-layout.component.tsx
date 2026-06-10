@@ -108,7 +108,9 @@ export function AppLayout({
           {hasSource && (
             <PanelBreadcrumbs selectedPath={selectedPath} sources={sources} />
           )}
-          {hasSource && <PanelToolbar right={panelToolbarRight} />}
+          {hasSource && panelToolbarRight != null && (
+            <PanelToolbar right={panelToolbarRight} />
+          )}
           <Box sx={{ flexGrow: 1, overflow: 'auto' }}>{content}</Box>
         </Box>
       </Box>
