@@ -3,6 +3,7 @@ import type {
   EquipmentDomain,
   EquipmentEntity,
   EquipmentKind,
+  EquipmentScalar,
 } from '@contracts';
 import type {
   AssignmentNode,
@@ -13,6 +14,13 @@ import type {
 } from '@paradox-parser';
 
 import { EQUIPMENT_TYPE_DOMAIN } from './equipment-type-domain.const';
+
+// Identity- and classification-bearing keys the extractor already reads. Hoisted
+// to constants so the scalar projection excludes exactly these without restating
+// the literals.
+const KEY_ARCHETYPE = 'archetype';
+const KEY_IS_ARCHETYPE = 'is_archetype';
+const KEY_TYPE = 'type';
 
 export function extractEquipment(
   parsedTarget: Script,
@@ -38,6 +46,7 @@ export function extractEquipment(
         kind,
         name: keyName(entry),
         node: entry,
+        scalars: entityScalars(entry, block),
       });
     }
   }
@@ -45,7 +54,7 @@ export function extractEquipment(
 }
 
 function archetypeRef(block: BlockNode): string | undefined {
-  const assignment = findAssignment(block, 'archetype');
+  const assignment = findAssignment(block, KEY_ARCHETYPE);
   return assignment === undefined ? undefined : tokenOf(assignment.value);
 }
 
@@ -99,10 +108,36 @@ function entityKind(block: BlockNode | undefined): EquipmentKind {
   if (block === undefined) {
     return 'regular';
   }
-  const flag = findAssignment(block, 'is_archetype');
+  const flag = findAssignment(block, KEY_IS_ARCHETYPE);
   return flag !== undefined && isAffirmative(flag.value)
     ? 'archetype'
     : 'regular';
+}
+
+function entityScalars(
+  entry: AssignmentNode,
+  block: BlockNode | undefined,
+): readonly EquipmentScalar[] {
+  if (block === undefined) {
+    return [];
+  }
+  const excluded = new Set<string>([
+    KEY_ARCHETYPE,
+    KEY_IS_ARCHETYPE,
+    KEY_TYPE,
+    keyName(entry),
+  ]);
+  const scalars: EquipmentScalar[] = [];
+  for (const child of block.children) {
+    if (child.kind !== 'Assignment' || excluded.has(keyName(child))) {
+      continue;
+    }
+    const value = scalarValueOf(child.value);
+    if (value !== undefined) {
+      scalars.push({ key: keyName(child), value });
+    }
+  }
+  return scalars;
 }
 
 function findAssignment(
@@ -127,6 +162,23 @@ function keyName(assignment: AssignmentNode): string {
     : assignment.key.value;
 }
 
+function scalarValueOf(value: ParadoxValue): string | undefined {
+  switch (value.kind) {
+    case 'BooleanValue':
+      return value.value ? 'yes' : 'no';
+    case 'DateValue':
+      return value.raw;
+    case 'Identifier':
+      return value.name;
+    case 'NumberValue':
+      return value.raw;
+    case 'StringValue':
+      return value.value;
+    default:
+      return undefined;
+  }
+}
+
 function tokenOf(node: BlockChild): string | undefined {
   if (node.kind === 'Identifier') {
     return node.name;
@@ -138,7 +190,7 @@ function tokenOf(node: BlockChild): string | undefined {
 }
 
 function typeTokens(block: BlockNode): readonly string[] {
-  const assignment = findAssignment(block, 'type');
+  const assignment = findAssignment(block, KEY_TYPE);
   if (assignment === undefined) {
     return [];
   }

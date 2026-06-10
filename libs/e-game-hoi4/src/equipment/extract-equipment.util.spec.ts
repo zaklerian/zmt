@@ -4,6 +4,7 @@ import type {
   BlockNode,
   BooleanValueNode,
   IdentifierNode,
+  NumberValueNode,
   OperatorNode,
   ParadoxValue,
   Script,
@@ -56,6 +57,10 @@ function equipments(...entries: AssignmentNode[]): Script {
 
 function id(name: string): IdentifierNode {
   return { ...base(), kind: 'Identifier', name };
+}
+
+function num(raw: string): NumberValueNode {
+  return { ...base(), kind: 'NumberValue', raw, value: Number(raw) };
 }
 
 function op(): OperatorNode {
@@ -229,6 +234,52 @@ describe('extractEquipment', () => {
 
     expect(entities).toHaveLength(1);
     expect(entities[0]?.name).toBe('fighter_equipment');
+  });
+
+  it('projects scalar leaf fields, keeping custom keys and excluding identity and classifier keys', () => {
+    const entry = assign(
+      'fighter_equipment',
+      block([
+        assign('is_archetype', bool(true)),
+        assign('type', id('fighter')),
+        assign('archetype', id('fighter_base')),
+        assign('fighter_equipment', num('99')),
+        assign('reliability', num('0.8')),
+        assign('build_cost_ic', num('20')),
+        assign('my_custom_stat', str('experimental')),
+      ]),
+    );
+
+    const [entity] = extractEquipment(equipments(entry), new Map());
+
+    expect(entity?.scalars).toEqual([
+      { key: 'reliability', value: '0.8' },
+      { key: 'build_cost_ic', value: '20' },
+      { key: 'my_custom_stat', value: 'experimental' },
+    ]);
+  });
+
+  it('omits nested blocks from the scalar projection', () => {
+    const entry = assign(
+      'fighter_equipment',
+      block([
+        assign('is_archetype', bool(true)),
+        assign('type', id('fighter')),
+        assign('reliability', num('0.8')),
+        assign('modules', block([assign('fixed_slot', id('engine'))])),
+        assign('upgrades', block([assign('armor_value', num('1'))])),
+      ]),
+    );
+
+    const [entity] = extractEquipment(equipments(entry), new Map());
+
+    expect(entity?.scalars).toEqual([{ key: 'reliability', value: '0.8' }]);
+    expect(entity?.scalars.map((scalar) => scalar.key)).not.toContain(
+      'modules',
+    );
+    expect(entity?.scalars.map((scalar) => scalar.key)).not.toContain(
+      'upgrades',
+    );
   });
 
   it('preserves entity order and is deterministic for a given input', () => {

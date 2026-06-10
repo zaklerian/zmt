@@ -19,6 +19,10 @@ export interface EquipmentEntity {
   // round-trip fields the tool does not model. Kept as the parser's own mutable
   // shape; only the handle is readonly.
   readonly node: AssignmentNode;
+  // Flat projection of the entity's own scalar leaf fields, excluding the
+  // classification- and identity-bearing keys, so an edit form seeds editable
+  // rows without re-deriving field structure. Nested blocks stay in `node`.
+  readonly scalars: readonly EquipmentScalar[];
 }
 
 export type EquipmentInvalidReason =
@@ -28,3 +32,8 @@ export type EquipmentInvalidReason =
   | 'unknown-type';
 
 export type EquipmentKind = 'archetype' | 'regular';
+
+export interface EquipmentScalar {
+  readonly key: string;
+  readonly value: string;
+}
