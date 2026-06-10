@@ -4,6 +4,7 @@
   "private": true,
   "type": "commonjs",
   "dependencies": {
+    "@paradox-parser": "0.0.1",
     "tslib": "2.8.1"
   }
 }

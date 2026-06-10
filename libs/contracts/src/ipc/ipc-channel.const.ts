@@ -1,4 +1,7 @@
 export const IPC_CHANNELS = {
+  equipment: {
+    list: 'equipment:list',
+  },
   fs: {
     listDirectory: 'fs:listDirectory',
     openFolderDialog: 'fs:openFolderDialog',
