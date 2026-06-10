@@ -1,11 +1,11 @@
 import { FILE_SUPPORT, FileSupport, ProjectedSource } from '@contracts';
 import { Typography } from '@mui/material';
 import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { FsTreeItem } from './file-tree-item.model';
-import { basename } from './file-tree-item.util';
+import { basename, mergeNewRoots } from './file-tree-item.util';
 import {
   FileTreeRoot,
   FileTreeRootContribution,
@@ -34,7 +34,8 @@ export function FileTree({
   const [contributions, setContributions] = useState<
     ReadonlyMap<string, FileTreeRootContribution>
   >(new Map());
-  const [userExpanded, setUserExpanded] = useState<readonly string[]>([]);
+  const [expandedItems, setExpandedItems] = useState<readonly string[]>([]);
+  const seededRootsRef = useRef<ReadonlySet<string>>(new Set());
   const loadingLabel = t('feature.modContent:fileTree.loading');
 
   const handleContribution = useCallback(
@@ -53,11 +54,12 @@ export function FileTree({
     [sources],
   );
 
-  const expanded = useMemo<readonly string[]>(() => {
-    const set = new Set<string>(rootPaths);
-    for (const id of userExpanded) set.add(id);
-    return [...set];
-  }, [rootPaths, userExpanded]);
+  useEffect(() => {
+    const newRoots = rootPaths.filter((p) => !seededRootsRef.current.has(p));
+    if (newRoots.length === 0) return;
+    seededRootsRef.current = new Set([...seededRootsRef.current, ...newRoots]);
+    setExpandedItems((prev) => mergeNewRoots(prev, newRoots));
+  }, [rootPaths]);
 
   const items = useMemo<readonly FsTreeItem[]>(
     () =>
@@ -120,12 +122,14 @@ export function FileTree({
     _event: null | React.SyntheticEvent,
     nextExpanded: readonly string[],
   ) => {
-    const newlyExpanded = nextExpanded.filter((id) => !expanded.includes(id));
+    const newlyExpanded = nextExpanded.filter(
+      (id) => !expandedItems.includes(id),
+    );
     newlyExpanded.forEach((path) => {
       if (rootPaths.includes(path)) return;
       loadOwnedChildren(path);
     });
-    setUserExpanded(nextExpanded.filter((id) => !rootPaths.includes(id)));
+    setExpandedItems(nextExpanded);
   };
 
   const handleSelectedChange = (
@@ -160,7 +164,7 @@ export function FileTree({
         </Typography>
       ) : (
         <RichTreeView<FsTreeItem>
-          expandedItems={[...expanded]}
+          expandedItems={[...expandedItems]}
           isItemDisabled={isItemDisabled}
           items={[...items]}
           selectedItems={selectedPath}
