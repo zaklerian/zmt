@@ -1,5 +1,5 @@
+import { recognizerRegistry } from '@r-core';
 import { RendererPlugin } from '@r-game-hoi4';
-import { recognizerRegistry } from '@r-recognizer';
 
 export function registerPluginRecognizers(
   plugins: readonly RendererPlugin[],

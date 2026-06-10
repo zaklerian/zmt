@@ -5,7 +5,7 @@
   "type": "commonjs",
   "dependencies": {
     "@contracts": "*",
-    "@r-recognizer": "*",
+    "@r-core": "*",
     "react": "19.2.4",
     "tslib": "2.8.1"
   }

@@ -15,8 +15,8 @@
       "@main/*": ["apps/electron/src/main/*"],
       "@paradox-parser": ["libs/paradox-parser/src/index.ts"],
       "@preload/*": ["apps/electron/src/preload/*"],
+      "@r-core": ["libs/r-core/src/index.ts"],
       "@r-game-hoi4": ["libs/r-game-hoi4/src/index.ts"],
-      "@r-recognizer": ["libs/r-recognizer/src/index.ts"],
       "@renderer/*": ["apps/zmt/src/*"]
     },
     "rootDir": ".",

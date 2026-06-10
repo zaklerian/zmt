@@ -1,5 +1,5 @@
 import { EquipmentEntity } from '@contracts';
-import { EntityRow, TranslateFn } from '@r-recognizer';
+import { EntityRow, TranslateFn } from '@r-core';
 
 const DOMAIN_KEY = {
   air: 'plugin.hoi4:equipment.domain.air',

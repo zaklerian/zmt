@@ -1,9 +1,5 @@
 import { AppApiModel } from '@contracts';
-import {
-  EntityTableData,
-  EntityTableRecognizer,
-  TranslateFn,
-} from '@r-recognizer';
+import { EntityTableData, EntityTableRecognizer, TranslateFn } from '@r-core';
 
 import { buildEquipmentActions } from './equipment-actions';
 import { EQUIPMENT_COLUMNS } from './equipment-columns.const';

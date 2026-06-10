@@ -1,5 +1,5 @@
 import { createTheme, ThemeProvider } from '@mui/material';
-import { EntityTableData } from '@r-recognizer';
+import { EntityTableData } from '@r-core';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { ReactNode } from 'react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';

@@ -10,7 +10,7 @@ import {
   EntityTableRecognizer,
   recognizerRegistry,
   TranslateFn,
-} from '@r-recognizer';
+} from '@r-core';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 

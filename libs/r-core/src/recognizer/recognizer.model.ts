@@ -1,4 +1,4 @@
-import { Action } from './action.model';
+import { Action } from '../action';
 
 export interface EntityColumn {
   headerKey: string;

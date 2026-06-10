@@ -1,5 +1,5 @@
 import { EquipmentEntity } from '@contracts';
-import { Action, EntityToolbarContext } from '@r-recognizer';
+import { Action, EntityToolbarContext } from '@r-core';
 
 const ADD = 'plugin.hoi4:equipment.actions.add';
 const DELETE = 'plugin.hoi4:equipment.actions.delete';

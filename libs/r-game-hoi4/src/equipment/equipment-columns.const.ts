@@ -1,4 +1,4 @@
-import { EntityColumn } from '@r-recognizer';
+import { EntityColumn } from '@r-core';
 
 // Display order Name · Kind · Type · Domain is meaningful, so it is kept as-is
 // rather than alphabetized (R-CODE-9 array-literal carve-out).

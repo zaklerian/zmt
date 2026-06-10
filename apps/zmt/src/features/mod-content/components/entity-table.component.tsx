@@ -13,7 +13,7 @@ import {
   EntitySortKey,
   EntityTableData,
   EntityToolbarContext,
-} from '@r-recognizer';
+} from '@r-core';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 

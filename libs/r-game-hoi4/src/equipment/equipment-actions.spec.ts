@@ -1,5 +1,5 @@
 import { EquipmentEntity } from '@contracts';
-import { EntityToolbarContext } from '@r-recognizer';
+import { EntityToolbarContext } from '@r-core';
 import { describe, expect, it } from 'vitest';
 
 import { buildEquipmentActions } from './equipment-actions';

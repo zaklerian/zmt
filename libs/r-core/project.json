@@ -1,7 +1,7 @@
 {
-  "name": "r-recognizer",
+  "name": "r-core",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/r-recognizer/src",
+  "sourceRoot": "libs/r-core/src",
   "projectType": "library",
   "tags": ["scope:renderer", "type:lib"],
   "targets": {
@@ -9,10 +9,10 @@
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/libs/r-recognizer",
-        "main": "libs/r-recognizer/src/index.ts",
-        "tsConfig": "libs/r-recognizer/tsconfig.lib.json",
-        "assets": ["libs/r-recognizer/*.md"]
+        "outputPath": "dist/libs/r-core",
+        "main": "libs/r-core/src/index.ts",
+        "tsConfig": "libs/r-core/tsconfig.lib.json",
+        "assets": ["libs/r-core/*.md"]
       }
     }
   }
