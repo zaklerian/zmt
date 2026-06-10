@@ -14,6 +14,7 @@ import {
 import { AppLayout } from '../layout';
 import { ShellContextProvider, ShellContextValue } from './shell-context';
 import { useContentViewMode } from './use-content-view-mode.hook';
+import { useEditGuard } from './use-edit-guard.hook';
 
 export function AppShell() {
   const [includedMods, setIncludedMods] = useState<readonly IncludedMod[]>([]);
@@ -23,6 +24,7 @@ export function AppShell() {
     null,
   );
   const { setViewMode, viewMode } = useContentViewMode(selectedPath);
+  const { confirmLeaveIfDirty, registerEditGuard } = useEditGuard();
   const [appSettingsOpen, setAppSettingsOpen] = useState(false);
   const [hideUnsupportedFiles, setHideUnsupportedFiles] = useState(false);
   const [hideVanilla, setHideVanilla] = useState(false);
@@ -90,17 +92,23 @@ export function AppShell() {
   };
 
   const handleSelect = (selection: FileTreeSelection) => {
-    setSelectedPath(selection.path);
-    setSelectedSupport(selection.support);
-    if (selection.path !== null && selection.isModRoot) {
-      if (location.pathname !== '/mod/info') {
-        void navigate('/mod/info');
+    void (async () => {
+      // Gate the swap itself: the buffer dies at setSelectedPath-driven remount,
+      // which useBlocker cannot prevent (it blocks navigation, not state). Both
+      // the intra-route content swap and the route-changing branches pass here.
+      if (!(await confirmLeaveIfDirty())) return;
+      setSelectedPath(selection.path);
+      setSelectedSupport(selection.support);
+      if (selection.path !== null && selection.isModRoot) {
+        if (location.pathname !== '/mod/info') {
+          void navigate('/mod/info');
+        }
+        return;
       }
-      return;
-    }
-    if (location.pathname !== '/') {
-      void navigate('/');
-    }
+      if (location.pathname !== '/') {
+        void navigate('/');
+      }
+    })();
   };
 
   const sidebar = !hasSource ? null : (
@@ -127,12 +135,22 @@ export function AppShell() {
   const shellValue = useMemo<ShellContextValue>(
     () => ({
       activeModRootPath,
+      confirmLeaveIfDirty,
+      registerEditGuard,
       selectedPath,
       selectedSupport,
       setViewMode,
       viewMode,
     }),
-    [activeModRootPath, selectedPath, selectedSupport, setViewMode, viewMode],
+    [
+      activeModRootPath,
+      confirmLeaveIfDirty,
+      registerEditGuard,
+      selectedPath,
+      selectedSupport,
+      setViewMode,
+      viewMode,
+    ],
   );
 
   return (

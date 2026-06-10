@@ -58,6 +58,8 @@ function shell(
 ): ShellContextValue {
   return {
     activeModRootPath: null,
+    confirmLeaveIfDirty: () => Promise.resolve(true),
+    registerEditGuard: () => () => undefined,
     selectedPath,
     selectedSupport,
     setViewMode: vi.fn(),

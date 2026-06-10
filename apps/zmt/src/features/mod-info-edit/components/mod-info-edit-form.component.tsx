@@ -23,7 +23,7 @@ import {
   type Script,
   serialize,
 } from '@paradox-parser';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useBlocker } from 'react-router';
@@ -33,6 +33,7 @@ import type {
   ResolvedModDescriptorSchema,
 } from '../mod-info-edit.model';
 
+import { useShell } from '../../../app/shell/shell-context';
 import { useAsyncCallback } from '../../../shared/hooks';
 import { useModal } from '../../../shared/modal';
 import { applyFormValuesToAst, astToFormValues } from '../ast-adapter';
@@ -72,10 +73,25 @@ export function ModInfoEditForm({
 }: ModInfoEditFormProps) {
   const { t } = useTranslation(['feature.modInfoEdit', 'app']);
   const modal = useModal();
+  const { registerEditGuard } = useShell();
   const methods = useForm<ModDescriptorFormValues>({
     defaultValues: defaultValues as ModDescriptorFormValues,
     resolver: zodResolver(schema),
   });
+
+  // Ref-backed predicate so the shell consults current dirtiness through one
+  // stable registration (register on mount, unregister on unmount) rather than
+  // re-registering on every field edit (A-REACT-3).
+  const isDirty = methods.formState.isDirty;
+  const dirtyRef = useRef(isDirty);
+  useEffect(() => {
+    dirtyRef.current = isDirty;
+  }, [isDirty]);
+
+  useEffect(
+    () => registerEditGuard(() => dirtyRef.current),
+    [registerEditGuard],
+  );
 
   const fieldLabel = (name: string): string => {
     switch (name) {

@@ -1,10 +1,15 @@
 import { EditorView } from '@codemirror/view';
 import { createTheme, ThemeProvider } from '@mui/material';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { createMemoryRouter, RouterProvider, useNavigate } from 'react-router';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import {
+  ShellContextProvider,
+  ShellContextValue,
+} from '../../../app/shell/shell-context';
+import { useEditGuard } from '../../../app/shell/use-edit-guard.hook';
 import { initI18n } from '../../../i18n';
 import { ModalContextProvider } from '../../../shared/modal';
 import { ModalContextValue } from '../../../shared/modal/modal.model';
@@ -50,9 +55,31 @@ function makeModal(confirmResult: boolean): ModalContextValue {
   };
 }
 
-function renderEditor(node: ReactNode, modal: ModalContextValue) {
+function makeShell(overrides?: Partial<ShellContextValue>): ShellContextValue {
+  return {
+    activeModRootPath: null,
+    confirmLeaveIfDirty: () => Promise.resolve(true),
+    registerEditGuard: () => () => undefined,
+    selectedPath: null,
+    selectedSupport: null,
+    setViewMode: () => undefined,
+    viewMode: 'code',
+    ...overrides,
+  };
+}
+
+function renderEditor(
+  node: ReactNode,
+  modal: ModalContextValue,
+  shell: ShellContextValue = makeShell(),
+) {
   const router = createMemoryRouter([
-    { element: node, path: '/' },
+    {
+      element: (
+        <ShellContextProvider value={shell}>{node}</ShellContextProvider>
+      ),
+      path: '/',
+    },
     { element: <div>other page</div>, path: '/other' },
   ]);
   return render(
@@ -61,6 +88,35 @@ function renderEditor(node: ReactNode, modal: ModalContextValue) {
         <RouterProvider router={router} />
       </ModalContextProvider>
     </ThemeProvider>,
+  );
+}
+
+// Drives the real shell gate: the mounted editor publishes its dirty-predicate
+// through useEditGuard and the gate consults it before swapping the file, the
+// same single-slot path AppShell.handleSelect takes for an intra-route swap.
+function SelectionGateHarness() {
+  const [filePath, setFilePath] = useState('/mods/a/first.txt');
+  const { confirmLeaveIfDirty, registerEditGuard } = useEditGuard();
+  const shell = makeShell({
+    confirmLeaveIfDirty,
+    registerEditGuard,
+    selectedPath: filePath,
+  });
+
+  return (
+    <ShellContextProvider value={shell}>
+      <PlainEditor filePath={filePath} writable />
+      <button
+        type="button"
+        onClick={() =>
+          void (async () => {
+            if (await confirmLeaveIfDirty()) setFilePath('/mods/a/second.txt');
+          })()
+        }
+      >
+        select second
+      </button>
+    </ShellContextProvider>
   );
 }
 
@@ -211,5 +267,48 @@ describe('PlainEditor', () => {
     screen.getByRole('button', { name: 'leave' }).click();
 
     expect(await screen.findByText('other page')).toBeInTheDocument();
+  });
+
+  it('keeps the dirty buffer when a same-route file swap is declined', async () => {
+    readTextFile.mockImplementation((path) =>
+      Promise.resolve(
+        path === '/mods/a/first.txt' ? 'first body' : 'second body',
+      ),
+    );
+    const modal = makeModal(false);
+    const { container } = renderEditor(<SelectionGateHarness />, modal);
+
+    await screen.findByText('first body');
+    act(() => {
+      const view = editorView(container);
+      view.dispatch({ changes: { from: view.state.doc.length, insert: '!' } });
+    });
+
+    screen.getByRole('button', { name: 'select second' }).click();
+
+    await waitFor(() => expect(modal.confirm).toHaveBeenCalled());
+    expect(within(container).getByText('first body!')).toBeInTheDocument();
+    expect(screen.queryByText('second body')).not.toBeInTheDocument();
+  });
+
+  it('swaps the buffer when a same-route file swap is confirmed', async () => {
+    readTextFile.mockImplementation((path) =>
+      Promise.resolve(
+        path === '/mods/a/first.txt' ? 'first body' : 'second body',
+      ),
+    );
+    const modal = makeModal(true);
+    const { container } = renderEditor(<SelectionGateHarness />, modal);
+
+    await screen.findByText('first body');
+    act(() => {
+      const view = editorView(container);
+      view.dispatch({ changes: { from: view.state.doc.length, insert: '!' } });
+    });
+
+    screen.getByRole('button', { name: 'select second' }).click();
+
+    await waitFor(() => expect(modal.confirm).toHaveBeenCalled());
+    expect(await screen.findByText('second body')).toBeInTheDocument();
   });
 });
