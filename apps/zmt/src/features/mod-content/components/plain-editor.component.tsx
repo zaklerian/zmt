@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBlocker } from 'react-router';
 
+import { useShell } from '../../../app/shell/shell-context';
 import { useAsyncCallback } from '../../../shared/hooks';
 import { useModal } from '../../../shared/modal';
 import { useCodeMirror } from '../hooks';
@@ -110,10 +111,24 @@ function PlainEditorSurface({
 }: PlainEditorSurfaceProps) {
   const { t } = useTranslation(['feature.modContent', 'app']);
   const modal = useModal();
+  const { registerEditGuard } = useShell();
   const originalRef = useRef(initialText);
   const [dirty, setDirty] = useState(false);
   const [saveError, setSaveError] = useState<IpcError | null>(null);
   const [savedAt, setSavedAt] = useState<null | number>(null);
+
+  // Ref-backed predicate so the shell consults current dirtiness through one
+  // stable registration (register on mount, unregister on unmount) rather than
+  // re-registering on every dirty transition (A-REACT-3).
+  const dirtyRef = useRef(dirty);
+  useEffect(() => {
+    dirtyRef.current = dirty;
+  }, [dirty]);
+
+  useEffect(
+    () => registerEditGuard(() => dirtyRef.current),
+    [registerEditGuard],
+  );
 
   const handleDocChange = useCallback((doc: string) => {
     setDirty(doc !== originalRef.current);

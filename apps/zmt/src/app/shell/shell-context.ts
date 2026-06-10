@@ -4,6 +4,8 @@ import { createRequiredContext } from '../../shared/react';
 
 export interface ShellContextValue {
   readonly activeModRootPath: null | string;
+  confirmLeaveIfDirty: () => Promise<boolean>;
+  registerEditGuard: (predicate: () => boolean) => () => void;
   readonly selectedPath: null | string;
   selectedSupport: FileSupport | null;
   setViewMode: (mode: ViewMode) => void;
