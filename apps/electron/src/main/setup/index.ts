@@ -1,3 +1,4 @@
+export * from './equipment-handlers.setup';
 export * from './fs-handlers.setup';
 export * from './initialize-default-root.setup';
 export * from './install-csp.setup';
