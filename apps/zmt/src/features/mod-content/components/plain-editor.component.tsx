@@ -125,6 +125,19 @@ function PlainEditorSurface({
     onDocChange: handleDocChange,
   });
 
+  const cancel = useCallback(() => {
+    const view = viewRef.current;
+    if (view === null) return;
+    view.dispatch({
+      changes: {
+        from: 0,
+        insert: originalRef.current,
+        to: view.state.doc.length,
+      },
+    });
+    setDirty(false);
+  }, [viewRef]);
+
   const save = useAsyncCallback(async () => {
     const view = viewRef.current;
     if (view === null) return;
@@ -179,10 +192,19 @@ function PlainEditorSurface({
             borderBottom: 1,
             borderColor: 'divider',
             display: 'flex',
+            gap: 1,
             justifyContent: 'flex-end',
             p: 1,
           }}
         >
+          <Button
+            disabled={!dirty || save.isPending}
+            size="small"
+            variant="outlined"
+            onClick={cancel}
+          >
+            {t('app:actions.cancel')}
+          </Button>
           <Button
             disabled={!dirty || save.isPending}
             size="small"

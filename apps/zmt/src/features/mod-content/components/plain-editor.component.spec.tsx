@@ -127,6 +127,38 @@ describe('PlainEditor', () => {
     );
   });
 
+  it('reverts the buffer to the saved text when Cancel is clicked', async () => {
+    readTextFile.mockResolvedValue('hello');
+    const { container } = renderEditor(
+      <PlainEditor filePath="/mods/a/notes.txt" writable />,
+      makeModal(false),
+    );
+
+    await screen.findByText('hello');
+    const cancel = screen.getByRole('button', { name: 'Cancel' });
+    const save = screen.getByRole('button', { name: 'Save' });
+    expect(cancel).toBeDisabled();
+    expect(save).toBeDisabled();
+
+    act(() => {
+      const view = editorView(container);
+      view.dispatch({ changes: { from: view.state.doc.length, insert: '!' } });
+    });
+
+    expect(cancel).toBeEnabled();
+    expect(within(container).getByText('hello!')).toBeInTheDocument();
+
+    act(() => {
+      cancel.click();
+    });
+
+    expect(within(container).getByText('hello')).toBeInTheDocument();
+    expect(within(container).queryByText('hello!')).not.toBeInTheDocument();
+    expect(cancel).toBeDisabled();
+    expect(save).toBeDisabled();
+    expect(writeTextFile).not.toHaveBeenCalled();
+  });
+
   it('is view-only with no Save control on a readonly source', async () => {
     readTextFile.mockResolvedValue('vanilla text');
     const { container } = renderEditor(
@@ -141,6 +173,9 @@ describe('PlainEditor', () => {
     );
     expect(
       screen.queryByRole('button', { name: 'Save' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Cancel' }),
     ).not.toBeInTheDocument();
   });
 
