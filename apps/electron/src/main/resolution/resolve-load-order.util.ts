@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { posix } from 'node:path';
 
 import { ResolutionSource, ResolvedFile } from './resolution.model';
 
@@ -35,7 +35,7 @@ export function resolveLoadOrder(
     const winningSource = contributingSources[contributingSources.length - 1];
     const shadowedSources = contributingSources.slice(0, -1);
     resolved.push({
-      absolutePath: join(winningSource.root, relativePath),
+      absolutePath: posix.join(winningSource.root, relativePath),
       reason: reasonFor(sources, winningSource, relativePath, shadowedSources),
       relativePath,
       shadowedSources,
