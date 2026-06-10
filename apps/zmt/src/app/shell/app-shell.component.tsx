@@ -24,7 +24,12 @@ export function AppShell() {
     null,
   );
   const { setViewMode, viewMode } = useContentViewMode(selectedPath);
-  const { confirmLeaveIfDirty, registerEditGuard } = useEditGuard();
+  const {
+    confirmLeaveIfDirty,
+    consumeLeaveConfirmed,
+    registerEditGuard,
+    signalLeaveConfirmed,
+  } = useEditGuard();
   const [appSettingsOpen, setAppSettingsOpen] = useState(false);
   const [hideUnsupportedFiles, setHideUnsupportedFiles] = useState(false);
   const [hideVanilla, setHideVanilla] = useState(false);
@@ -101,11 +106,15 @@ export function AppShell() {
       setSelectedSupport(selection.support);
       if (selection.path !== null && selection.isModRoot) {
         if (location.pathname !== '/mod/info') {
+          // Consent already obtained above; suppress the still-mounted editor's
+          // useBlocker for this one consent-driven transition (ZMT-E8.1).
+          signalLeaveConfirmed();
           void navigate('/mod/info');
         }
         return;
       }
       if (location.pathname !== '/') {
+        signalLeaveConfirmed();
         void navigate('/');
       }
     })();
@@ -136,19 +145,23 @@ export function AppShell() {
     () => ({
       activeModRootPath,
       confirmLeaveIfDirty,
+      consumeLeaveConfirmed,
       registerEditGuard,
       selectedPath,
       selectedSupport,
       setViewMode,
+      signalLeaveConfirmed,
       viewMode,
     }),
     [
       activeModRootPath,
       confirmLeaveIfDirty,
+      consumeLeaveConfirmed,
       registerEditGuard,
       selectedPath,
       selectedSupport,
       setViewMode,
+      signalLeaveConfirmed,
       viewMode,
     ],
   );

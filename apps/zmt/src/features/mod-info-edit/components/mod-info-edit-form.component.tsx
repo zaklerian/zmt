@@ -73,7 +73,7 @@ export function ModInfoEditForm({
 }: ModInfoEditFormProps) {
   const { t } = useTranslation(['feature.modInfoEdit', 'app']);
   const modal = useModal();
-  const { registerEditGuard } = useShell();
+  const { consumeLeaveConfirmed, registerEditGuard } = useShell();
   const methods = useForm<ModDescriptorFormValues>({
     defaultValues: defaultValues as ModDescriptorFormValues,
     resolver: zodResolver(schema),
@@ -145,11 +145,16 @@ export function ModInfoEditForm({
     }
   });
 
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
+  const blocker = useBlocker(({ currentLocation, nextLocation }) => {
+    // The gate already obtained consent for this one transition; skip the
+    // re-prompt and clear the flag so the next navigation is guarded normally
+    // (ZMT-E8.1).
+    if (consumeLeaveConfirmed()) return false;
+    return (
       methods.formState.isDirty &&
-      currentLocation.pathname !== nextLocation.pathname,
-  );
+      currentLocation.pathname !== nextLocation.pathname
+    );
+  });
 
   useEffect(() => {
     if (blocker.state !== 'blocked') return;
