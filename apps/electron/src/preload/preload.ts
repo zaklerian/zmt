@@ -7,6 +7,7 @@ import {
   IPC_CHANNELS,
   ListOptions,
   ModId,
+  ModuleEntity,
   PreferenceKey,
   Preferences,
   Workspace,
@@ -42,6 +43,13 @@ const API = {
       invokeStructured<void>(IPC_CHANNELS.fs.writeBinaryFile, path, content),
     writeTextFile: (path: string, content: string) =>
       invokeStructured<void>(IPC_CHANNELS.fs.writeTextFile, path, content),
+  },
+  module: {
+    list: (filePath: string) =>
+      invokeStructured<readonly ModuleEntity[]>(
+        IPC_CHANNELS.module.list,
+        filePath,
+      ),
   },
   plugins: {
     list: () => invokeStructured<GamePlugin[]>(IPC_CHANNELS.plugins.list),

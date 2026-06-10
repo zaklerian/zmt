@@ -3,6 +3,7 @@ export * from './equipment-handlers.setup';
 export * from './fs-handlers.setup';
 export * from './initialize-default-root.setup';
 export * from './install-csp.setup';
+export * from './module-handlers.setup';
 export * from './plugins-handlers.setup';
 export * from './preferences-handlers.setup';
 export * from './register-app-lifecycle.setup';

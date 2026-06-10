@@ -14,6 +14,9 @@ export const IPC_CHANNELS = {
     writeBinaryFile: 'fs:writeBinaryFile',
     writeTextFile: 'fs:writeTextFile',
   },
+  module: {
+    list: 'module:list',
+  },
   plugins: {
     list: 'plugins:list',
   },
