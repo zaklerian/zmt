@@ -1,6 +1,9 @@
 import type { en } from '../en/feature.mod-content';
 
 export const de: typeof en = {
+  entityTable: {
+    columns: 'Spalten',
+  },
   fileTree: {
     empty: 'Ordner ist leer',
     loading: 'Lädt…',

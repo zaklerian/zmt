@@ -1,3 +1,4 @@
+import { ProjectedSource } from '@contracts';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Box, Drawer, IconButton, Tooltip } from '@mui/material';
@@ -6,6 +7,8 @@ import { useTranslation } from 'react-i18next';
 
 import { AppFooter } from './app-footer.component';
 import { AppHeader } from './app-header.component';
+import { PanelBreadcrumbs } from './panel-breadcrumbs.component';
+import { PanelToolbar } from './panel-toolbar.component';
 
 const DRAWER_WIDTH_OPEN = 320;
 const DRAWER_WIDTH_MINI = 56;
@@ -17,7 +20,9 @@ interface AppLayoutProps {
   onOpenAppSettings: () => void;
   onOpenFolder: () => void;
   onToggleDrawer: () => void;
+  selectedPath: null | string;
   sidebar: ReactNode;
+  readonly sources: readonly ProjectedSource[];
 }
 
 export function AppLayout({
@@ -27,7 +32,9 @@ export function AppLayout({
   onOpenAppSettings,
   onOpenFolder,
   onToggleDrawer,
+  selectedPath,
   sidebar,
+  sources,
 }: AppLayoutProps) {
   const { t } = useTranslation(['app']);
   const width = drawerOpen ? DRAWER_WIDTH_OPEN : DRAWER_WIDTH_MINI;
@@ -87,8 +94,20 @@ export function AppLayout({
             )}
           </Drawer>
         )}
-        <Box component="main" sx={{ flexGrow: 1, overflow: 'auto' }}>
-          {content}
+        <Box
+          component="main"
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            flexGrow: 1,
+            overflow: 'hidden',
+          }}
+        >
+          {hasSource && (
+            <PanelBreadcrumbs selectedPath={selectedPath} sources={sources} />
+          )}
+          {hasSource && <PanelToolbar />}
+          <Box sx={{ flexGrow: 1, overflow: 'auto' }}>{content}</Box>
         </Box>
       </Box>
       <AppFooter />

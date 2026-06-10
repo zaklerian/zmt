@@ -1,6 +1,9 @@
 import type { en } from '../en/feature.mod-content';
 
 export const uk: typeof en = {
+  entityTable: {
+    columns: 'Стовпці',
+  },
   fileTree: {
     empty: 'Тека порожня',
     loading: 'Завантаження…',

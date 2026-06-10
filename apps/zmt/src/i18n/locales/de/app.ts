@@ -42,4 +42,12 @@ export const de: typeof en = {
       title: 'Ungespeicherte Änderungen',
     },
   },
+  panel: {
+    breadcrumbs: {
+      label: 'Dateipfad',
+    },
+    toolbar: {
+      label: 'Panel-Aktionen',
+    },
+  },
 };
