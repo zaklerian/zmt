@@ -20,6 +20,50 @@ const theme = createTheme();
 const readTextFile = vi.fn<(path: string) => Promise<string>>();
 const writeTextFile = vi.fn<(path: string, content: string) => Promise<void>>();
 
+// Drives the real shell gate across a route change: the gate prompts once,
+// signals the one-shot leave-confirmed flag, then navigates. The mounted
+// editor's useBlocker must consume that flag instead of re-prompting (ZMT-E8.1).
+// "leave directly" bypasses the gate to prove the blocker still guards an
+// unrelated navigation once the flag is cleared/never set.
+function CrossRouteGateHarness() {
+  const navigate = useNavigate();
+  const {
+    confirmLeaveIfDirty,
+    consumeLeaveConfirmed,
+    registerEditGuard,
+    signalLeaveConfirmed,
+  } = useEditGuard();
+  const shell = makeShell({
+    confirmLeaveIfDirty,
+    consumeLeaveConfirmed,
+    registerEditGuard,
+    selectedPath: '/mods/a/notes.txt',
+    signalLeaveConfirmed,
+  });
+
+  return (
+    <ShellContextProvider value={shell}>
+      <PlainEditor filePath="/mods/a/notes.txt" writable />
+      <button
+        type="button"
+        onClick={() =>
+          void (async () => {
+            if (await confirmLeaveIfDirty()) {
+              signalLeaveConfirmed();
+              void navigate('/mod/info');
+            }
+          })()
+        }
+      >
+        select mod root
+      </button>
+      <button type="button" onClick={() => void navigate('/other')}>
+        leave directly
+      </button>
+    </ShellContextProvider>
+  );
+}
+
 function editorView(container: HTMLElement): EditorView {
   const content = container.querySelector('.cm-content');
   if (content === null) throw new Error('editor content not mounted');
@@ -59,10 +103,12 @@ function makeShell(overrides?: Partial<ShellContextValue>): ShellContextValue {
   return {
     activeModRootPath: null,
     confirmLeaveIfDirty: () => Promise.resolve(true),
+    consumeLeaveConfirmed: () => false,
     registerEditGuard: () => () => undefined,
     selectedPath: null,
     selectedSupport: null,
     setViewMode: () => undefined,
+    signalLeaveConfirmed: () => undefined,
     viewMode: 'code',
     ...overrides,
   };
@@ -81,6 +127,7 @@ function renderEditor(
       path: '/',
     },
     { element: <div>other page</div>, path: '/other' },
+    { element: <div>mod info page</div>, path: '/mod/info' },
   ]);
   return render(
     <ThemeProvider theme={theme}>
@@ -310,5 +357,48 @@ describe('PlainEditor', () => {
 
     await waitFor(() => expect(modal.confirm).toHaveBeenCalled());
     expect(await screen.findByText('second body')).toBeInTheDocument();
+  });
+
+  it('prompts exactly once when a confirmed dirty selection also changes route', async () => {
+    readTextFile.mockResolvedValue('draft');
+    const modal = makeModal(true);
+    const { container } = renderEditor(<CrossRouteGateHarness />, modal);
+
+    await screen.findByText('draft');
+    act(() => {
+      const view = editorView(container);
+      view.dispatch({ changes: { from: view.state.doc.length, insert: 'X' } });
+    });
+
+    screen.getByRole('button', { name: 'select mod root' }).click();
+
+    expect(await screen.findByText('mod info page')).toBeInTheDocument();
+    expect(modal.confirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the buffer on a declined cross-route selection and still guards a later navigation', async () => {
+    readTextFile.mockResolvedValue('draft');
+    const modal = makeModal(false);
+    const { container } = renderEditor(<CrossRouteGateHarness />, modal);
+
+    await screen.findByText('draft');
+    act(() => {
+      const view = editorView(container);
+      view.dispatch({ changes: { from: view.state.doc.length, insert: 'X' } });
+    });
+
+    screen.getByRole('button', { name: 'select mod root' }).click();
+
+    await waitFor(() => expect(modal.confirm).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText('mod info page')).not.toBeInTheDocument();
+    expect(within(container).getByText('draftX')).toBeInTheDocument();
+
+    // Decline never set the flag, so the blocker still guards an unrelated
+    // navigation — a second prompt fires.
+    screen.getByRole('button', { name: 'leave directly' }).click();
+
+    await waitFor(() => expect(modal.confirm).toHaveBeenCalledTimes(2));
+    expect(screen.queryByText('other page')).not.toBeInTheDocument();
+    expect(within(container).getByText('draftX')).toBeInTheDocument();
   });
 });

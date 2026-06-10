@@ -111,7 +111,7 @@ function PlainEditorSurface({
 }: PlainEditorSurfaceProps) {
   const { t } = useTranslation(['feature.modContent', 'app']);
   const modal = useModal();
-  const { registerEditGuard } = useShell();
+  const { consumeLeaveConfirmed, registerEditGuard } = useShell();
   const originalRef = useRef(initialText);
   const [dirty, setDirty] = useState(false);
   const [saveError, setSaveError] = useState<IpcError | null>(null);
@@ -171,10 +171,13 @@ function PlainEditorSurface({
     }
   });
 
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
-      dirty && currentLocation.pathname !== nextLocation.pathname,
-  );
+  const blocker = useBlocker(({ currentLocation, nextLocation }) => {
+    // The gate already obtained consent for this one transition; skip the
+    // re-prompt and clear the flag so the next navigation is guarded normally
+    // (ZMT-E8.1).
+    if (consumeLeaveConfirmed()) return false;
+    return dirty && currentLocation.pathname !== nextLocation.pathname;
+  });
 
   useEffect(() => {
     if (blocker.state !== 'blocked') return;

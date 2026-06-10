@@ -59,10 +59,12 @@ function shell(
   return {
     activeModRootPath: null,
     confirmLeaveIfDirty: () => Promise.resolve(true),
+    consumeLeaveConfirmed: () => false,
     registerEditGuard: () => () => undefined,
     selectedPath,
     selectedSupport,
     setViewMode: vi.fn(),
+    signalLeaveConfirmed: () => undefined,
     viewMode,
   };
 }
