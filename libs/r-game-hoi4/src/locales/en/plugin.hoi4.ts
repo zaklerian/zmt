@@ -11,10 +11,48 @@ export const en = {
       name: 'Name',
       type: 'Type',
     },
+    delete: {
+      confirm: 'Delete',
+      message: 'Delete "{name}"? This cannot be undone.',
+      title: 'Delete equipment',
+    },
     domain: {
       air: 'Air',
       land: 'Land',
       naval: 'Naval',
+    },
+    errors: {
+      conflict:
+        'This equipment changed on disk since you opened it. Reload and try again.',
+      forbidden: 'This file is read-only and cannot be modified.',
+      notFound: 'This equipment no longer exists.',
+      title: 'Action failed',
+      unknown: 'Something went wrong. Please try again.',
+    },
+    form: {
+      addField: 'Add field',
+      cancel: 'Cancel',
+      discard: 'Discard',
+      fields: {
+        key: {
+          label: 'Property',
+        },
+        value: {
+          label: 'Value',
+        },
+      },
+      removeField: 'Remove',
+      save: 'Save',
+      unsavedMessage: 'You have unsaved changes. Discard them?',
+      unsavedTitle: 'Unsaved changes',
+      validation: {
+        keyDuplicate: 'Duplicate property key.',
+        keyRequired: 'Property key is required.',
+      },
+    },
+    kind: {
+      archetype: 'Archetype',
+      regular: 'Regular',
     },
     status: {
       invalid: 'Invalid',

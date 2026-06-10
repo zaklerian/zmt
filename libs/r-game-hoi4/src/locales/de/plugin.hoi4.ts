@@ -13,10 +13,50 @@ export const de: typeof en = {
       name: 'Name',
       type: 'Typ',
     },
+    delete: {
+      confirm: 'Löschen',
+      message:
+        'Möchten Sie „{name}“ löschen? Dies kann nicht rückgängig gemacht werden.',
+      title: 'Ausrüstung löschen',
+    },
     domain: {
       air: 'Luft',
       land: 'Land',
       naval: 'Marine',
+    },
+    errors: {
+      conflict:
+        'Diese Ausrüstung wurde seit dem Öffnen auf der Festplatte geändert. Neu laden und erneut versuchen.',
+      forbidden:
+        'Diese Datei ist schreibgeschützt und kann nicht geändert werden.',
+      notFound: 'Diese Ausrüstung existiert nicht mehr.',
+      title: 'Aktion fehlgeschlagen',
+      unknown: 'Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.',
+    },
+    form: {
+      addField: 'Feld hinzufügen',
+      cancel: 'Abbrechen',
+      discard: 'Verwerfen',
+      fields: {
+        key: {
+          label: 'Eigenschaft',
+        },
+        value: {
+          label: 'Wert',
+        },
+      },
+      removeField: 'Entfernen',
+      save: 'Speichern',
+      unsavedMessage: 'Sie haben nicht gespeicherte Änderungen. Verwerfen?',
+      unsavedTitle: 'Nicht gespeicherte Änderungen',
+      validation: {
+        keyDuplicate: 'Doppelter Eigenschaftsschlüssel.',
+        keyRequired: 'Eigenschaftsschlüssel ist erforderlich.',
+      },
+    },
+    kind: {
+      archetype: 'Archetyp',
+      regular: 'Regulär',
     },
     status: {
       invalid: 'Ungültig',

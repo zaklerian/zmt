@@ -19,7 +19,7 @@ function load(
       sorted.map((entity) => [entity.name, entity] as const),
     );
     return {
-      actions: buildEquipmentActions(entitiesById),
+      actions: buildEquipmentActions(entitiesById, translate),
       columns: EQUIPMENT_COLUMNS,
       // Rows arrive pre-sorted (air first); no column-driven default sort.
       defaultSort: [],

@@ -3,6 +3,7 @@ import { FileSupport } from '@contracts';
 import { createRequiredContext } from '../../shared/react';
 
 export interface ShellContextValue {
+  readonly activeModId: null | string;
   readonly activeModRootPath: null | string;
   confirmLeaveIfDirty: () => Promise<boolean>;
   consumeLeaveConfirmed: () => boolean;

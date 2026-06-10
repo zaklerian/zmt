@@ -1,21 +1,25 @@
 import { FILE_SUPPORT } from '@contracts';
 import { Alert, Box, Button, CircularProgress } from '@mui/material';
 import {
+  EntityActionEnvironment,
   EntityTableData,
   EntityTableRecognizer,
   recognizerRegistry,
   TranslateFn,
 } from '@r-core';
-import { useCallback, useEffect, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { EntityTable, PlainEditor } from '../../features/mod-content';
+import { useModal } from '../../shared/modal';
 import { SelectSomethingPlaceholder } from './select-something-placeholder.component';
 import { useShell } from './shell-context';
 
 interface RecognizedEntityPanelProps {
   readonly filePath: string;
+  readonly modId: null | string;
   readonly recognizer: EntityTableRecognizer;
+  readonly relativePath: string;
   readonly writable: boolean;
 }
 
@@ -29,12 +33,18 @@ type Settled =
   | { error: Error; filePath: string; kind: 'error'; version: number };
 
 export function ContentPanel() {
-  const { activeModRootPath, selectedPath, selectedSupport, viewMode } =
-    useShell();
+  const {
+    activeModId,
+    activeModRootPath,
+    selectedPath,
+    selectedSupport,
+    viewMode,
+  } = useShell();
   if (selectedPath === null) return <SelectSomethingPlaceholder />;
 
   const writable = activeModRootPath !== null;
   const recognizer = recognizerRegistry.recognize(selectedPath);
+  const relativePath = toRelativePath(activeModRootPath, selectedPath);
 
   // Entity-bearing file: table is the natural view, code mode shows raw text.
   if (recognizer !== null) {
@@ -43,7 +53,9 @@ export function ContentPanel() {
     ) : (
       <RecognizedEntityPanel
         filePath={selectedPath}
+        modId={activeModId}
         recognizer={recognizer}
+        relativePath={relativePath}
         writable={writable}
       />
     );
@@ -60,19 +72,38 @@ export function ContentPanel() {
 
 function RecognizedEntityPanel({
   filePath,
+  modId,
   recognizer,
+  relativePath,
   writable,
 }: RecognizedEntityPanelProps) {
   const { t } = useTranslation(['app']);
+  const modal = useModal();
   const [version, setVersion] = useState(0);
   const [settled, setSettled] = useState<null | Settled>(null);
   const [selection, setSelection] = useState<null | RowSelection>(null);
+  const [presentedForm, setPresentedForm] = useState<ReactNode>(null);
 
   // Recognizers localize cells via the injected translate; a new t reference on
   // locale change re-runs the effect and reloads the table in the new language.
   const translate = useCallback<TranslateFn>(
     (key) => (t as (key: string) => string)(key),
     [t],
+  );
+
+  // Capabilities the recognizer's actions need at execute time: file location,
+  // modal, a list refresh (version bump), and a slot to mount the plugin's edit
+  // form. Stable per inputs so the toolbar context does not churn each render.
+  const actionEnv = useMemo<EntityActionEnvironment>(
+    () => ({
+      dismissForm: () => setPresentedForm(null),
+      modal,
+      modId,
+      presentForm: (node) => setPresentedForm(node),
+      refresh: () => setVersion((value) => value + 1),
+      relativePath,
+    }),
+    [modId, modal, relativePath],
   );
 
   useEffect(() => {
@@ -147,6 +178,7 @@ function RecognizedEntityPanel({
   return (
     <Box sx={{ height: '100%' }}>
       <EntityTable
+        actionEnv={actionEnv}
         data={current.data}
         selectedRowId={selectedRowId}
         writable={writable}
@@ -154,6 +186,20 @@ function RecognizedEntityPanel({
           setSelection(rowId === null ? null : { filePath, rowId })
         }
       />
+      {presentedForm}
     </Box>
   );
+}
+
+function toRelativePath(
+  activeModRootPath: null | string,
+  selectedPath: string,
+): string {
+  if (
+    activeModRootPath === null ||
+    !selectedPath.startsWith(activeModRootPath)
+  ) {
+    return selectedPath;
+  }
+  return selectedPath.slice(activeModRootPath.length).replace(/^[/\\]+/, '');
 }

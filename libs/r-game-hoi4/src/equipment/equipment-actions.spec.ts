@@ -13,6 +13,7 @@ function entity(
     kind: 'regular',
     name,
     node: null as unknown as EquipmentEntity['node'],
+    scalars: [],
   };
 }
 
@@ -27,6 +28,7 @@ const entities = [
 const actionById = new Map(
   buildEquipmentActions(
     new Map(entities.map((entry) => [entry.name, entry])),
+    (key) => key,
   ).map((action) => [action.id, action]),
 );
 
@@ -34,7 +36,19 @@ function context(
   selectedRowId: null | string,
   writable: boolean,
 ): EntityToolbarContext {
-  return { selectedRowId, writable };
+  return {
+    dismissForm: () => undefined,
+    modal: {
+      confirm: () => Promise.resolve(false),
+      info: () => Promise.resolve(),
+    },
+    modId: 'mod-a',
+    presentForm: () => undefined,
+    refresh: () => undefined,
+    relativePath: 'common/units/equipment/air.txt',
+    selectedRowId,
+    writable,
+  };
 }
 
 function isAvailable(id: string, context: EntityToolbarContext): boolean {
