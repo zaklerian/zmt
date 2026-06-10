@@ -1,4 +1,4 @@
-import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import SettingsIcon from '@mui/icons-material/Settings';
 import {
   AppBar,
@@ -22,7 +22,7 @@ export function AppHeader({
   onOpenFolder,
 }: AppHeaderProps) {
   const { t } = useTranslation(['app']);
-  const openFolderLabel = t('actions.openFolder');
+  const addModLabel = t('actions.addMod');
   const appSettingsLabel = t('header.appSettings.label');
 
   return (
@@ -33,13 +33,13 @@ export function AppHeader({
         </Typography>
         <Box sx={{ flexGrow: 1 }} />
         {hasSource && (
-          <Tooltip title={openFolderLabel}>
+          <Tooltip title={addModLabel}>
             <IconButton
-              aria-label={openFolderLabel}
+              aria-label={addModLabel}
               size="small"
               onClick={onOpenFolder}
             >
-              <FolderOpenIcon fontSize="small" />
+              <CreateNewFolderIcon fontSize="small" />
             </IconButton>
           </Tooltip>
         )}

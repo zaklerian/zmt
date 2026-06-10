@@ -2,10 +2,11 @@ import type { en } from '../en/app';
 
 export const uk: typeof en = {
   actions: {
+    addMod: 'Додати мод',
     cancel: 'Скасувати',
     close: 'Закрити',
     discard: 'Відхилити',
-    openFolder: 'Відкрити теку',
+    openModFolder: 'Відкрити теку мода',
     retry: 'Повторити',
     save: 'Зберегти',
   },

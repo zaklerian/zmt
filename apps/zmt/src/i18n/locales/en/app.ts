@@ -1,9 +1,10 @@
 export const en = {
   actions: {
+    addMod: 'Add mod',
     cancel: 'Cancel',
     close: 'Close',
     discard: 'Discard',
-    openFolder: 'Open folder',
+    openModFolder: 'Open mod folder',
     retry: 'Retry',
     save: 'Save',
   },

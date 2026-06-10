@@ -2,10 +2,11 @@ import type { en } from '../en/app';
 
 export const de: typeof en = {
   actions: {
+    addMod: 'Mod hinzufügen',
     cancel: 'Abbrechen',
     close: 'Schließen',
     discard: 'Verwerfen',
-    openFolder: 'Ordner öffnen',
+    openModFolder: 'Mod-Ordner öffnen',
     retry: 'Erneut versuchen',
     save: 'Speichern',
   },
