@@ -1,3 +1,4 @@
+export * from './entity-handlers.setup';
 export * from './equipment-handlers.setup';
 export * from './fs-handlers.setup';
 export * from './initialize-default-root.setup';

@@ -1,5 +1,7 @@
 import {
   AppApiModel,
+  EntityDeleteRequest,
+  EntityWriteRequest,
   EquipmentEntity,
   GamePlugin,
   IPC_CHANNELS,
@@ -14,6 +16,12 @@ import { contextBridge } from 'electron';
 import { invokeStructured } from './ipc-invoke.util';
 
 const API = {
+  entity: {
+    delete: (request: EntityDeleteRequest) =>
+      invokeStructured<void>(IPC_CHANNELS.entity.delete, request),
+    write: (request: EntityWriteRequest) =>
+      invokeStructured<void>(IPC_CHANNELS.entity.write, request),
+  },
   equipment: {
     list: (filePath: string) =>
       invokeStructured<readonly EquipmentEntity[]>(
