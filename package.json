@@ -7,6 +7,7 @@
     "@lezer/lr": "1.4.10",
     "@mui/icons-material": "7.3.11",
     "@mui/material": "7.3.11",
+    "@mui/x-data-grid": "8.28.5",
     "@mui/x-tree-view": "8.28.5",
     "electron-store": "8.2.0",
     "i18next": "26.2.0",

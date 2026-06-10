@@ -1,5 +1,5 @@
 import { IncludedMod, ProjectedSource } from '@contracts';
-import { Box, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 
@@ -108,13 +108,6 @@ export function AppShell() {
   ) : (
     <Box sx={{ height: '100%' }}>
       <Outlet />
-      {selectedPath !== null && location.pathname === '/' && (
-        <Box sx={{ p: 3 }}>
-          <Typography color="text.secondary" variant="body2">
-            {selectedPath}
-          </Typography>
-        </Box>
-      )}
     </Box>
   );
 
@@ -129,7 +122,9 @@ export function AppShell() {
         content={content}
         drawerOpen={drawerOpen}
         hasSource={hasSource}
+        selectedPath={selectedPath}
         sidebar={sidebar}
+        sources={sources}
         onOpenAppSettings={() => setAppSettingsOpen(true)}
         onOpenFolder={handleOpenFolder}
         onToggleDrawer={() => setDrawerOpen((open) => !open)}

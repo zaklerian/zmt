@@ -42,4 +42,12 @@ export const uk: typeof en = {
       title: 'Незбережені зміни',
     },
   },
+  panel: {
+    breadcrumbs: {
+      label: 'Шлях до файлу',
+    },
+    toolbar: {
+      label: 'Дії панелі',
+    },
+  },
 };

@@ -39,4 +39,12 @@ export const en = {
       title: 'Unsaved changes',
     },
   },
+  panel: {
+    breadcrumbs: {
+      label: 'File path',
+    },
+    toolbar: {
+      label: 'Panel actions',
+    },
+  },
 };

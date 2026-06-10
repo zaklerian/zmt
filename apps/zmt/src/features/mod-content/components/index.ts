@@ -1,3 +1,4 @@
+export * from './entity-table.component';
 export * from './file-tree-item.model';
 export * from './file-tree-item.util';
 export * from './file-tree-root.component';

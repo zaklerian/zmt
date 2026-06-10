@@ -1,4 +1,7 @@
 export const en = {
+  entityTable: {
+    columns: 'Columns',
+  },
   fileTree: {
     empty: 'Folder is empty',
     loading: 'Loading…',
