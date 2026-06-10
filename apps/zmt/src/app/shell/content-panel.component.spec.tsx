@@ -107,7 +107,7 @@ describe('ContentPanel dispatch', () => {
   it('leaves an unsupported file to the current behavior, not the editor', () => {
     renderPanel(shell('/mods/a/sprite.dds', 'unsupported', 'table'));
 
-    expect(screen.getByText('/mods/a/sprite.dds')).toBeInTheDocument();
+    expect(screen.queryByText('/mods/a/sprite.dds')).not.toBeInTheDocument();
     expect(readTextFile).not.toHaveBeenCalled();
   });
 

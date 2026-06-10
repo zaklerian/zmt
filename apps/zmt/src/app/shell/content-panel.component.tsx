@@ -1,11 +1,5 @@
 import { FILE_SUPPORT } from '@contracts';
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Button, CircularProgress } from '@mui/material';
 import {
   EntityTableData,
   EntityTableRecognizer,
@@ -61,7 +55,7 @@ export function ContentPanel() {
     return <PlainEditor filePath={selectedPath} writable={writable} />;
   }
 
-  return <UnrecognizedFile path={selectedPath} />;
+  return <SelectSomethingPlaceholder />;
 }
 
 function RecognizedEntityPanel({
@@ -161,18 +155,5 @@ function RecognizedEntityPanel({
         }
       />
     </Box>
-  );
-}
-
-function UnrecognizedFile({ path }: { readonly path: string }) {
-  return (
-    <>
-      <SelectSomethingPlaceholder />
-      <Box sx={{ p: 3 }}>
-        <Typography color="text.secondary" variant="body2">
-          {path}
-        </Typography>
-      </Box>
-    </>
   );
 }
