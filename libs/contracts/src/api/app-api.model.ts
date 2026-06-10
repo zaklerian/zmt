@@ -1,3 +1,4 @@
+import { EntityDeleteRequest, EntityWriteRequest } from '../entity';
 import { EquipmentEntity } from '../equipment';
 import { FsNode, ListOptions } from '../fs';
 import { GamePlugin } from '../plugin';
@@ -5,6 +6,10 @@ import { PreferenceKey, Preferences } from '../preferences';
 import { ModId, Workspace } from '../workspace';
 
 export interface AppApiModel {
+  readonly entity: {
+    readonly delete: (request: EntityDeleteRequest) => Promise<void>;
+    readonly write: (request: EntityWriteRequest) => Promise<void>;
+  };
   readonly equipment: {
     readonly list: (filePath: string) => Promise<readonly EquipmentEntity[]>;
   };

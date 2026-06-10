@@ -1,4 +1,8 @@
 export const IPC_CHANNELS = {
+  entity: {
+    delete: 'entity:delete',
+    write: 'entity:write',
+  },
   equipment: {
     list: 'equipment:list',
   },
