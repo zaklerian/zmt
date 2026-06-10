@@ -1,6 +1,7 @@
 import { EntityDeleteRequest, EntityWriteRequest } from '../entity';
 import { EquipmentEntity } from '../equipment';
 import { FsNode, ListOptions } from '../fs';
+import { ModuleEntity } from '../module';
 import { GamePlugin } from '../plugin';
 import { PreferenceKey, Preferences } from '../preferences';
 import { ModId, Workspace } from '../workspace';
@@ -30,6 +31,9 @@ export interface AppApiModel {
       content: Readonly<Uint8Array>,
     ) => Promise<void>;
     readonly writeTextFile: (path: string, content: string) => Promise<void>;
+  };
+  readonly module: {
+    readonly list: (filePath: string) => Promise<readonly ModuleEntity[]>;
   };
   readonly plugins: {
     readonly list: () => Promise<readonly GamePlugin[]>;
