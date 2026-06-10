@@ -1,0 +1,19 @@
+{
+  "name": "r-core",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/r-core/src",
+  "projectType": "library",
+  "tags": ["scope:renderer", "type:lib"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/r-core",
+        "main": "libs/r-core/src/index.ts",
+        "tsConfig": "libs/r-core/tsconfig.lib.json",
+        "assets": ["libs/r-core/*.md"]
+      }
+    }
+  }
+}

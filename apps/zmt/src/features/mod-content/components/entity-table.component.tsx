@@ -1,3 +1,4 @@
+import { Box, Button } from '@mui/material';
 import {
   ColumnsPanelTrigger,
   DataGrid,
@@ -6,14 +7,22 @@ import {
   GridRowSelectionModel,
   Toolbar,
 } from '@mui/x-data-grid';
-import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-
 import {
+  Action,
   EntityRow,
   EntitySortKey,
   EntityTableData,
-} from '../../../shared/recognizer';
+  EntityToolbarContext,
+} from '@r-core';
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+
+declare module '@mui/x-data-grid' {
+  interface ToolbarPropsOverrides {
+    actions: readonly Action<EntityToolbarContext>[];
+    context: EntityToolbarContext;
+  }
+}
 
 interface EntityGridRow {
   readonly cells: Readonly<Record<string, string>>;
@@ -24,6 +33,7 @@ interface EntityTableProps {
   readonly data: EntityTableData;
   onSelectRow: (rowId: null | string) => void;
   selectedRowId: null | string;
+  readonly writable: boolean;
 }
 
 const ROW_STATE_SX = {
@@ -36,10 +46,16 @@ export function EntityTable({
   data,
   onSelectRow,
   selectedRowId,
+  writable,
 }: EntityTableProps) {
   const { t } = useTranslation(['feature.modContent']);
   // Recognizer header keys are runtime data, not literals the typed t() knows.
   const translateHeader = t as (key: string) => string;
+
+  const toolbarContext = useMemo<EntityToolbarContext>(
+    () => ({ selectedRowId, writable }),
+    [selectedRowId, writable],
+  );
 
   const sortedRows = useMemo(
     () => sortRows(data.rows, data.defaultSort),
@@ -105,6 +121,9 @@ export function EntityTable({
       rowSelectionModel={rowSelectionModel}
       rows={[...gridRows]}
       showToolbar
+      slotProps={{
+        toolbar: { actions: data.actions ?? [], context: toolbarContext },
+      }}
       slots={{ toolbar: EntityTableToolbar }}
       sx={ROW_STATE_SX}
       onRowSelectionModelChange={handleRowSelectionModelChange}
@@ -112,10 +131,31 @@ export function EntityTable({
   );
 }
 
-function EntityTableToolbar() {
+function EntityTableToolbar({
+  actions,
+  context,
+}: {
+  readonly actions: readonly Action<EntityToolbarContext>[];
+  readonly context: EntityToolbarContext;
+}) {
   const { t } = useTranslation(['feature.modContent']);
+  // Action labels are runtime keys from the recognizer's namespace, not literals
+  // the typed t() knows.
+  const translateLabel = t as (key: string) => string;
+  const available = actions.filter((action) => action.isAvailable(context));
+
   return (
     <Toolbar>
+      {available.map((action) => (
+        <Button
+          key={action.id}
+          size="small"
+          onClick={() => void action.execute(context)}
+        >
+          {translateLabel(action.label(context))}
+        </Button>
+      ))}
+      <Box sx={{ flex: 1 }} />
       <ColumnsPanelTrigger>
         {t('feature.modContent:entityTable.columns')}
       </ColumnsPanelTrigger>

@@ -1,12 +1,9 @@
 {
-  "name": "@r-game-hoi4",
+  "name": "@r-core",
   "version": "0.0.1",
   "private": true,
   "type": "commonjs",
   "dependencies": {
-    "@contracts": "*",
-    "@r-core": "*",
-    "react": "19.2.4",
     "tslib": "2.8.1"
   }
 }

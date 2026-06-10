@@ -5,21 +5,23 @@ import {
   CircularProgress,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-
-import { EntityTable } from '../../features/mod-content';
 import {
   EntityTableData,
   EntityTableRecognizer,
   recognizerRegistry,
-} from '../../shared/recognizer';
+  TranslateFn,
+} from '@r-core';
+import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import { EntityTable } from '../../features/mod-content';
 import { SelectSomethingPlaceholder } from './select-something-placeholder.component';
 import { useShell } from './shell-context';
 
 interface RecognizedEntityPanelProps {
   readonly filePath: string;
   readonly recognizer: EntityTableRecognizer;
+  readonly writable: boolean;
 }
 
 interface RowSelection {
@@ -32,31 +34,43 @@ type Settled =
   | { error: Error; filePath: string; kind: 'error'; version: number };
 
 export function ContentPanel() {
-  const { selectedPath } = useShell();
+  const { activeModRootPath, selectedPath } = useShell();
   if (selectedPath === null) return <SelectSomethingPlaceholder />;
 
   const recognizer = recognizerRegistry.recognize(selectedPath);
   if (recognizer === null) return <UnrecognizedFile path={selectedPath} />;
 
   return (
-    <RecognizedEntityPanel filePath={selectedPath} recognizer={recognizer} />
+    <RecognizedEntityPanel
+      filePath={selectedPath}
+      recognizer={recognizer}
+      writable={activeModRootPath !== null}
+    />
   );
 }
 
 function RecognizedEntityPanel({
   filePath,
   recognizer,
+  writable,
 }: RecognizedEntityPanelProps) {
   const { t } = useTranslation(['app']);
   const [version, setVersion] = useState(0);
   const [settled, setSettled] = useState<null | Settled>(null);
   const [selection, setSelection] = useState<null | RowSelection>(null);
 
+  // Recognizers localize cells via the injected translate; a new t reference on
+  // locale change re-runs the effect and reloads the table in the new language.
+  const translate = useCallback<TranslateFn>(
+    (key) => (t as (key: string) => string)(key),
+    [t],
+  );
+
   useEffect(() => {
     let cancelled = false;
     const myVersion = version;
     recognizer
-      .load(filePath)
+      .load(filePath, translate)
       .then((data) => {
         if (!cancelled) {
           setSettled({ data, filePath, kind: 'ready', version: myVersion });
@@ -78,7 +92,7 @@ function RecognizedEntityPanel({
     return () => {
       cancelled = true;
     };
-  }, [filePath, recognizer, version]);
+  }, [filePath, recognizer, translate, version]);
 
   const current =
     settled !== null &&
@@ -126,6 +140,7 @@ function RecognizedEntityPanel({
       <EntityTable
         data={current.data}
         selectedRowId={selectedRowId}
+        writable={writable}
         onSelectRow={(rowId) =>
           setSelection(rowId === null ? null : { filePath, rowId })
         }
