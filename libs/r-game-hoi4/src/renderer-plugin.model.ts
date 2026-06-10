@@ -1,6 +1,7 @@
 import type { JSX } from 'react';
 
 import { GameId, LocaleResources } from '@contracts';
+import { EntityTableRecognizer } from '@r-recognizer';
 
 export interface RendererPlugin {
   readonly components: {
@@ -8,4 +9,5 @@ export interface RendererPlugin {
   };
   readonly gameId: GameId;
   readonly localeResources?: LocaleResources;
+  readonly recognizers?: readonly EntityTableRecognizer[];
 }

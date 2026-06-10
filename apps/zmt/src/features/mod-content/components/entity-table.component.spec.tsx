@@ -1,10 +1,10 @@
 import { createTheme, ThemeProvider } from '@mui/material';
+import { EntityTableData } from '@r-recognizer';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { ReactNode } from 'react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { initI18n } from '../../../i18n';
-import { EntityTableData } from '../../../shared/recognizer';
 import { EntityTable } from './entity-table.component';
 
 const theme = createTheme();
@@ -60,7 +60,12 @@ describe('EntityTable', () => {
 
   it('renders the given columns and rows', () => {
     render(
-      <EntityTable data={data} selectedRowId={null} onSelectRow={vi.fn()} />,
+      <EntityTable
+        data={data}
+        selectedRowId={null}
+        writable={false}
+        onSelectRow={vi.fn()}
+      />,
       { wrapper },
     );
 
@@ -80,6 +85,7 @@ describe('EntityTable', () => {
       <EntityTable
         data={data}
         selectedRowId={null}
+        writable={false}
         onSelectRow={onSelectRow}
       />,
       { wrapper },
@@ -91,7 +97,12 @@ describe('EntityTable', () => {
 
   it('applies a distinct row class for each entity state', () => {
     const { container } = render(
-      <EntityTable data={data} selectedRowId={null} onSelectRow={vi.fn()} />,
+      <EntityTable
+        data={data}
+        selectedRowId={null}
+        writable={false}
+        onSelectRow={vi.fn()}
+      />,
       { wrapper },
     );
 
@@ -103,7 +114,12 @@ describe('EntityTable', () => {
 
   it('reorders the displayed rows on sort without mutating the data', () => {
     render(
-      <EntityTable data={data} selectedRowId={null} onSelectRow={vi.fn()} />,
+      <EntityTable
+        data={data}
+        selectedRowId={null}
+        writable={false}
+        onSelectRow={vi.fn()}
+      />,
       { wrapper },
     );
 

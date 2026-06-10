@@ -1,3 +1,5 @@
+import { Action } from './action.model';
+
 export interface EntityColumn {
   headerKey: string;
   id: string;
@@ -16,6 +18,7 @@ export interface EntitySortKey {
 }
 
 export interface EntityTableData {
+  readonly actions?: readonly Action<EntityToolbarContext>[];
   readonly columns: readonly EntityColumn[];
   readonly defaultSort: readonly EntitySortKey[];
   readonly rows: readonly EntityRow[];
@@ -23,6 +26,13 @@ export interface EntityTableData {
 
 export interface EntityTableRecognizer {
   id: string;
-  load: (filePath: string) => Promise<EntityTableData>;
+  load: (filePath: string, translate: TranslateFn) => Promise<EntityTableData>;
   matches: (filePath: string) => boolean;
 }
+
+export interface EntityToolbarContext {
+  readonly selectedRowId: null | string;
+  readonly writable: boolean;
+}
+
+export type TranslateFn = (key: string) => string;
