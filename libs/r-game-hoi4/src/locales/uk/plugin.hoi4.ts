@@ -62,4 +62,17 @@ export const uk: typeof en = {
       unresolved: 'Архетип не знайдено',
     },
   },
+  module: {
+    columns: {
+      category: 'Категорія',
+      domain: 'Сфера',
+      name: 'Назва',
+    },
+    domain: {
+      air: 'Повітря',
+      land: 'Суша',
+      naval: 'Флот',
+      unclassified: 'Не класифіковано',
+    },
+  },
 };

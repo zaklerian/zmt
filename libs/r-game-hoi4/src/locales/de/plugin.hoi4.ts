@@ -63,4 +63,17 @@ export const de: typeof en = {
       unresolved: 'Archetyp nicht gefunden',
     },
   },
+  module: {
+    columns: {
+      category: 'Kategorie',
+      domain: 'Bereich',
+      name: 'Name',
+    },
+    domain: {
+      air: 'Luft',
+      land: 'Land',
+      naval: 'Marine',
+      unclassified: 'Nicht klassifiziert',
+    },
+  },
 };
