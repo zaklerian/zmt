@@ -30,7 +30,7 @@ export function NoFolderState({ onOpenFolder }: NoFolderStateProps) {
           variant="contained"
           onClick={onOpenFolder}
         >
-          {t('app:actions.openFolder')}
+          {t('app:actions.openModFolder')}
         </Button>
       </Stack>
     </Box>
