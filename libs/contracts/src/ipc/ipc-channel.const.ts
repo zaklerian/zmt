@@ -5,6 +5,7 @@ export const IPC_CHANNELS = {
   },
   equipment: {
     list: 'equipment:list',
+    slots: 'equipment:slots',
   },
   fs: {
     listDirectory: 'fs:listDirectory',

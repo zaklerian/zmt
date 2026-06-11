@@ -3,6 +3,8 @@ import {
   EntityDeleteRequest,
   EntityWriteRequest,
   EquipmentEntity,
+  EquipmentSlotsRequest,
+  EquipmentSlotsResult,
   GamePlugin,
   IPC_CHANNELS,
   ListOptions,
@@ -28,6 +30,11 @@ const API = {
       invokeStructured<readonly EquipmentEntity[]>(
         IPC_CHANNELS.equipment.list,
         filePath,
+      ),
+    slots: (request: EquipmentSlotsRequest) =>
+      invokeStructured<EquipmentSlotsResult>(
+        IPC_CHANNELS.equipment.slots,
+        request,
       ),
   },
   fs: {

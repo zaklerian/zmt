@@ -1,4 +1,10 @@
-import { EquipmentEntity, IPC_CHANNELS, ProjectedSource } from '@contracts';
+import {
+  EquipmentEntity,
+  EquipmentSlotsResult,
+  IncludedMod,
+  IPC_CHANNELS,
+  ProjectedSource,
+} from '@contracts';
 import { ipcMain } from 'electron';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -12,13 +18,16 @@ import {
 } from './__test-utils__/capture-ipc-handler';
 import { registerEquipmentHandlers } from './equipment-handlers.setup';
 
-const state = vi.hoisted(() => ({ sources: [] as ProjectedSource[] }));
+const state = vi.hoisted(() => ({
+  sources: [] as ProjectedSource[],
+  workspace: { includedMods: [] as IncludedMod[] },
+}));
 
 vi.mock('../workspace', () => ({
   activeGameFolderPath: vi.fn(async () => null),
   activeGameId: vi.fn(() => 'hoi4'),
   resolveProjectedSources: vi.fn(() => state.sources),
-  workspaceStoreService: { get: vi.fn(() => ({ includedMods: [] })) },
+  workspaceStoreService: { get: vi.fn(() => state.workspace) },
 }));
 
 vi.mock('../plugins', () => ({
@@ -51,6 +60,38 @@ const MOD_FILE = `equipments = {
 }
 `;
 
+const SLOTS_FILE = `equipments = {
+\tsmall_plane_airframe = {
+\t\tis_archetype = yes
+\t\ttype = { fighter }
+\t\tmodule_slots = {
+\t\t\tfixed_main_weapon = {
+\t\t\t\trequired = yes
+\t\t\t\tallowed_module_categories = {
+\t\t\t\t\tfixed_air_weapon
+\t\t\t\t}
+\t\t\t}
+\t\t\tengine_slot = {
+\t\t\t\tallowed_module_categories = {
+\t\t\t\t\tair_engine
+\t\t\t\t}
+\t\t\t}
+\t\t}
+\t\tdefault_modules = {
+\t\t\tfixed_main_weapon = light_mg
+\t\t\tengine_slot = engine_1
+\t\t}
+\t}
+\tplain_airframe = {
+\t\tis_archetype = yes
+\t\ttype = { fighter }
+\t}
+}
+`;
+
+const MOD_ID = 'mod-1';
+const SLOTS_RELATIVE = path.join(EQUIPMENT_DIR, 'air_archetypes.txt');
+
 let vanillaRoot: string;
 let modRoot: string;
 let vanillaFilePath: string;
@@ -72,6 +113,15 @@ function readonlySource(sourcePath: string): ProjectedSource {
   return { path: sourcePath, permission: 'readonly' };
 }
 
+function slotsFor(entityName: string): Promise<EquipmentSlotsResult> {
+  const handler = getCapturedHandler(IPC_CHANNELS.equipment.slots);
+  return handler(makeInvokeEvent(), {
+    entityName,
+    modId: MOD_ID,
+    relativePath: SLOTS_RELATIVE,
+  }) as Promise<EquipmentSlotsResult>;
+}
+
 describe('registerEquipmentHandlers', () => {
   beforeEach(async () => {
     vi.mocked(ipcMain.handle).mockReset();
@@ -89,6 +139,13 @@ describe('registerEquipmentHandlers', () => {
     modFilePath = path.join(modRoot, EQUIPMENT_DIR, 'mod_equipment.txt');
     await writeFile(vanillaFilePath, VANILLA_FILE);
     await writeFile(modFilePath, MOD_FILE);
+    await writeFile(path.join(modRoot, SLOTS_RELATIVE), SLOTS_FILE);
+
+    state.workspace = {
+      includedMods: [
+        { id: MOD_ID, name: 'mod', path: modRoot, permission: 'readonly' },
+      ],
+    };
 
     registerEquipmentHandlers();
   });
@@ -146,6 +203,46 @@ describe('registerEquipmentHandlers', () => {
     const handler = getCapturedHandler(IPC_CHANNELS.equipment.list);
     await expect(handler(makeInvokeEvent(), 42)).rejects.toSatisfy(
       (error) => extractIpcError(error).code === 400,
+    );
+  });
+
+  it('projects slots and assignments for an archetype in a readonly source', async () => {
+    state.sources = [readonlySource(modRoot)];
+
+    const result = await slotsFor('small_plane_airframe');
+
+    expect(result.slots).toEqual([
+      {
+        allowedCategories: ['fixed_air_weapon'],
+        name: 'fixed_main_weapon',
+        required: true,
+      },
+      {
+        allowedCategories: ['air_engine'],
+        name: 'engine_slot',
+        required: false,
+      },
+    ]);
+    expect(result.assignments).toEqual([
+      { key: 'fixed_main_weapon', value: 'light_mg' },
+      { key: 'engine_slot', value: 'engine_1' },
+    ]);
+  });
+
+  it('returns an empty slot list for an archetype with no module_slots', async () => {
+    state.sources = [readonlySource(modRoot)];
+
+    const result = await slotsFor('plain_airframe');
+
+    expect(result.slots).toEqual([]);
+    expect(result.assignments).toEqual([]);
+  });
+
+  it('rejects slots with 404 when the archetype is absent', async () => {
+    state.sources = [readonlySource(modRoot)];
+
+    await expect(slotsFor('ghost_airframe')).rejects.toSatisfy(
+      (error) => extractIpcError(error).code === 404,
     );
   });
 });
