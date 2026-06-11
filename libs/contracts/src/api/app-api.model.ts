@@ -5,7 +5,7 @@ import {
   EquipmentSlotsResult,
 } from '../equipment';
 import { FsNode, ListOptions } from '../fs';
-import { ModuleEntity } from '../module';
+import { CatalogModule, ModuleEntity } from '../module';
 import { GamePlugin } from '../plugin';
 import { PreferenceKey, Preferences } from '../preferences';
 import { ModId, Workspace } from '../workspace';
@@ -40,6 +40,7 @@ export interface AppApiModel {
     readonly writeTextFile: (path: string, content: string) => Promise<void>;
   };
   readonly module: {
+    readonly catalog: () => Promise<readonly CatalogModule[]>;
     readonly list: (filePath: string) => Promise<readonly ModuleEntity[]>;
   };
   readonly plugins: {

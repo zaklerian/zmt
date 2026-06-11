@@ -16,6 +16,7 @@ export const IPC_CHANNELS = {
     writeTextFile: 'fs:writeTextFile',
   },
   module: {
+    catalog: 'module:catalog',
     list: 'module:list',
   },
   plugins: {

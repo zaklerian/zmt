@@ -1,4 +1,5 @@
 import {
+  CatalogModule,
   IPC_CHANNELS,
   IPC_ERROR_CODES,
   IpcError,
@@ -6,9 +7,13 @@ import {
 } from '@contracts';
 
 import { ipcHandle } from '../ipc';
-import { listModules } from '../module';
+import { catalogModules, listModules } from '../module';
 
 export function registerModuleHandlers(): void {
+  ipcHandle<readonly CatalogModule[]>(IPC_CHANNELS.module.catalog, async () =>
+    catalogModules(),
+  );
+
   ipcHandle<readonly ModuleEntity[]>(
     IPC_CHANNELS.module.list,
     async (_event, rawFilePath) => {
