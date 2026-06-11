@@ -5,6 +5,7 @@ export const uk: typeof en = {
     actions: {
       add: 'Додати',
       delete: 'Видалити',
+      designModules: 'Налаштувати модулі',
       edit: 'Редагувати',
     },
     columns: {
@@ -17,6 +18,13 @@ export const uk: typeof en = {
       confirm: 'Видалити',
       message: 'Видалити «{name}»? Цю дію не можна скасувати.',
       title: 'Видалити спорядження',
+    },
+    designer: {
+      clear: 'Очистити',
+      pickerPlaceholder: 'Виберіть модуль',
+      required: "Обов'язковий",
+      title: 'Налаштувати модулі',
+      unfilledWarning: "Цьому обов'язковому слоту не призначено модуль.",
     },
     domain: {
       air: 'Повітря',

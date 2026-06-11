@@ -7,10 +7,11 @@ import { buildEquipmentActions } from './equipment-actions';
 function entity(
   name: string,
   classification: EquipmentEntity['classification'],
+  kind: EquipmentEntity['kind'] = 'regular',
 ): EquipmentEntity {
   return {
     classification,
-    kind: 'regular',
+    kind,
     name,
     node: null as unknown as EquipmentEntity['node'],
     scalars: [],
@@ -19,6 +20,16 @@ function entity(
 
 const entities = [
   entity('air_eq', { domain: 'air', status: 'classified', type: ['fighter'] }),
+  entity(
+    'air_arch',
+    { domain: 'air', status: 'classified', type: ['fighter'] },
+    'archetype',
+  ),
+  entity(
+    'land_arch',
+    { domain: 'land', status: 'classified', type: ['armor'] },
+    'archetype',
+  ),
   entity('naval_eq', { domain: 'naval', status: 'classified', type: ['ship'] }),
   entity('land_eq', { domain: 'land', status: 'classified', type: ['armor'] }),
   entity('unresolved_eq', { archetypeRef: 'x', status: 'unresolved' }),
@@ -76,6 +87,15 @@ describe('equipment toolbar action availability', () => {
 
   it('disables Edit when no row is selected', () => {
     expect(isAvailable('hoi4-equipment-edit', context(null, true))).toBe(false);
+  });
+
+  it('enables Design modules only for a writable air archetype', () => {
+    const id = 'hoi4-equipment-design-modules';
+    expect(isAvailable(id, context('air_arch', true))).toBe(true);
+    expect(isAvailable(id, context('air_arch', false))).toBe(false);
+    expect(isAvailable(id, context('air_eq', true))).toBe(false);
+    expect(isAvailable(id, context('land_arch', true))).toBe(false);
+    expect(isAvailable(id, context(null, true))).toBe(false);
   });
 
   it('enables Add whenever the file is writable', () => {

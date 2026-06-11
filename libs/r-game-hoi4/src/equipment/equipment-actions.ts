@@ -10,9 +10,11 @@ import { createElement } from 'react';
 
 import { AirEquipmentEditForm } from './air-equipment-edit-form.component';
 import { equipmentErrorMessageKey } from './equipment-error.util';
+import { SlotDesigner } from './slot-designer.component';
 
 const ADD = 'plugin.hoi4:equipment.actions.add';
 const DELETE = 'plugin.hoi4:equipment.actions.delete';
+const DESIGN_MODULES = 'plugin.hoi4:equipment.actions.designModules';
 const EDIT = 'plugin.hoi4:equipment.actions.edit';
 
 // Add still has no insert contract (entity:write is an update path); its stub
@@ -36,6 +38,28 @@ export function buildEquipmentActions(
     const { classification } = entity;
     return (
       classification.status === 'classified' && classification.domain === 'air'
+    );
+  };
+
+  // Only archetypes define module_slots, so the designer is archetype-only on
+  // top of the classified-air gate the edit form already requires.
+  const selectedIsAirArchetype = (context: EntityToolbarContext): boolean => {
+    const entity = selectedEntity(context);
+    return entity?.kind === 'archetype' && selectedIsClassifiedAir(context);
+  };
+
+  const openDesigner = (context: EntityToolbarContext): void => {
+    const entity = selectedEntity(context);
+    if (entity === undefined || context.modId === null) return;
+    context.presentForm(
+      createElement(SlotDesigner, {
+        entity,
+        modal: context.modal,
+        modId: context.modId,
+        onClose: context.dismissForm,
+        onSaved: context.refresh,
+        relativePath: context.relativePath,
+      }),
     );
   };
 
@@ -100,6 +124,13 @@ export function buildEquipmentActions(
       isAvailable: (context) =>
         context.writable && selectedIsClassifiedAir(context),
       label: () => EDIT,
+    },
+    {
+      execute: openDesigner,
+      id: 'hoi4-equipment-design-modules',
+      isAvailable: (context) =>
+        context.writable && selectedIsAirArchetype(context),
+      label: () => DESIGN_MODULES,
     },
     {
       execute: deleteEntity,
