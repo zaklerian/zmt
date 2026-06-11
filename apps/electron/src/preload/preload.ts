@@ -1,5 +1,6 @@
 import {
   AppApiModel,
+  CatalogModule,
   EntityDeleteRequest,
   EntityWriteRequest,
   EquipmentEntity,
@@ -52,6 +53,8 @@ const API = {
       invokeStructured<void>(IPC_CHANNELS.fs.writeTextFile, path, content),
   },
   module: {
+    catalog: () =>
+      invokeStructured<readonly CatalogModule[]>(IPC_CHANNELS.module.catalog),
     list: (filePath: string) =>
       invokeStructured<readonly ModuleEntity[]>(
         IPC_CHANNELS.module.list,
