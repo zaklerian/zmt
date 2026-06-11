@@ -7,3 +7,5 @@ export * from './equipment-recognizer';
 export * from './equipment-row.util';
 export * from './equipment-sort.util';
 export * from './known-air-equipment-keys.const';
+export * from './slot-delta.util';
+export * from './slot-designer.component';

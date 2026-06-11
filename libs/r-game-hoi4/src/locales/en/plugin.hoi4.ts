@@ -3,6 +3,7 @@ export const en = {
     actions: {
       add: 'Add',
       delete: 'Delete',
+      designModules: 'Design modules',
       edit: 'Edit',
     },
     columns: {
@@ -15,6 +16,13 @@ export const en = {
       confirm: 'Delete',
       message: 'Delete "{name}"? This cannot be undone.',
       title: 'Delete equipment',
+    },
+    designer: {
+      clear: 'Clear',
+      pickerPlaceholder: 'Select module',
+      required: 'Required',
+      title: 'Design modules',
+      unfilledWarning: 'This required slot has no module assigned.',
     },
     domain: {
       air: 'Air',

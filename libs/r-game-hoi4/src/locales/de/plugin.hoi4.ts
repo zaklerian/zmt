@@ -5,6 +5,7 @@ export const de: typeof en = {
     actions: {
       add: 'Hinzufügen',
       delete: 'Löschen',
+      designModules: 'Module entwerfen',
       edit: 'Bearbeiten',
     },
     columns: {
@@ -18,6 +19,13 @@ export const de: typeof en = {
       message:
         'Möchten Sie „{name}“ löschen? Dies kann nicht rückgängig gemacht werden.',
       title: 'Ausrüstung löschen',
+    },
+    designer: {
+      clear: 'Löschen',
+      pickerPlaceholder: 'Modul auswählen',
+      required: 'Erforderlich',
+      title: 'Module entwerfen',
+      unfilledWarning: 'Diesem erforderlichen Slot ist kein Modul zugewiesen.',
     },
     domain: {
       air: 'Luft',
