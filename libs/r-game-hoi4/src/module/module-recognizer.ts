@@ -1,6 +1,7 @@
 import { AppApiModel } from '@contracts';
 import { EntityTableData, EntityTableRecognizer, TranslateFn } from '@r-core';
 
+import { buildModuleActions } from './module-actions';
 import { MODULE_COLUMNS } from './module-columns.const';
 import { mapModuleRow } from './module-row.util';
 import { compareModuleEntities } from './module-sort.util';
@@ -14,7 +15,11 @@ function load(
   const { api } = window as unknown as { readonly api: AppApiModel };
   return api.module.list(filePath).then((entities) => {
     const sorted = [...entities].sort(compareModuleEntities);
+    const entitiesById = new Map(
+      sorted.map((entity) => [entity.name, entity] as const),
+    );
     return {
+      actions: buildModuleActions(entitiesById, translate),
       columns: MODULE_COLUMNS,
       // Rows arrive pre-sorted (air first); no column-driven default sort.
       defaultSort: [],

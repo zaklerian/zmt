@@ -63,16 +63,65 @@ export const uk: typeof en = {
     },
   },
   module: {
+    actions: {
+      delete: 'Видалити',
+      edit: 'Редагувати',
+    },
     columns: {
       category: 'Категорія',
       domain: 'Сфера',
       name: 'Назва',
+    },
+    delete: {
+      confirm: 'Видалити',
+      message: 'Видалити «{name}»? Цю дію не можна скасувати.',
+      title: 'Видалити модуль',
     },
     domain: {
       air: 'Повітря',
       land: 'Суша',
       naval: 'Флот',
       unclassified: 'Не класифіковано',
+    },
+    errors: {
+      conflict:
+        'Цей модуль змінився на диску після відкриття. Перезавантажте та спробуйте ще раз.',
+      forbidden:
+        'Цей файл доступний лише для читання та не може бути змінений.',
+      notFound: 'Цей модуль більше не існує.',
+      title: 'Помилка дії',
+      unknown: 'Щось пішло не так. Спробуйте ще раз.',
+    },
+    form: {
+      addField: 'Додати поле',
+      cancel: 'Скасувати',
+      discard: 'Відхилити',
+      fields: {
+        key: {
+          label: 'Властивість',
+        },
+        value: {
+          label: 'Значення',
+        },
+      },
+      header: {
+        category: 'Категорія',
+        domain: 'Сфера',
+      },
+      removeField: 'Вилучити',
+      save: 'Зберегти',
+      sections: {
+        addAverageStats: 'Середні характеристики (add_average_stats)',
+        addStats: 'Додані характеристики (add_stats)',
+        multiplyStats: 'Множені характеристики (multiply_stats)',
+        scalars: 'Властивості модуля',
+      },
+      unsavedMessage: 'У вас є незбережені зміни. Відхилити їх?',
+      unsavedTitle: 'Незбережені зміни',
+      validation: {
+        keyDuplicate: 'Дубльований ключ властивості.',
+        keyRequired: "Ключ властивості є обов'язковим.",
+      },
     },
   },
 };

@@ -1,9 +1,9 @@
-import { EquipmentScalar } from '@contracts';
+import { EntityField } from '@contracts';
 import { describe, expect, it } from 'vitest';
 
-import { computeScalarDelta } from './equipment-delta.util';
+import { computeScalarDelta } from './scalar-delta.util';
 
-const snapshot: readonly EquipmentScalar[] = [
+const snapshot: readonly EntityField[] = [
   { key: 'air_attack', value: '10' },
   { key: 'air_range', value: '2000' },
   { key: 'reliability', value: '0.8' },
@@ -25,7 +25,7 @@ describe('computeScalarDelta', () => {
   it('returns empty groups when nothing changed', () => {
     const delta = computeScalarDelta(
       snapshot,
-      snapshot.map((scalar) => ({ ...scalar })),
+      snapshot.map((field) => ({ ...field })),
     );
 
     expect(delta.added).toEqual([]);
