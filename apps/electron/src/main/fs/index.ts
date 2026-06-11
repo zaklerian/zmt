@@ -1,6 +1,7 @@
 export * from './classify-file.util';
 export * from './default-file-classification.const';
 export * from './entity-mutation.service';
+export * from './equipment-slots.service';
 export * from './list-directory.service';
 export * from './path-guard.util';
 export * from './read-file.service';

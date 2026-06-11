@@ -1,5 +1,9 @@
 import { EntityDeleteRequest, EntityWriteRequest } from '../entity';
-import { EquipmentEntity } from '../equipment';
+import {
+  EquipmentEntity,
+  EquipmentSlotsRequest,
+  EquipmentSlotsResult,
+} from '../equipment';
 import { FsNode, ListOptions } from '../fs';
 import { ModuleEntity } from '../module';
 import { GamePlugin } from '../plugin';
@@ -13,6 +17,9 @@ export interface AppApiModel {
   };
   readonly equipment: {
     readonly list: (filePath: string) => Promise<readonly EquipmentEntity[]>;
+    readonly slots: (
+      request: EquipmentSlotsRequest,
+    ) => Promise<EquipmentSlotsResult>;
   };
   readonly fs: {
     readonly listDirectory: (
