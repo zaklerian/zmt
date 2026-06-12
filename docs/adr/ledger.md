@@ -23,6 +23,10 @@ ADRs, or rule files are not journaled here — the live artifact is the record.
 | L-007 | Pre-push hook for `.claude/` vs `docs/` sync   | In discussion — at next consistency drift | 2026-06-08 |
 | L-009 | Mini drawer variant                            | Rejected for now — at rail content need   | 2026-06-08 |
 | L-010 | Across-launch tree expansion persistence       | Rejected for now — at user request        | 2026-06-08 |
+| L-011 | Entity rename operation (delete-old-block + insert-new-block; outside the scalar-delta model) | In discussion — at the TL feature-tree "change file of origin" need, or first cross-cut rename need | 2026-06-12 |
+| L-012 | Entity create/insert contract (entity:write patches existing blocks only; creating a new named entity needs an insert path — currently keeps the Add action stubbed) | In discussion — required by TL "change file of origin" (move = delete + insert) and by Add | 2026-06-12 |
+| L-013 | Module catalog caching (module:catalog re-enumerates and re-parses all module files across sources per call, uncached) | In discussion — at real-mod-scale latency | 2026-06-12 |
+| L-014 | Module-file-location single home (the catalog enumeration and the recognizer's module-file selection must share one definition of where modules live) | In discussion — at the next module-path consumer, or on observed duplication | 2026-06-12 |
 
 ## How to add an entry
 

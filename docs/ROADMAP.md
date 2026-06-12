@@ -81,6 +81,24 @@ point.
 
 ---
 
+## Top-layer (TL) features
+
+### Advanced view editing (TL) — `Deferred (2026-06-12)`
+
+Two follow-ons to the assignment-only slot designer: (a) slot-definition editing —
+module_slots: which slots exist, required, allowed categories; (b) in-game-style spatial
+slot schematic showing where each slot physically sits, sourced from the game's
+interface/*.gui files plus designer art (real positions, read from the vanilla source;
+not a guessed silhouette). Both need interface/gui-level data the entity files do not
+carry.
+
+### Global custom-variable manager (TL) — `Deferred (2026-06-12)`
+
+Central management of modder-invented custom entity keys across the project; the
+per-entity combobox free-text entry is the current stopgap.
+
+---
+
 ## Filesystem awareness
 
 ### File watcher for live tree refresh — `In discussion (deferred)`
