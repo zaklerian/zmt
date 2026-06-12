@@ -77,6 +77,23 @@ describe('mutation preserves surrounding trivia', () => {
   });
 });
 
+describe('large-file scale (ZMT-E10)', () => {
+  it('parses and round-trips a flat equipment_modules block with thousands of entries', () => {
+    const entryCount = 6000;
+    const lines = ['equipment_modules={'];
+    for (let i = 0; i < entryCount; i += 1) {
+      lines.push(`\tmodule_${i}=enabled`);
+    }
+    lines.push('}');
+    const source = `${lines.join('\n')}\n`;
+
+    const script = parse(source);
+
+    expect(script.errors).toEqual([]);
+    expect(serialize(script, source)).toBe(source);
+  });
+});
+
 describe('dialect flags', () => {
   const BRACKET_SOURCE = 'speed=@[base/2]\n';
 

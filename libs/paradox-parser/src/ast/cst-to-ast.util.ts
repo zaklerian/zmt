@@ -42,10 +42,17 @@ interface CommentRange {
 export function cstToAst(tree: Tree, source: string): Script {
   const errors: ParseError[] = [];
   const root = tree.topNode;
-  const children = adaptScriptChildren(root, source, errors);
+  // R-CODE-2: build the newline index once and thread it through trivia
+  // attribution. lineOf is called per child and per trivia inside every
+  // container; a per-call linear scan made attribution O(n²) over source
+  // length and froze large flat blocks (e.g. equipment_modules). Binary
+  // search against this precomputed index keeps it O(n log n).
+  const newlineIndex = buildNewlineIndex(source);
+  const children = adaptScriptChildren(root, source, newlineIndex, errors);
   const { leading, trailing } = attributeContainerTrivia(
     root,
     source,
+    newlineIndex,
     children,
     root.from,
     root.to,
@@ -73,6 +80,7 @@ export function cstToAst(tree: Tree, source: string): Script {
 function adaptAssignment(
   node: SyntaxNode,
   source: string,
+  newlineIndex: readonly number[],
   errors: ParseError[],
 ): AssignmentNode {
   const keyCst = node.getChild('Key');
@@ -97,7 +105,7 @@ function adaptAssignment(
       : placeholderOperator(node);
   const value =
     valueCst !== null
-      ? adaptValue(valueCst, source, errors)
+      ? adaptValue(valueCst, source, newlineIndex, errors)
       : placeholderIdentifier(node, source);
 
   return {
@@ -116,6 +124,7 @@ function adaptAssignment(
 function adaptBlock(
   node: SyntaxNode,
   source: string,
+  newlineIndex: readonly number[],
   errors: ParseError[],
 ): BlockNode {
   const lbrace = node.getChild('LBrace');
@@ -134,12 +143,19 @@ function adaptBlock(
       continue;
     }
     if (item.name !== 'BlockItem') continue;
-    const blockChild = adaptBlockItem(item, source, errors);
+    const blockChild = adaptBlockItem(item, source, newlineIndex, errors);
     if (blockChild !== null) children.push(blockChild);
   }
 
   const { leading: innerLeading, trailing: innerTrailing } =
-    attributeContainerTrivia(node, source, children, innerStart, innerEnd);
+    attributeContainerTrivia(
+      node,
+      source,
+      newlineIndex,
+      children,
+      innerStart,
+      innerEnd,
+    );
 
   return {
     children,
@@ -157,15 +173,16 @@ function adaptBlock(
 function adaptBlockItem(
   node: SyntaxNode,
   source: string,
+  newlineIndex: readonly number[],
   errors: ParseError[],
 ): BlockChild | null {
   const inner = node.firstChild;
   if (inner === null) return null;
   if (inner.name === 'Assignment') {
-    return adaptAssignment(inner, source, errors);
+    return adaptAssignment(inner, source, newlineIndex, errors);
   }
   if (inner.name === 'Value') {
-    return adaptValue(inner, source, errors);
+    return adaptValue(inner, source, newlineIndex, errors);
   }
   return null;
 }
@@ -254,6 +271,7 @@ function adaptOperator(node: SyntaxNode): OperatorNode {
 function adaptScriptChildren(
   root: SyntaxNode,
   source: string,
+  newlineIndex: readonly number[],
   errors: ParseError[],
 ): ScriptChild[] {
   const out: ScriptChild[] = [];
@@ -270,7 +288,7 @@ function adaptScriptChildren(
       continue;
     }
     if (child.name === 'Assignment') {
-      out.push(adaptAssignment(child, source, errors));
+      out.push(adaptAssignment(child, source, newlineIndex, errors));
     }
   }
   return out;
@@ -293,12 +311,13 @@ function adaptString(node: SyntaxNode, source: string): StringValueNode {
 function adaptValue(
   node: SyntaxNode,
   source: string,
+  newlineIndex: readonly number[],
   errors: ParseError[],
 ): ParadoxValue {
   const inner = node.firstChild ?? node;
   switch (inner.name) {
     case 'Block':
-      return adaptBlock(inner, source, errors);
+      return adaptBlock(inner, source, newlineIndex, errors);
     case 'BooleanValue':
       return adaptBoolean(inner, source);
     case 'BracketExpression':
@@ -319,6 +338,7 @@ function adaptValue(
 function attributeContainerTrivia(
   container: SyntaxNode,
   source: string,
+  newlineIndex: readonly number[],
   children: AttributionTarget[],
   containerStart: number,
   containerEnd: number,
@@ -356,10 +376,10 @@ function attributeContainerTrivia(
       containerLeading.push(...pending);
     } else {
       const prev = children[i - 1];
-      const prevEndLine = lineOf(source, prev.to);
+      const prevEndLine = lineOf(newlineIndex, prev.to);
       const { rest, sameLine } = splitTriviaBySameLine(
         pending,
-        source,
+        newlineIndex,
         prevEndLine,
       );
       prev.trailingTrivia.push(...sameLine);
@@ -369,10 +389,10 @@ function attributeContainerTrivia(
 
   const last = children[children.length - 1];
   const tail = trivia.slice(cursor);
-  const lastEndLine = lineOf(source, last.to);
+  const lastEndLine = lineOf(newlineIndex, last.to);
   const { rest: tailRest, sameLine: tailSameLine } = splitTriviaBySameLine(
     tail,
-    source,
+    newlineIndex,
     lastEndLine,
   );
   last.trailingTrivia.push(...tailSameLine);
@@ -415,6 +435,14 @@ function buildGapTrivia(
     pushWhitespace(out, source, cursor, end);
   }
   return out;
+}
+
+function buildNewlineIndex(source: string): number[] {
+  const offsets: number[] = [];
+  for (let i = 0; i < source.length; i += 1) {
+    if (source.charCodeAt(i) === 10 /* \n */) offsets.push(i);
+  }
+  return offsets;
 }
 
 function collectCommentRanges(
@@ -469,13 +497,15 @@ function decodeString(raw: string): string {
   return out;
 }
 
-function lineOf(source: string, offset: number): number {
-  let line = 0;
-  const stop = Math.min(offset, source.length);
-  for (let i = 0; i < stop; i += 1) {
-    if (source.charCodeAt(i) === 10 /* \n */) line += 1;
+function lineOf(newlineIndex: readonly number[], offset: number): number {
+  let lo = 0;
+  let hi = newlineIndex.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1;
+    if (newlineIndex[mid] < offset) lo = mid + 1;
+    else hi = mid;
   }
-  return line;
+  return lo;
 }
 
 function placeholderIdentifier(
@@ -548,7 +578,7 @@ function splitContainerTriviaAtFirstNewline(trivia: readonly Trivia[]): {
 
 function splitTriviaBySameLine(
   trivia: readonly Trivia[],
-  source: string,
+  newlineIndex: readonly number[],
   prevEndLine: number,
 ): { rest: Trivia[]; sameLine: Trivia[] } {
   const sameLine: Trivia[] = [];
@@ -559,7 +589,7 @@ function splitTriviaBySameLine(
       rest.push(t);
       continue;
     }
-    if (lineOf(source, t.from) === prevEndLine) {
+    if (lineOf(newlineIndex, t.from) === prevEndLine) {
       sameLine.push(t);
       if (t.kind === 'Whitespace' && t.text.includes('\n')) {
         crossed = true;
