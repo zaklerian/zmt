@@ -74,19 +74,12 @@ export const en = {
     },
     columns: {
       category: 'Category',
-      domain: 'Domain',
       name: 'Name',
     },
     delete: {
       confirm: 'Delete',
       message: 'Delete "{name}"? This cannot be undone.',
       title: 'Delete module',
-    },
-    domain: {
-      air: 'Air',
-      land: 'Land',
-      naval: 'Naval',
-      unclassified: 'Unclassified',
     },
     errors: {
       conflict:
@@ -110,7 +103,6 @@ export const en = {
       },
       header: {
         category: 'Category',
-        domain: 'Domain',
       },
       removeField: 'Remove',
       save: 'Save',

@@ -21,9 +21,9 @@ function load(
     return {
       actions: buildModuleActions(entitiesById, translate),
       columns: MODULE_COLUMNS,
-      // Rows arrive pre-sorted (air first); no column-driven default sort.
+      // Rows arrive pre-sorted (by category, then name); no column-driven sort.
       defaultSort: [],
-      rows: sorted.map((entity) => mapModuleRow(entity, translate)),
+      rows: sorted.map((entity) => mapModuleRow(entity)),
     };
   });
 }

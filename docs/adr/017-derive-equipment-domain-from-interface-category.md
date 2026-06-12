@@ -1,4 +1,4 @@
-# ADR 018 — Derive equipment domain from interface category
+# ADR 017 — Derive equipment domain from interface category
 
 ## Status
 
@@ -11,15 +11,14 @@ Accepted
 ## Context
 
 An equipment archetype's domain (air / land / naval) is currently determined by looking
-up its `type` field in a static table (EQUIPMENT_TYPE_DOMAIN). The `type` field's real
-purpose is to identify the equipment _kind_ — it drives buildable variant grouping,
+up its `type` field in a static table (EQUIPMENT*TYPE_DOMAIN). The `type` field's real
+purpose is to identify the equipment \_kind* — it drives buildable variant grouping,
 `allowed_types`, and `type_override` — and domain classification was layered onto it as a
 second responsibility. The static table enumerates which type tokens belong to which
 domain, and like every hand-authored domain table in this project it has drifted: it was
 populated against one total-conversion mod's renamed type vocabulary and does not contain
 the base-game type tokens. Vanilla equipment therefore fails to classify (its types are
-absent from the table), and through the module-domain derivation that depends on it
-(ADR 017), all vanilla modules resolve to `unclassified` as a downstream consequence.
+absent from the table).
 
 The data already carries a field whose purpose is domain-aligned grouping:
 `interface_category`, present on equipment archetypes, drives the air-designer interface
@@ -59,7 +58,7 @@ Derive equipment domain from `interface_category` via an explicit mapping; remov
    classification model's `unresolved` state — which carries the dangling archetype
    reference of a variant — does not apply to it; a structurally valid archetype with no
    determinable domain is invalid. The system reports a non-classification rather than
-   inferring a domain it cannot justify, consistent with ADR 017.
+   inferring a domain it cannot justify.
 
 4. **Variants inherit via archetype.** Domain is read from the archetype; buildable
    variants that reference an archetype derive their domain through it and are not required
@@ -70,8 +69,7 @@ The `type → domain` table (EQUIPMENT_TYPE_DOMAIN) is removed.
 ## Consequences
 
 - Base-game equipment classifies, because `interface_category` is authored on base-game
-  archetypes; the module-domain derivation (ADR 017) consequently classifies base-game
-  modules instead of failing to.
+  archetypes.
 - Domain classification no longer depends on maintaining a domain table keyed on the
   type-kind vocabulary, which each mod renames. The `interface_category` set is small,
   stable, and shared across base game and mods that build on its interface, so it drifts
@@ -87,8 +85,7 @@ Deferred:
 - Variant→archetype domain inheritance (rule 4) lands as a follow-up. The equipment
   extractor is pure over a single parsed block and does not perform the cross-entity
   archetype lookup a variant's domain requires; until that step ships, a variant carrying
-  no `interface_category` of its own does not classify. Archetype classification — the
-  input to ADR 017 — is unaffected, so the module-domain index is repaired regardless.
+  no `interface_category` of its own does not classify.
 - Reading `interface_category → domain` from mod-provided interface definitions to remove
   the last hand-maintained mapping entirely; out of scope, and lower value than the
   type-table removal because this set is stable.

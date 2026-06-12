@@ -77,19 +77,12 @@ export const uk: typeof en = {
     },
     columns: {
       category: 'Категорія',
-      domain: 'Сфера',
       name: 'Назва',
     },
     delete: {
       confirm: 'Видалити',
       message: 'Видалити «{name}»? Цю дію не можна скасувати.',
       title: 'Видалити модуль',
-    },
-    domain: {
-      air: 'Повітря',
-      land: 'Суша',
-      naval: 'Флот',
-      unclassified: 'Не класифіковано',
     },
     errors: {
       conflict:
@@ -114,7 +107,6 @@ export const uk: typeof en = {
       },
       header: {
         category: 'Категорія',
-        domain: 'Сфера',
       },
       removeField: 'Вилучити',
       save: 'Зберегти',

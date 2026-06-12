@@ -13,9 +13,8 @@ export async function parseGameFile(
 }
 
 // Resolve the equipment files across the given sources into the load order the
-// resolver settles on (ADR 016), then parse every winner. Shared by the
-// equipment listing (visible-source slice per file) and the workspace-wide
-// module domain index, which both walk the same resolved archetype set.
+// resolver settles on (ADR 016), then parse every winner. Feeds the equipment
+// listing's archetype walk (visible-source slice per file).
 export async function resolveEquipmentFiles(
   sources: readonly ProjectedSource[],
   dialects: readonly string[],

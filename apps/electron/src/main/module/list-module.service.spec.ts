@@ -24,26 +24,7 @@ vi.mock('../plugins', () => ({
   },
 }));
 
-const EQUIPMENT_DIR = 'common/units/equipment';
 const MODULE_DIR = 'common/units/equipment/modules';
-
-// An air archetype whose single slot accepts `air_engine`; the derivation stamps
-// 'air' onto that category. `unreferenced_cat` is in no archetype's slots.
-const AIR_ARCHETYPE_FILE = `equipments = {
-\tsmall_airframe = {
-\t\tis_archetype = yes
-\t\tinterface_category = interface_category_air
-\t\ttype = fighter
-\t\tmodule_slots = {
-\t\t\tengine_slot = {
-\t\t\t\tallowed_module_categories = {
-\t\t\t\t\tair_engine
-\t\t\t\t}
-\t\t\t}
-\t\t}
-\t}
-}
-`;
 
 const MODULES_FILE = `equipment_modules = {
 \tengine_1 = {
@@ -52,23 +33,12 @@ const MODULES_FILE = `equipment_modules = {
 \tmystery_1 = {
 \t\tcategory = unreferenced_cat
 \t}
+\tnameless_1 = {
+\t}
 }
 `;
 
 let roots: string[] = [];
-
-async function equipmentSource(
-  permission: ProjectedSource['permission'],
-): Promise<ProjectedSource> {
-  const root = await mkdtemp(path.join(tmpdir(), 'zmt-equip-'));
-  roots.push(root);
-  await mkdir(path.join(root, EQUIPMENT_DIR), { recursive: true });
-  await writeFile(
-    path.join(root, EQUIPMENT_DIR, '00_archetypes.txt'),
-    AIR_ARCHETYPE_FILE,
-  );
-  return { path: root, permission };
-}
 
 async function moduleSource(): Promise<{
   modulePath: string;
@@ -95,41 +65,36 @@ describe('listModules', () => {
     );
   });
 
-  it('classifies a module by an archetype slot in the same source and leaves an unreferenced category unclassified', async () => {
-    const root = await mkdtemp(path.join(tmpdir(), 'zmt-modlist-'));
-    roots.push(root);
-    await mkdir(path.join(root, EQUIPMENT_DIR), { recursive: true });
-    await mkdir(path.join(root, MODULE_DIR), { recursive: true });
-    await writeFile(
-      path.join(root, EQUIPMENT_DIR, '00_archetypes.txt'),
-      AIR_ARCHETYPE_FILE,
-    );
-    const modulePath = path.join(root, MODULE_DIR, '00_modules.txt');
-    await writeFile(modulePath, MODULES_FILE);
-    state.sources = [{ path: root, permission: 'readonly' }];
+  it('reads the file losslessly, surfacing each module name and category', async () => {
+    const { modulePath, source } = await moduleSource();
+    state.sources = [source];
 
     const entities = await listModules(modulePath);
 
-    expect(entities.find((entity) => entity.name === 'engine_1')?.domain).toBe(
-      'air',
-    );
-    expect(entities.find((entity) => entity.name === 'mystery_1')?.domain).toBe(
-      'unclassified',
-    );
+    expect(entities.map((entity) => entity.name)).toEqual([
+      'engine_1',
+      'mystery_1',
+      'nameless_1',
+    ]);
+    expect(
+      entities.find((entity) => entity.name === 'engine_1')?.category,
+    ).toBe('air_engine');
+    expect(
+      entities.find((entity) => entity.name === 'mystery_1')?.category,
+    ).toBe('unreferenced_cat');
+    expect(
+      entities.find((entity) => entity.name === 'nameless_1')?.category,
+    ).toBe('');
   });
 
-  it('classifies across sources: an archetype in vanilla domains a module defined in a mod', async () => {
-    const vanilla = await equipmentSource('readonly');
-    const { modulePath, source: mod } = await moduleSource();
-    state.sources = [vanilla, mod];
+  it('consults no archetype data — module listing is a pure per-file read', async () => {
+    const { modulePath, source } = await moduleSource();
+    state.sources = [source];
 
     const entities = await listModules(modulePath);
 
-    expect(entities.find((entity) => entity.name === 'engine_1')?.domain).toBe(
-      'air',
-    );
-    expect(entities.find((entity) => entity.name === 'mystery_1')?.domain).toBe(
-      'unclassified',
-    );
+    for (const entity of entities) {
+      expect(entity).not.toHaveProperty('domain');
+    }
   });
 });

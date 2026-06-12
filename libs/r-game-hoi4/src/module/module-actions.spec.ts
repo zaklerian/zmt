@@ -4,10 +4,9 @@ import { describe, expect, it } from 'vitest';
 
 import { buildModuleActions } from './module-actions';
 
-function entity(name: string, domain: ModuleEntity['domain']): ModuleEntity {
+function entity(name: string): ModuleEntity {
   return {
     category: 'engine',
-    domain,
     name,
     node: null as unknown as ModuleEntity['node'],
     scalars: [],
@@ -15,12 +14,7 @@ function entity(name: string, domain: ModuleEntity['domain']): ModuleEntity {
   };
 }
 
-const entities = [
-  entity('air_mod', 'air'),
-  entity('naval_mod', 'naval'),
-  entity('land_mod', 'land'),
-  entity('unclassified_mod', 'unclassified'),
-];
+const entities = [entity('engine_mod'), entity('battery_mod')];
 
 const actionById = new Map(
   buildModuleActions(
@@ -61,13 +55,11 @@ describe('module toolbar action availability', () => {
   });
 
   for (const id of ['hoi4-module-edit', 'hoi4-module-delete']) {
-    it(`enables ${id} only for an air row on a writable file`, () => {
-      expect(isAvailable(id, context('air_mod', true))).toBe(true);
-      expect(isAvailable(id, context('air_mod', false))).toBe(false);
+    it(`enables ${id} for any selected row on a writable file`, () => {
+      expect(isAvailable(id, context('engine_mod', true))).toBe(true);
+      expect(isAvailable(id, context('battery_mod', true))).toBe(true);
+      expect(isAvailable(id, context('engine_mod', false))).toBe(false);
       expect(isAvailable(id, context(null, true))).toBe(false);
-      for (const row of ['naval_mod', 'land_mod', 'unclassified_mod']) {
-        expect(isAvailable(id, context(row, true))).toBe(false);
-      }
     });
   }
 });

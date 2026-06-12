@@ -1,9 +1,4 @@
-import type {
-  EntityField,
-  EquipmentDomain,
-  ModuleEntity,
-  ModuleStatBlocks,
-} from '@contracts';
+import type { EntityField, ModuleEntity, ModuleStatBlocks } from '@contracts';
 import type {
   AssignmentNode,
   BlockChild,
@@ -12,14 +7,12 @@ import type {
   Script,
 } from '@paradox-parser';
 
-// The classifier input, surfaced read-only on the entity and excluded from the
-// scalar projection.
+// Surfaced read-only on the entity and excluded from the scalar projection. A
+// module's only relation to an archetype is its category matching a slot's
+// allowed categories, checked by the slot designer — modules carry no domain.
 const KEY_CATEGORY = 'category';
 
-export function extractModules(
-  parsedTarget: Script,
-  domainIndex: ReadonlyMap<string, EquipmentDomain>,
-): readonly ModuleEntity[] {
+export function extractModules(parsedTarget: Script): readonly ModuleEntity[] {
   const entities: ModuleEntity[] = [];
   for (const child of parsedTarget.children) {
     if (
@@ -37,7 +30,6 @@ export function extractModules(
       const category = moduleCategory(block);
       entities.push({
         category,
-        domain: domainIndex.get(category) ?? 'unclassified',
         name: keyName(entry),
         node: entry,
         scalars: moduleScalars(entry, block),

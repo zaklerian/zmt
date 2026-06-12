@@ -37,8 +37,7 @@ Each ADR follows a consistent structure:
 | 014 | [Reference / read-only sources](014-reference-readonly-sources.md)                                        | Accepted |
 | 015 | [Business actions: availability-driven interaction pattern](015-business-actions.md)                      | Accepted |
 | 016 | [Load-order file resolution and provenance](016-load-order-resolution.md)                                 | Accepted |
-| 017 | [Derive module domain from archetype slots](017-derive-module-domain-from-archetype-slots.md)             | Accepted |
-| 018 | [Derive equipment domain from interface category](018-derive-equipment-domain-from-interface-category.md) | Accepted |
+| 017 | [Derive equipment domain from interface category](017-derive-equipment-domain-from-interface-category.md) | Accepted |
 
 ## When to write an ADR
 

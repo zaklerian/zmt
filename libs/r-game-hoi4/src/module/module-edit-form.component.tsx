@@ -65,7 +65,7 @@ export function ModuleEditForm({
   );
   const schema = useMemo(() => buildModuleEditSchema(translate), [translate]);
 
-  const { category, domain, name, scalars, statBlocks } = entity;
+  const { category, name, scalars, statBlocks } = entity;
 
   // Snapshot each bag's seeded key→value set at open so save diffs against the
   // original projection rather than the (mutated) field arrays.
@@ -149,11 +149,6 @@ export function ModuleEditForm({
             {`${translate('plugin.hoi4:module.form.header.category')}: ${
               category === '' ? '—' : category
             }`}
-          </Typography>
-          <Typography color="text.secondary" variant="body2">
-            {`${translate('plugin.hoi4:module.form.header.domain')}: ${translate(
-              `plugin.hoi4:module.domain.${domain}`,
-            )}`}
           </Typography>
         </Stack>
       </DialogTitle>
