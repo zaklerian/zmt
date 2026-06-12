@@ -4,6 +4,7 @@ import { dialectsFromPlugins, parse, type Script } from '@paradox-parser';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
+import { moduleDomainIndex } from '../equipment';
 import { assertReadable } from '../fs';
 import { pluginRegistryService } from '../plugins';
 
@@ -13,7 +14,11 @@ export async function listModules(
   await assertReadable(filePath);
 
   const dialects = dialectsFromPlugins(pluginRegistryService.list());
-  return extractModules(await parseFile(path.resolve(filePath), dialects));
+  const domainIndex = await moduleDomainIndex();
+  return extractModules(
+    await parseFile(path.resolve(filePath), dialects),
+    domainIndex,
+  );
 }
 
 async function parseFile(

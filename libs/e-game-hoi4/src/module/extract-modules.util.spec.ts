@@ -1,3 +1,4 @@
+import type { EquipmentDomain } from '@contracts';
 import type {
   AssignmentNode,
   BlockChild,
@@ -14,6 +15,14 @@ import type {
 import { describe, expect, it } from 'vitest';
 
 import { extractModules } from './extract-modules.util';
+
+// Domain index supplied by the caller (ADR 017); replaces the removed static
+// category→domain table. Categories absent here classify as 'unclassified'.
+const DOMAIN_INDEX = new Map<string, EquipmentDomain>([
+  ['engine', 'air'],
+  ['ship_light_battery', 'naval'],
+  ['turret_type', 'land'],
+]);
 
 function assign(key: string, value: ParadoxValue): AssignmentNode {
   return { ...base(), key: id(key), kind: 'Assignment', operator: op(), value };
@@ -77,7 +86,7 @@ describe('extractModules', () => {
       block([assign('category', id('engine'))]),
     );
 
-    const [entity, ...rest] = extractModules(modules(entry));
+    const [entity, ...rest] = extractModules(modules(entry), DOMAIN_INDEX);
 
     expect(rest).toEqual([]);
     expect(entity).toMatchObject({
@@ -94,18 +103,18 @@ describe('extractModules', () => {
       block([assign('category', id('ship_light_battery'))]),
     );
 
-    const [entity] = extractModules(modules(entry));
+    const [entity] = extractModules(modules(entry), DOMAIN_INDEX);
 
     expect(entity?.domain).toBe('naval');
   });
 
-  it('classifies a category absent from the table as unclassified', () => {
+  it('classifies a category absent from the index as unclassified', () => {
     const entry = assign(
       'modder_widget',
       block([assign('category', id('totally_made_up'))]),
     );
 
-    const [entity] = extractModules(modules(entry));
+    const [entity] = extractModules(modules(entry), DOMAIN_INDEX);
 
     expect(entity).toMatchObject({
       category: 'totally_made_up',
@@ -124,7 +133,7 @@ describe('extractModules', () => {
       ]),
     );
 
-    const [entity] = extractModules(modules(entry));
+    const [entity] = extractModules(modules(entry), DOMAIN_INDEX);
 
     expect(entity?.scalars).toEqual([
       { key: 'build_cost_ic', value: '5' },
@@ -147,7 +156,7 @@ describe('extractModules', () => {
       ]),
     );
 
-    const [entity] = extractModules(modules(entry));
+    const [entity] = extractModules(modules(entry), DOMAIN_INDEX);
 
     expect(entity?.statBlocks.add_stats).toEqual([
       { key: 'air_range', value: '100' },
@@ -164,7 +173,7 @@ describe('extractModules', () => {
       ]),
     );
 
-    const [entity] = extractModules(modules(entry));
+    const [entity] = extractModules(modules(entry), DOMAIN_INDEX);
 
     expect(entity?.statBlocks.add_stats).toEqual([
       { key: 'air_range', value: '100' },
@@ -183,7 +192,7 @@ describe('extractModules', () => {
       ]),
     );
 
-    const [entity] = extractModules(modules(entry));
+    const [entity] = extractModules(modules(entry), DOMAIN_INDEX);
 
     expect(entity?.scalars.map((field) => field.key)).not.toContain('gui');
     expect(entity?.statBlocks.add_stats).toEqual([
@@ -204,7 +213,7 @@ describe('extractModules', () => {
       ),
     ]);
 
-    const entities = extractModules(target);
+    const entities = extractModules(target, DOMAIN_INDEX);
 
     expect(entities).toHaveLength(1);
     expect(entities[0]?.name).toBe('engine_small_1');
@@ -220,8 +229,8 @@ describe('extractModules', () => {
       assign('turret_a', block([assign('category', id('turret_type'))])),
     );
 
-    const first = extractModules(target);
-    const second = extractModules(target);
+    const first = extractModules(target, DOMAIN_INDEX);
+    const second = extractModules(target, DOMAIN_INDEX);
 
     expect(first.map((entity) => entity.name)).toEqual([
       'engine_small_1',

@@ -27,7 +27,36 @@ vi.mock('../plugins', () => ({
   },
 }));
 
+const EQUIPMENT_DIR = 'common/units/equipment';
 const MODULE_DIR = 'common/units/equipment/modules';
+
+// Archetype slots stamp `engine` → air and `ship_light_battery` → naval (ADR
+// 017); `totally_made_up` is in no slot and stays unclassified.
+const ARCHETYPES_FILE = `equipments = {
+\tair_frame = {
+\t\tis_archetype = yes
+\t\ttype = fighter
+\t\tmodule_slots = {
+\t\t\tengine_slot = {
+\t\t\t\tallowed_module_categories = {
+\t\t\t\t\tengine
+\t\t\t\t}
+\t\t\t}
+\t\t}
+\t}
+\tship_hull = {
+\t\tis_archetype = yes
+\t\ttype = capital_ship
+\t\tmodule_slots = {
+\t\t\tbattery_slot = {
+\t\t\t\tallowed_module_categories = {
+\t\t\t\t\tship_light_battery
+\t\t\t\t}
+\t\t\t}
+\t\t}
+\t}
+}
+`;
 
 const MODULE_FILE = `equipment_modules = {
 \tengine_small_1 = {
@@ -66,6 +95,10 @@ describe('registerModuleHandlers', () => {
 
     modRoot = await mkdtemp(path.join(tmpdir(), 'zmt-mod-'));
     await mkdir(path.join(modRoot, MODULE_DIR), { recursive: true });
+    await writeFile(
+      path.join(modRoot, EQUIPMENT_DIR, '00_archetypes.txt'),
+      ARCHETYPES_FILE,
+    );
 
     moduleFilePath = path.join(modRoot, MODULE_DIR, '00_air_modules.txt');
     await writeFile(moduleFilePath, MODULE_FILE);

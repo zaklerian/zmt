@@ -1,9 +1,10 @@
-import { CatalogModule, ProjectedSource } from '@contracts';
+import { CatalogModule, EquipmentDomain, ProjectedSource } from '@contracts';
 import { extractModules, MODULE_DIR } from '@e-game-hoi4';
 import { dialectsFromPlugins, parse } from '@paradox-parser';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
+import { moduleDomainIndex } from '../equipment';
 import { assertReadable } from '../fs';
 import { pluginRegistryService } from '../plugins';
 import {
@@ -20,9 +21,10 @@ export async function catalogModules(): Promise<readonly CatalogModule[]> {
     await activeGameFolderPath(),
   );
   const dialects = dialectsFromPlugins(pluginRegistryService.list());
+  const domainIndex = await moduleDomainIndex();
 
   const perSource = await Promise.all(
-    sources.map((source) => modulesInSource(source, dialects)),
+    sources.map((source) => modulesInSource(source, dialects, domainIndex)),
   );
 
   // Sources arrive lowest → highest precedence (ADR 016, source ordering only).
@@ -58,10 +60,11 @@ async function modulesInFile(
   absolutePath: string,
   source: string,
   dialects: readonly string[],
+  domainIndex: ReadonlyMap<string, EquipmentDomain>,
 ): Promise<readonly CatalogModule[]> {
   await assertReadable(absolutePath);
   const script = parse(await fs.readFile(absolutePath, 'utf8'), { dialects });
-  return extractModules(script).map((module) => ({
+  return extractModules(script, domainIndex).map((module) => ({
     category: module.category,
     domain: module.domain,
     name: module.name,
@@ -72,6 +75,7 @@ async function modulesInFile(
 async function modulesInSource(
   source: ProjectedSource,
   dialects: readonly string[],
+  domainIndex: ReadonlyMap<string, EquipmentDomain>,
 ): Promise<readonly CatalogModule[]> {
   const relativePaths = await enumerateModuleFiles(source.path);
   const perFile = await Promise.all(
@@ -80,6 +84,7 @@ async function modulesInSource(
         path.resolve(source.path, relativePath),
         source.path,
         dialects,
+        domainIndex,
       ),
     ),
   );
