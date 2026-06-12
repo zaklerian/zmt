@@ -78,7 +78,6 @@ export const de: typeof en = {
     },
     columns: {
       category: 'Kategorie',
-      domain: 'Bereich',
       name: 'Name',
     },
     delete: {
@@ -86,12 +85,6 @@ export const de: typeof en = {
       message:
         'Möchten Sie „{name}“ löschen? Dies kann nicht rückgängig gemacht werden.',
       title: 'Modul löschen',
-    },
-    domain: {
-      air: 'Luft',
-      land: 'Land',
-      naval: 'Marine',
-      unclassified: 'Nicht klassifiziert',
     },
     errors: {
       conflict:
@@ -116,7 +109,6 @@ export const de: typeof en = {
       },
       header: {
         category: 'Kategorie',
-        domain: 'Bereich',
       },
       removeField: 'Entfernen',
       save: 'Speichern',

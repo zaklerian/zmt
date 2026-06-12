@@ -21,39 +21,7 @@ vi.mock('../plugins', () => ({
   },
 }));
 
-const EQUIPMENT_DIR = 'common/units/equipment';
 const MODULE_DIR = 'common/units/equipment/modules';
-
-// Archetype slots stamp the categories these tests exercise (ADR 017): `engine`
-// → air, `ship_light_battery` → naval, `armament_type` → land. Every source
-// carries the same file, so repeated stamps reinforce rather than conflict.
-const ARCHETYPES_FILE = `equipments = {
-\tair_frame = {
-\t\tis_archetype = yes
-\t\tinterface_category = interface_category_air
-\t\ttype = fighter
-\t\tmodule_slots = {
-\t\t\tengine_slot = { allowed_module_categories = { engine } }
-\t\t}
-\t}
-\tship_hull = {
-\t\tis_archetype = yes
-\t\tinterface_category = interface_category_capital_ships
-\t\ttype = capital_ship
-\t\tmodule_slots = {
-\t\t\tbattery_slot = { allowed_module_categories = { ship_light_battery } }
-\t\t}
-\t}
-\ttank_hull = {
-\t\tis_archetype = yes
-\t\tinterface_category = interface_category_armor
-\t\ttype = armor
-\t\tmodule_slots = {
-\t\t\tarmament_slot = { allowed_module_categories = { armament_type } }
-\t\t}
-\t}
-}
-`;
 
 function modulesBlock(entries: Readonly<Record<string, string>>): string {
   const body = Object.entries(entries)
@@ -69,10 +37,6 @@ async function source(
   const root = await mkdtemp(path.join(tmpdir(), 'zmt-catalog-'));
   roots.push(root);
   await mkdir(path.join(root, MODULE_DIR), { recursive: true });
-  await writeFile(
-    path.join(root, EQUIPMENT_DIR, '00_archetypes.txt'),
-    ARCHETYPES_FILE,
-  );
   for (const [fileName, entries] of Object.entries(files)) {
     await writeFile(
       path.join(root, MODULE_DIR, fileName),
@@ -96,7 +60,7 @@ describe('catalogModules', () => {
     );
   });
 
-  it('aggregates non-colliding modules from every source, classifying by category', async () => {
+  it('aggregates non-colliding modules from every source, surfacing category and source', async () => {
     const vanilla = await source('readonly', {
       '00_modules.txt': { engine_small_1: 'engine' },
     });
@@ -108,11 +72,11 @@ describe('catalogModules', () => {
     const catalog = await catalogModules();
 
     expect(byName(catalog, 'engine_small_1')).toMatchObject({
-      domain: 'air',
+      category: 'engine',
       source: vanilla.path,
     });
     expect(byName(catalog, 'ship_gun_1')).toMatchObject({
-      domain: 'naval',
+      category: 'ship_light_battery',
       source: mod.path,
     });
     expect(catalog).toHaveLength(2);
@@ -134,7 +98,6 @@ describe('catalogModules', () => {
     ).toHaveLength(1);
     expect(byName(catalog, 'shared_engine')).toMatchObject({
       category: 'armament_type',
-      domain: 'land',
       source: mod.path,
     });
   });

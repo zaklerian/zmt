@@ -1,4 +1,3 @@
-import type { EquipmentDomain } from '@contracts';
 import type {
   AssignmentNode,
   BlockChild,
@@ -15,14 +14,6 @@ import type {
 import { describe, expect, it } from 'vitest';
 
 import { extractModules } from './extract-modules.util';
-
-// Domain index supplied by the caller (ADR 017); replaces the removed static
-// category→domain table. Categories absent here classify as 'unclassified'.
-const DOMAIN_INDEX = new Map<string, EquipmentDomain>([
-  ['engine', 'air'],
-  ['ship_light_battery', 'naval'],
-  ['turret_type', 'land'],
-]);
 
 function assign(key: string, value: ParadoxValue): AssignmentNode {
   return { ...base(), key: id(key), kind: 'Assignment', operator: op(), value };
@@ -80,45 +71,30 @@ function str(value: string): StringValueNode {
 }
 
 describe('extractModules', () => {
-  it('classifies a known category to its domain and retains the node', () => {
+  it('surfaces the module category and retains the node', () => {
     const entry = assign(
       'engine_small_1',
       block([assign('category', id('engine'))]),
     );
 
-    const [entity, ...rest] = extractModules(modules(entry), DOMAIN_INDEX);
+    const [entity, ...rest] = extractModules(modules(entry));
 
     expect(rest).toEqual([]);
     expect(entity).toMatchObject({
       category: 'engine',
-      domain: 'air',
       name: 'engine_small_1',
     });
     expect(entity?.node).toBe(entry);
   });
 
-  it('classifies a naval category to its domain', () => {
-    const entry = assign(
-      'ship_light_battery_1',
-      block([assign('category', id('ship_light_battery'))]),
-    );
+  it('surfaces an empty category when the source omits it', () => {
+    const entry = assign('modder_widget', block([assign('foo', id('bar'))]));
 
-    const [entity] = extractModules(modules(entry), DOMAIN_INDEX);
-
-    expect(entity?.domain).toBe('naval');
-  });
-
-  it('classifies a category absent from the index as unclassified', () => {
-    const entry = assign(
-      'modder_widget',
-      block([assign('category', id('totally_made_up'))]),
-    );
-
-    const [entity] = extractModules(modules(entry), DOMAIN_INDEX);
+    const [entity] = extractModules(modules(entry));
 
     expect(entity).toMatchObject({
-      category: 'totally_made_up',
-      domain: 'unclassified',
+      category: '',
+      name: 'modder_widget',
     });
   });
 
@@ -133,7 +109,7 @@ describe('extractModules', () => {
       ]),
     );
 
-    const [entity] = extractModules(modules(entry), DOMAIN_INDEX);
+    const [entity] = extractModules(modules(entry));
 
     expect(entity?.scalars).toEqual([
       { key: 'build_cost_ic', value: '5' },
@@ -156,7 +132,7 @@ describe('extractModules', () => {
       ]),
     );
 
-    const [entity] = extractModules(modules(entry), DOMAIN_INDEX);
+    const [entity] = extractModules(modules(entry));
 
     expect(entity?.statBlocks.add_stats).toEqual([
       { key: 'air_range', value: '100' },
@@ -173,7 +149,7 @@ describe('extractModules', () => {
       ]),
     );
 
-    const [entity] = extractModules(modules(entry), DOMAIN_INDEX);
+    const [entity] = extractModules(modules(entry));
 
     expect(entity?.statBlocks.add_stats).toEqual([
       { key: 'air_range', value: '100' },
@@ -192,7 +168,7 @@ describe('extractModules', () => {
       ]),
     );
 
-    const [entity] = extractModules(modules(entry), DOMAIN_INDEX);
+    const [entity] = extractModules(modules(entry));
 
     expect(entity?.scalars.map((field) => field.key)).not.toContain('gui');
     expect(entity?.statBlocks.add_stats).toEqual([
@@ -213,7 +189,7 @@ describe('extractModules', () => {
       ),
     ]);
 
-    const entities = extractModules(target, DOMAIN_INDEX);
+    const entities = extractModules(target);
 
     expect(entities).toHaveLength(1);
     expect(entities[0]?.name).toBe('engine_small_1');
@@ -229,8 +205,8 @@ describe('extractModules', () => {
       assign('turret_a', block([assign('category', id('turret_type'))])),
     );
 
-    const first = extractModules(target, DOMAIN_INDEX);
-    const second = extractModules(target, DOMAIN_INDEX);
+    const first = extractModules(target);
+    const second = extractModules(target);
 
     expect(first.map((entity) => entity.name)).toEqual([
       'engine_small_1',

@@ -2,13 +2,11 @@ import type { AssignmentNode } from '@paradox-parser';
 
 import type { EntityField } from '../entity';
 
-export type ModuleDomain = 'air' | 'land' | 'naval' | 'unclassified';
-
 export interface ModuleEntity {
-  // The module's `category` value, surfaced read-only for display and used as the
-  // classification input. Empty string when the source omits it.
+  // The module's `category` value, surfaced read-only for display. A module has
+  // no intrinsic domain; its only relation to an archetype is its category
+  // matching a slot's allowed categories. Empty string when the source omits it.
   readonly category: string;
-  readonly domain: ModuleDomain;
   readonly name: string;
   // Lossless: the original parsed `name = { ... }` node, retained so a save can
   // round-trip blocks the tool does not project (gui, can_convert_from,

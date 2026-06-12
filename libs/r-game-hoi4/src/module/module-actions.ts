@@ -25,8 +25,8 @@ export function buildModuleActions(
       ? undefined
       : entitiesById.get(context.selectedRowId);
 
-  const selectedIsAir = (context: EntityToolbarContext): boolean =>
-    selectedEntity(context)?.domain === 'air';
+  const hasSelection = (context: EntityToolbarContext): boolean =>
+    selectedEntity(context) !== undefined;
 
   const openEditForm = (context: EntityToolbarContext): void => {
     const entity = selectedEntity(context);
@@ -80,13 +80,13 @@ export function buildModuleActions(
     {
       execute: openEditForm,
       id: 'hoi4-module-edit',
-      isAvailable: (context) => context.writable && selectedIsAir(context),
+      isAvailable: (context) => context.writable && hasSelection(context),
       label: () => EDIT,
     },
     {
       execute: deleteEntity,
       id: 'hoi4-module-delete',
-      isAvailable: (context) => context.writable && selectedIsAir(context),
+      isAvailable: (context) => context.writable && hasSelection(context),
       label: () => DELETE,
     },
   ];

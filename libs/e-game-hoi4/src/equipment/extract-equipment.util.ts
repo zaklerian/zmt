@@ -59,14 +59,14 @@ function archetypeRef(block: BlockNode): string | undefined {
   return assignment === undefined ? undefined : tokenOf(assignment.value);
 }
 
-// Domain comes from the block's own `interface_category` (ADR 018); the `type`
+// Domain comes from the block's own `interface_category` (ADR 017); the `type`
 // tokens it once derived from now populate only the classified `type` field. A
 // block whose interface_category is absent or unmapped yields no domain:
 //   - an archetype falls to the no-domain/invalid branch, reusing
 //     `archetype-missing-type` (the archetype carries no determinable domain);
 //   - a variant carries no interface_category of its own and so does not
 //     classify here — archetype-domain inheritance is a cross-entity resolution
-//     this single-block extractor does not perform (ADR 018 rule 4, deferred).
+//     this single-block extractor does not perform (ADR 017 rule 4, deferred).
 function classify(
   kind: EquipmentKind,
   block: BlockNode | undefined,

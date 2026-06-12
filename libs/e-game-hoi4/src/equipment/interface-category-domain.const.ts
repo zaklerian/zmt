@@ -1,6 +1,6 @@
 import type { EquipmentDomain } from '@contracts';
 
-// Closed interface_category→domain table for HOI4 equipment (ADR 018). An
+// Closed interface_category→domain table for HOI4 equipment (ADR 017). An
 // archetype's domain is read from its authored `interface_category`, not its
 // `type`. Literal enumeration only: a value absent here yields no domain and the
 // archetype classifies as no-domain/invalid. Domain is never inferred from a
