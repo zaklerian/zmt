@@ -5,20 +5,21 @@ import {
   ProjectedSource,
 } from '@contracts';
 import { buildArchetypeIndex, extractEquipment } from '@e-game-hoi4';
-import { dialectsFromPlugins, parse, type Script } from '@paradox-parser';
-import { promises as fs } from 'node:fs';
+import { dialectsFromPlugins } from '@paradox-parser';
 import path from 'node:path';
 
 import { assertReadable } from '../fs';
 import { pluginRegistryService } from '../plugins';
-import { resolveLoadOrder } from '../resolution';
 import {
   activeGameFolderPath,
   activeGameId,
   resolveProjectedSources,
   workspaceStoreService,
 } from '../workspace';
-import { enumerateEquipmentSources } from './enumerate-equipment-sources.util';
+import {
+  parseGameFile,
+  resolveEquipmentFiles,
+} from './resolve-equipment-files.util';
 
 export async function listEquipment(
   filePath: string,
@@ -32,30 +33,18 @@ export async function listEquipment(
   );
   const dialects = dialectsFromPlugins(pluginRegistryService.list());
 
-  const resolved = resolveLoadOrder(
-    await enumerateEquipmentSources(visibleTo(sources, filePath), dialects),
-  );
   const index = buildArchetypeIndex(
-    await Promise.all(
-      resolved.map((file) => parseFile(file.absolutePath, dialects)),
-    ),
+    await resolveEquipmentFiles(visibleTo(sources, filePath), dialects),
   );
 
   return extractEquipment(
-    await parseFile(path.resolve(filePath), dialects),
+    await parseGameFile(path.resolve(filePath), dialects),
     index,
   );
 }
 
 function isContained(target: string, root: string): boolean {
   return target === root || target.startsWith(root + path.sep);
-}
-
-async function parseFile(
-  absolutePath: string,
-  dialects: readonly string[],
-): Promise<Script> {
-  return parse(await fs.readFile(absolutePath, 'utf8'), { dialects });
 }
 
 function visibleTo(

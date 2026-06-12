@@ -21,7 +21,36 @@ vi.mock('../plugins', () => ({
   },
 }));
 
+const EQUIPMENT_DIR = 'common/units/equipment';
 const MODULE_DIR = 'common/units/equipment/modules';
+
+// Archetype slots stamp the categories these tests exercise (ADR 017): `engine`
+// → air, `ship_light_battery` → naval, `armament_type` → land. Every source
+// carries the same file, so repeated stamps reinforce rather than conflict.
+const ARCHETYPES_FILE = `equipments = {
+\tair_frame = {
+\t\tis_archetype = yes
+\t\ttype = fighter
+\t\tmodule_slots = {
+\t\t\tengine_slot = { allowed_module_categories = { engine } }
+\t\t}
+\t}
+\tship_hull = {
+\t\tis_archetype = yes
+\t\ttype = capital_ship
+\t\tmodule_slots = {
+\t\t\tbattery_slot = { allowed_module_categories = { ship_light_battery } }
+\t\t}
+\t}
+\ttank_hull = {
+\t\tis_archetype = yes
+\t\ttype = armor
+\t\tmodule_slots = {
+\t\t\tarmament_slot = { allowed_module_categories = { armament_type } }
+\t\t}
+\t}
+}
+`;
 
 function modulesBlock(entries: Readonly<Record<string, string>>): string {
   const body = Object.entries(entries)
@@ -37,6 +66,10 @@ async function source(
   const root = await mkdtemp(path.join(tmpdir(), 'zmt-catalog-'));
   roots.push(root);
   await mkdir(path.join(root, MODULE_DIR), { recursive: true });
+  await writeFile(
+    path.join(root, EQUIPMENT_DIR, '00_archetypes.txt'),
+    ARCHETYPES_FILE,
+  );
   for (const [fileName, entries] of Object.entries(files)) {
     await writeFile(
       path.join(root, MODULE_DIR, fileName),

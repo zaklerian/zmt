@@ -1,6 +1,6 @@
 import type {
   EntityField,
-  ModuleDomain,
+  EquipmentDomain,
   ModuleEntity,
   ModuleStatBlocks,
 } from '@contracts';
@@ -12,13 +12,14 @@ import type {
   Script,
 } from '@paradox-parser';
 
-import { MODULE_CATEGORY_DOMAIN } from './module-category-domain.const';
-
 // The classifier input, surfaced read-only on the entity and excluded from the
 // scalar projection.
 const KEY_CATEGORY = 'category';
 
-export function extractModules(parsedTarget: Script): readonly ModuleEntity[] {
+export function extractModules(
+  parsedTarget: Script,
+  domainIndex: ReadonlyMap<string, EquipmentDomain>,
+): readonly ModuleEntity[] {
   const entities: ModuleEntity[] = [];
   for (const child of parsedTarget.children) {
     if (
@@ -36,7 +37,7 @@ export function extractModules(parsedTarget: Script): readonly ModuleEntity[] {
       const category = moduleCategory(block);
       entities.push({
         category,
-        domain: domainOf(category),
+        domain: domainIndex.get(category) ?? 'unclassified',
         name: keyName(entry),
         node: entry,
         scalars: moduleScalars(entry, block),
@@ -45,12 +46,6 @@ export function extractModules(parsedTarget: Script): readonly ModuleEntity[] {
     }
   }
   return entities;
-}
-
-function domainOf(category: string): ModuleDomain {
-  return Object.hasOwn(MODULE_CATEGORY_DOMAIN, category)
-    ? MODULE_CATEGORY_DOMAIN[category as keyof typeof MODULE_CATEGORY_DOMAIN]
-    : 'unclassified';
 }
 
 function findAssignment(
