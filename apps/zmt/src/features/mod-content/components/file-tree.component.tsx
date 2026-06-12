@@ -4,6 +4,7 @@ import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { FileTreeItem } from './file-tree-item.component';
 import { FsTreeItem } from './file-tree-item.model';
 import { basename, mergeNewRoots } from './file-tree-item.util';
 import {
@@ -165,9 +166,11 @@ export function FileTree({
       ) : (
         <RichTreeView<FsTreeItem>
           expandedItems={[...expandedItems]}
+          expansionTrigger="iconContainer"
           isItemDisabled={isItemDisabled}
           items={[...items]}
           selectedItems={selectedPath}
+          slots={{ item: FileTreeItem }}
           sx={{
             '& .Mui-disabled, & .Mui-disabled .MuiTreeItem-content': {
               cursor: 'default',
