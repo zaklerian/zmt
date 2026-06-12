@@ -35,6 +35,7 @@ const MODULE_DIR = 'common/units/equipment/modules';
 const ARCHETYPES_FILE = `equipments = {
 \tair_frame = {
 \t\tis_archetype = yes
+\t\tinterface_category = interface_category_air
 \t\ttype = fighter
 \t\tmodule_slots = {
 \t\t\tengine_slot = {
@@ -46,6 +47,7 @@ const ARCHETYPES_FILE = `equipments = {
 \t}
 \tship_hull = {
 \t\tis_archetype = yes
+\t\tinterface_category = interface_category_capital_ships
 \t\ttype = capital_ship
 \t\tmodule_slots = {
 \t\t\tbattery_slot = {

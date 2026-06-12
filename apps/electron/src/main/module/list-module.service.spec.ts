@@ -32,6 +32,7 @@ const MODULE_DIR = 'common/units/equipment/modules';
 const AIR_ARCHETYPE_FILE = `equipments = {
 \tsmall_airframe = {
 \t\tis_archetype = yes
+\t\tinterface_category = interface_category_air
 \t\ttype = fighter
 \t\tmodule_slots = {
 \t\t\tengine_slot = {

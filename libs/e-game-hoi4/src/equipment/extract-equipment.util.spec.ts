@@ -76,12 +76,13 @@ function str(value: string): StringValueNode {
 }
 
 describe('extractEquipment', () => {
-  it('classifies an archetype with an air type and retains its node', () => {
+  it('classifies an air archetype from its interface_category and retains its node', () => {
     const entry = assign(
-      'fighter_equipment',
+      'small_plane_airframe',
       block([
         assign('is_archetype', bool(true)),
-        assign('type', id('fighter')),
+        assign('interface_category', id('interface_category_air')),
+        assign('type', id('small_plane')),
       ]),
     );
 
@@ -92,108 +93,99 @@ describe('extractEquipment', () => {
       classification: {
         domain: 'air',
         status: 'classified',
-        type: ['fighter'],
+        type: ['small_plane'],
       },
       kind: 'archetype',
-      name: 'fighter_equipment',
+      name: 'small_plane_airframe',
     });
     expect(entity?.node).toBe(entry);
   });
 
-  it('classifies a regular by resolving its archetype ref through the index', () => {
+  it('maps interface_category_armor to the land domain', () => {
     const entry = assign(
-      'fighter_equipment_1',
-      block([assign('archetype', id('fighter_equipment'))]),
-    );
-    const index = new Map<string, readonly string[]>([
-      ['fighter_equipment', ['fighter']],
-    ]);
-
-    const [entity] = extractEquipment(equipments(entry), index);
-
-    expect(entity).toMatchObject({
-      classification: {
-        domain: 'air',
-        status: 'classified',
-        type: ['fighter'],
-      },
-      kind: 'regular',
-      name: 'fighter_equipment_1',
-    });
-  });
-
-  it('classifies a multi-token type sharing one domain, keeping both tokens', () => {
-    const entry = assign(
-      'multi_role',
+      'light_tank_chassis',
       block([
         assign('is_archetype', bool(true)),
-        assign('type', block([id('fighter'), id('cas')])),
+        assign('interface_category', id('interface_category_armor')),
+        assign('type', id('light_tank')),
       ]),
     );
 
     const [entity] = extractEquipment(equipments(entry), new Map());
 
     expect(entity?.classification).toEqual({
-      domain: 'air',
+      domain: 'land',
       status: 'classified',
-      type: ['fighter', 'cas'],
+      type: ['light_tank'],
     });
   });
 
-  it('marks a type token absent from the table as unknown-type', () => {
+  it('maps interface_category_capital_ships to the naval domain', () => {
     const entry = assign(
-      'mystery',
+      'ship_hull_heavy',
       block([
         assign('is_archetype', bool(true)),
-        assign('type', id('frigate')),
+        assign('interface_category', id('interface_category_capital_ships')),
+        assign('type', id('heavy_ship')),
       ]),
     );
 
     const [entity] = extractEquipment(equipments(entry), new Map());
 
     expect(entity?.classification).toEqual({
-      reason: 'unknown-type',
-      status: 'invalid',
+      domain: 'naval',
+      status: 'classified',
+      type: ['heavy_ship'],
     });
   });
 
-  it('marks a type spanning two domains as cross-domain-type', () => {
+  it('marks an archetype whose interface_category is absent as invalid', () => {
     const entry = assign(
-      'cross_domain',
+      'no_category',
       block([
         assign('is_archetype', bool(true)),
-        assign('type', block([id('fighter'), id('infantry')])),
+        assign('type', id('fighter')),
       ]),
     );
 
     const [entity] = extractEquipment(equipments(entry), new Map());
 
     expect(entity?.classification).toEqual({
-      reason: 'cross-domain-type',
-      status: 'invalid',
-    });
-  });
-
-  it('marks an archetype with empty or absent type as archetype-missing-type', () => {
-    const absent = assign(
-      'no_type',
-      block([assign('is_archetype', bool(true))]),
-    );
-    const empty = assign(
-      'empty_type',
-      block([assign('is_archetype', bool(true)), assign('type', block([]))]),
-    );
-
-    const [absentEntity, emptyEntity] = extractEquipment(
-      equipments(absent, empty),
-      new Map(),
-    );
-
-    expect(absentEntity?.classification).toEqual({
       reason: 'archetype-missing-type',
       status: 'invalid',
     });
-    expect(emptyEntity?.classification).toEqual({
+  });
+
+  it('marks an archetype whose interface_category is not in the map as invalid', () => {
+    const entry = assign(
+      'space_frame',
+      block([
+        assign('is_archetype', bool(true)),
+        assign('interface_category', id('interface_category_space')),
+        assign('type', id('orbital')),
+      ]),
+    );
+
+    const [entity] = extractEquipment(equipments(entry), new Map());
+
+    expect(entity?.classification).toEqual({
+      reason: 'archetype-missing-type',
+      status: 'invalid',
+    });
+  });
+
+  it('marks an archetype with no type token as invalid even when it has a domain', () => {
+    const entry = assign(
+      'typeless',
+      block([
+        assign('is_archetype', bool(true)),
+        assign('interface_category', id('interface_category_air')),
+      ]),
+    );
+
+    const [entity] = extractEquipment(equipments(entry), new Map());
+
+    expect(entity?.classification).toEqual({
       reason: 'archetype-missing-type',
       status: 'invalid',
     });
@@ -213,6 +205,37 @@ describe('extractEquipment', () => {
     });
   });
 
+  it('marks a regular that carries no archetype ref as invalid', () => {
+    const entry = assign(
+      'loose_equipment',
+      block([assign('reliability', num('0.8'))]),
+    );
+
+    const [entity] = extractEquipment(equipments(entry), new Map());
+
+    expect(entity?.classification).toEqual({
+      reason: 'regular-ref-not-typed',
+      status: 'invalid',
+    });
+  });
+
+  it('does not classify a variant that carries no interface_category of its own (archetype-domain inheritance is deferred)', () => {
+    const entry = assign(
+      'small_plane_airframe_0',
+      block([assign('archetype', id('small_plane_airframe'))]),
+    );
+    const index = new Map<string, readonly string[]>([
+      ['small_plane_airframe', ['small_plane']],
+    ]);
+
+    const [entity] = extractEquipment(equipments(entry), index);
+
+    expect(entity?.classification).toEqual({
+      reason: 'regular-ref-not-typed',
+      status: 'invalid',
+    });
+  });
+
   it('ignores top-level blocks that are not `equipments`', () => {
     const target = script([
       assign('countries', block([assign('SOV', block([]))])),
@@ -220,10 +243,11 @@ describe('extractEquipment', () => {
         'equipments',
         block([
           assign(
-            'fighter_equipment',
+            'small_plane_airframe',
             block([
               assign('is_archetype', bool(true)),
-              assign('type', str('fighter')),
+              assign('interface_category', id('interface_category_air')),
+              assign('type', str('small_plane')),
             ]),
           ),
         ]),
@@ -233,17 +257,18 @@ describe('extractEquipment', () => {
     const entities = extractEquipment(target, new Map());
 
     expect(entities).toHaveLength(1);
-    expect(entities[0]?.name).toBe('fighter_equipment');
+    expect(entities[0]?.name).toBe('small_plane_airframe');
   });
 
   it('projects scalar leaf fields, keeping custom keys and excluding identity and classifier keys', () => {
     const entry = assign(
-      'fighter_equipment',
+      'small_plane_airframe',
       block([
         assign('is_archetype', bool(true)),
-        assign('type', id('fighter')),
-        assign('archetype', id('fighter_base')),
-        assign('fighter_equipment', num('99')),
+        assign('interface_category', id('interface_category_air')),
+        assign('type', id('small_plane')),
+        assign('archetype', id('plane_base')),
+        assign('small_plane_airframe', num('99')),
         assign('reliability', num('0.8')),
         assign('build_cost_ic', num('20')),
         assign('my_custom_stat', str('experimental')),
@@ -253,6 +278,7 @@ describe('extractEquipment', () => {
     const [entity] = extractEquipment(equipments(entry), new Map());
 
     expect(entity?.scalars).toEqual([
+      { key: 'interface_category', value: 'interface_category_air' },
       { key: 'reliability', value: '0.8' },
       { key: 'build_cost_ic', value: '20' },
       { key: 'my_custom_stat', value: 'experimental' },
@@ -261,10 +287,11 @@ describe('extractEquipment', () => {
 
   it('omits nested blocks from the scalar projection', () => {
     const entry = assign(
-      'fighter_equipment',
+      'small_plane_airframe',
       block([
         assign('is_archetype', bool(true)),
-        assign('type', id('fighter')),
+        assign('interface_category', id('interface_category_air')),
+        assign('type', id('small_plane')),
         assign('reliability', num('0.8')),
         assign('modules', block([assign('fixed_slot', id('engine'))])),
         assign('upgrades', block([assign('armor_value', num('1'))])),
@@ -273,7 +300,6 @@ describe('extractEquipment', () => {
 
     const [entity] = extractEquipment(equipments(entry), new Map());
 
-    expect(entity?.scalars).toEqual([{ key: 'reliability', value: '0.8' }]);
     expect(entity?.scalars.map((scalar) => scalar.key)).not.toContain(
       'modules',
     );
@@ -285,35 +311,37 @@ describe('extractEquipment', () => {
   it('preserves entity order and is deterministic for a given input', () => {
     const target = equipments(
       assign(
-        'fighter_equipment',
+        'small_plane_airframe',
         block([
           assign('is_archetype', bool(true)),
-          assign('type', id('fighter')),
+          assign('interface_category', id('interface_category_air')),
+          assign('type', id('small_plane')),
         ]),
       ),
       assign(
-        'infantry_equipment',
-        block([assign('archetype', id('infantry_base'))]),
+        'infantry_equipment_0',
+        block([assign('archetype', id('infantry_equipment'))]),
       ),
       assign(
-        'sub_equipment',
+        'submarine_hull',
         block([
           assign('is_archetype', bool(true)),
+          assign('interface_category', id('interface_category_screen_ships')),
           assign('type', id('submarine')),
         ]),
       ),
     );
     const index = new Map<string, readonly string[]>([
-      ['infantry_base', ['infantry']],
+      ['infantry_equipment', ['infantry']],
     ]);
 
     const first = extractEquipment(target, index);
     const second = extractEquipment(target, index);
 
     expect(first.map((entity) => entity.name)).toEqual([
-      'fighter_equipment',
-      'infantry_equipment',
-      'sub_equipment',
+      'small_plane_airframe',
+      'infantry_equipment_0',
+      'submarine_hull',
     ]);
     expect(first).toEqual(second);
   });

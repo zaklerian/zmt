@@ -13,12 +13,13 @@ import type {
   Script,
 } from '@paradox-parser';
 
-import { EQUIPMENT_TYPE_DOMAIN } from './equipment-type-domain.const';
+import { INTERFACE_CATEGORY_DOMAIN } from './interface-category-domain.const';
 
 // Identity- and classification-bearing keys the extractor already reads. Hoisted
 // to constants so the scalar projection excludes exactly these without restating
 // the literals.
 const KEY_ARCHETYPE = 'archetype';
+const KEY_INTERFACE_CATEGORY = 'interface_category';
 const KEY_IS_ARCHETYPE = 'is_archetype';
 const KEY_TYPE = 'type';
 
@@ -58,6 +59,14 @@ function archetypeRef(block: BlockNode): string | undefined {
   return assignment === undefined ? undefined : tokenOf(assignment.value);
 }
 
+// Domain comes from the block's own `interface_category` (ADR 018); the `type`
+// tokens it once derived from now populate only the classified `type` field. A
+// block whose interface_category is absent or unmapped yields no domain:
+//   - an archetype falls to the no-domain/invalid branch, reusing
+//     `archetype-missing-type` (the archetype carries no determinable domain);
+//   - a variant carries no interface_category of its own and so does not
+//     classify here — archetype-domain inheritance is a cross-entity resolution
+//     this single-block extractor does not perform (ADR 018 rule 4, deferred).
 function classify(
   kind: EquipmentKind,
   block: BlockNode | undefined,
@@ -65,9 +74,10 @@ function classify(
 ): EquipmentClassification {
   if (kind === 'archetype') {
     const types = block === undefined ? [] : typeTokens(block);
-    return types.length === 0
+    const domain = block === undefined ? undefined : domainOf(block);
+    return types.length === 0 || domain === undefined
       ? { reason: 'archetype-missing-type', status: 'invalid' }
-      : classifyTokens(types);
+      : { domain, status: 'classified', type: types };
   }
   const ref = block === undefined ? undefined : archetypeRef(block);
   if (ref === undefined) {
@@ -77,30 +87,19 @@ function classify(
   if (resolved === undefined) {
     return { archetypeRef: ref, status: 'unresolved' };
   }
-  return resolved.length === 0
+  const domain = block === undefined ? undefined : domainOf(block);
+  return resolved.length === 0 || domain === undefined
     ? { reason: 'regular-ref-not-typed', status: 'invalid' }
-    : classifyTokens(resolved);
+    : { domain, status: 'classified', type: resolved };
 }
 
-function classifyTokens(types: readonly string[]): EquipmentClassification {
-  const domains = new Set<EquipmentDomain>();
-  for (const token of types) {
-    const domain = domainOf(token);
-    if (domain === undefined) {
-      return { reason: 'unknown-type', status: 'invalid' };
-    }
-    domains.add(domain);
-  }
-  if (domains.size > 1) {
-    return { reason: 'cross-domain-type', status: 'invalid' };
-  }
-  const [domain] = domains;
-  return { domain, status: 'classified', type: types };
-}
-
-function domainOf(token: string): EquipmentDomain | undefined {
-  return Object.hasOwn(EQUIPMENT_TYPE_DOMAIN, token)
-    ? EQUIPMENT_TYPE_DOMAIN[token as keyof typeof EQUIPMENT_TYPE_DOMAIN]
+function domainOf(block: BlockNode): EquipmentDomain | undefined {
+  const category = interfaceCategory(block);
+  return category !== undefined &&
+    Object.hasOwn(INTERFACE_CATEGORY_DOMAIN, category)
+    ? INTERFACE_CATEGORY_DOMAIN[
+        category as keyof typeof INTERFACE_CATEGORY_DOMAIN
+      ]
     : undefined;
 }
 
@@ -150,6 +149,11 @@ function findAssignment(
     }
   }
   return undefined;
+}
+
+function interfaceCategory(block: BlockNode): string | undefined {
+  const assignment = findAssignment(block, KEY_INTERFACE_CATEGORY);
+  return assignment === undefined ? undefined : tokenOf(assignment.value);
 }
 
 function isAffirmative(value: ParadoxValue): boolean {
