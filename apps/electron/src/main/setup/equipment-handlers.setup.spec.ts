@@ -41,6 +41,7 @@ const EQUIPMENT_DIR = 'common/units/equipment';
 const VANILLA_FILE = `equipments = {
 \tinfantry_equipment = {
 \t\tis_archetype = yes
+\t\tinterface_category = interface_category_land
 \t\ttype = infantry
 \t}
 }
@@ -49,6 +50,7 @@ const VANILLA_FILE = `equipments = {
 const MOD_FILE = `equipments = {
 \tmod_fighter = {
 \t\tis_archetype = yes
+\t\tinterface_category = interface_category_air
 \t\ttype = fighter
 \t}
 \tmod_infantry_0 = {
@@ -155,15 +157,19 @@ describe('registerEquipmentHandlers', () => {
     await rm(modRoot, { force: true, recursive: true });
   });
 
-  it('classifies entities in a writable-mod file, resolving an archetype from a higher source', async () => {
+  it('classifies an archetype by interface_category and finds a variant ref across sources', async () => {
     state.sources = [readonlySource(vanillaRoot), editableSource(modRoot)];
 
     const entities = await listFor(modFilePath);
 
+    // The archetype `infantry_equipment` is visible (higher source), so the
+    // variant's ref resolves and it is not unresolved. Its domain, however, is
+    // not stamped here: variant→archetype domain inheritance is deferred (ADR
+    // 018 rule 4), so a variant carrying no interface_category does not classify.
     expect(
       entities.find((entity) => entity.name === 'mod_infantry_0')
         ?.classification,
-    ).toEqual({ domain: 'land', status: 'classified', type: ['infantry'] });
+    ).toEqual({ reason: 'regular-ref-not-typed', status: 'invalid' });
     expect(
       entities.find((entity) => entity.name === 'mod_fighter')?.classification,
     ).toEqual({ domain: 'air', status: 'classified', type: ['fighter'] });
