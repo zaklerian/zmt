@@ -57,7 +57,7 @@ Carrying `shadowedSources` and `reason` lets any later provenance display (overr
 
 ### Scope of this decision
 
-This specifies and ships the resolver as a pure, tested function. No running consumer is wired to it yet — provenance display and any read-path that picks a winning source are separate work. The resolver is exercised by tests over the precedence and replacement cases; its output contract is the surface those later consumers build on. Effective-value (intra-file content merge) is deferred.
+This specifies and ships the resolver as a pure, tested function. No running consumer is wired to it yet — provenance display and any read-path that picks a winning source are separate work. The resolver is exercised by tests over the precedence and replacement cases; its output contract is the surface those later consumers build on. Effective-value (intra-file content merge) is deferred. Effective-value resolution spans two axes, both deferred to the same later unified work: the load-order axis — a value defined in a lower source and overridden in a higher one across sources — and the archetype-inheritance axis — a value on a base archetype overridden on a regular entity. This decision's resolver produces file provenance only and resolves neither axis.
 
 ## Consequences
 
