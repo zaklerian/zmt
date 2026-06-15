@@ -4,6 +4,7 @@ export { LOCALES } from '@contracts';
 export const HOST_NAMESPACES = [
   'app',
   'feature.appSettings',
+  'feature.entityForm',
   'feature.modContent',
   'feature.modInfoEdit',
 ] as const;

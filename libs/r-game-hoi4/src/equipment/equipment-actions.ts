@@ -1,6 +1,7 @@
 import {
   AppApiModel,
   EquipmentEntity,
+  GAME_IDS,
   IPC_ERROR_CODES,
   IpcError,
   isIpcError,
@@ -8,7 +9,7 @@ import {
 import { Action, EntityToolbarContext, TranslateFn } from '@r-core';
 import { createElement } from 'react';
 
-import { AirEquipmentEditForm } from './air-equipment-edit-form.component';
+import { EQUIPMENT_ENTITY_ID } from './equipment-entity-id.const';
 import { equipmentErrorMessageKey } from './equipment-error.util';
 import { SlotDesigner } from './slot-designer.component';
 
@@ -66,16 +67,7 @@ export function buildEquipmentActions(
   const openEditForm = (context: EntityToolbarContext): void => {
     const entity = selectedEntity(context);
     if (entity === undefined || context.modId === null) return;
-    context.presentForm(
-      createElement(AirEquipmentEditForm, {
-        entity,
-        modal: context.modal,
-        modId: context.modId,
-        onClose: context.dismissForm,
-        onSaved: context.refresh,
-        relativePath: context.relativePath,
-      }),
-    );
+    context.presentEntityForm(GAME_IDS.hoi4, EQUIPMENT_ENTITY_ID, entity);
   };
 
   const deleteEntity = async (context: EntityToolbarContext): Promise<void> => {

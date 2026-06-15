@@ -1,4 +1,8 @@
 export const en = {
+  errors: {
+    message: 'The descriptor could not be saved. Please try again.',
+    title: 'Save failed',
+  },
   form: {
     fields: {
       name: { label: 'Name' },

@@ -3,6 +3,7 @@ import { EntityTableData, EntityTableRecognizer, TranslateFn } from '@r-core';
 
 import { buildEquipmentActions } from './equipment-actions';
 import { EQUIPMENT_COLUMNS } from './equipment-columns.const';
+import { EQUIPMENT_ENTITY_ID } from './equipment-entity-id.const';
 import { mapEquipmentRow } from './equipment-row.util';
 import { compareEquipmentEntities } from './equipment-sort.util';
 
@@ -53,7 +54,7 @@ function matchesEquipmentPath(filePath: string): boolean {
 }
 
 export const EQUIPMENT_RECOGNIZER: EntityTableRecognizer = {
-  id: 'hoi4-equipment',
+  id: EQUIPMENT_ENTITY_ID,
   load,
   matches: matchesEquipmentPath,
 };

@@ -1,6 +1,10 @@
 import type { en } from '../en/feature.mod-info-edit';
 
 export const uk: typeof en = {
+  errors: {
+    message: 'Не вдалося зберегти дескриптор. Спробуйте ще раз.',
+    title: 'Помилка збереження',
+  },
   form: {
     fields: {
       name: { label: 'Назва' },

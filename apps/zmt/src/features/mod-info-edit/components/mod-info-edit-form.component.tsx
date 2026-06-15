@@ -1,14 +1,9 @@
-import { GamePlugin, IpcError, isIpcError } from '@contracts';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { GamePlugin } from '@contracts';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
   List,
   ListItem,
   ListItemText,
@@ -23,25 +18,15 @@ import {
   type Script,
   serialize,
 } from '@paradox-parser';
-import { useEffect, useRef, useState } from 'react';
-import { FormProvider, useForm } from 'react-hook-form';
+import { EntityFormBlock, EntityFormModel, EntityFormValues } from '@r-core';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBlocker } from 'react-router';
 
-import type {
-  ModDescriptorFormValues,
-  ResolvedModDescriptorSchema,
-} from '../mod-info-edit.model';
+import type { ResolvedModDescriptorSchema } from '../mod-info-edit.model';
 
-import { useShell } from '../../../app/shell/shell-context';
-import { useAsyncCallback } from '../../../shared/hooks';
-import { useModal } from '../../../shared/modal';
+import { EntityFormShell } from '../../../shared/entity-form';
 import { applyFormValuesToAst, astToFormValues } from '../ast-adapter';
 import { modInfoEditService } from '../services/mod-info-edit.service';
-import {
-  ModInfoEditTagsField,
-  ModInfoEditTextField,
-} from './mod-info-edit-field.component';
 
 interface ModInfoEditFormProps {
   readonly astRef: React.RefObject<null | Script>;
@@ -62,6 +47,18 @@ const BASE_FIELD_ORDER: readonly string[] = [
   'path',
 ];
 
+// Field-label lookup table (replaces the former switch-case, R-WORK-7): keys
+// known to the descriptor map to i18n keys; an unknown plugin-extension key
+// falls back to its raw name.
+const FIELD_LABEL_KEYS: Readonly<Record<string, string>> = {
+  name: 'feature.modInfoEdit:form.fields.name.label',
+  path: 'feature.modInfoEdit:form.fields.path.label',
+  picture: 'feature.modInfoEdit:form.fields.picture.label',
+  supported_version: 'feature.modInfoEdit:form.fields.supportedVersion.label',
+  tags: 'feature.modInfoEdit:form.fields.tags.label',
+  version: 'feature.modInfoEdit:form.fields.version.label',
+};
+
 export function ModInfoEditForm({
   astRef,
   defaultValues,
@@ -72,54 +69,19 @@ export function ModInfoEditForm({
   schema,
 }: ModInfoEditFormProps) {
   const { t } = useTranslation(['feature.modInfoEdit', 'app']);
-  const modal = useModal();
-  const { consumeLeaveConfirmed, registerEditGuard } = useShell();
-  const methods = useForm<ModDescriptorFormValues>({
-    defaultValues: defaultValues as ModDescriptorFormValues,
-    resolver: zodResolver(schema),
-  });
-
-  // Ref-backed predicate so the shell consults current dirtiness through one
-  // stable registration (register on mount, unregister on unmount) rather than
-  // re-registering on every field edit (A-REACT-3).
-  const isDirty = methods.formState.isDirty;
-  const dirtyRef = useRef(isDirty);
-  useEffect(() => {
-    dirtyRef.current = isDirty;
-  }, [isDirty]);
-
-  useEffect(
-    () => registerEditGuard(() => dirtyRef.current),
-    [registerEditGuard],
-  );
-
-  const fieldLabel = (name: string): string => {
-    switch (name) {
-      case 'name':
-        return t('feature.modInfoEdit:form.fields.name.label');
-      case 'path':
-        return t('feature.modInfoEdit:form.fields.path.label');
-      case 'picture':
-        return t('feature.modInfoEdit:form.fields.picture.label');
-      case 'supported_version':
-        return t('feature.modInfoEdit:form.fields.supportedVersion.label');
-      case 'tags':
-        return t('feature.modInfoEdit:form.fields.tags.label');
-      case 'version':
-        return t('feature.modInfoEdit:form.fields.version.label');
-      default:
-        return name;
-    }
-  };
-
-  const [saveError, setSaveError] = useState<IpcError | null>(null);
   const [savedAt, setSavedAt] = useState<null | number>(null);
 
-  const save = useAsyncCallback(async (values: ModDescriptorFormValues) => {
-    setSaveError(null);
-    const ast = astRef.current;
-    if (ast === null) return;
-    try {
+  const model = useMemo<EntityFormModel>(() => {
+    const fieldLabel = (name: string): string => {
+      const key = FIELD_LABEL_KEYS[name];
+      return key === undefined ? name : (t as (k: string) => string)(key);
+    };
+
+    const save = async (
+      values: EntityFormValues,
+    ): Promise<EntityFormValues | void> => {
+      const ast = astRef.current;
+      if (ast === null) return;
       applyFormValuesToAst(
         ast,
         values as Readonly<Record<string, unknown>>,
@@ -133,129 +95,64 @@ export function ModInfoEditForm({
       });
       astRef.current = refreshedAst;
       originalSourceRef.current = newText;
-      methods.reset(
-        astToFormValues(refreshedAst, schema) as ModDescriptorFormValues,
-      );
-      setSavedAt(Date.now());
-    } catch (rawError: unknown) {
-      const error: IpcError = isIpcError(rawError)
-        ? rawError
-        : { code: 500, message: String(rawError) };
-      setSaveError(error);
-    }
-  });
-
-  const blocker = useBlocker(({ currentLocation, nextLocation }) => {
-    // The gate already obtained consent for this one transition; skip the
-    // re-prompt and clear the flag so the next navigation is guarded normally
-    // (ZMT-E8.1).
-    if (consumeLeaveConfirmed()) return false;
-    return (
-      methods.formState.isDirty &&
-      currentLocation.pathname !== nextLocation.pathname
-    );
-  });
-
-  useEffect(() => {
-    if (blocker.state !== 'blocked') return;
-    let active = true;
-    void (async () => {
-      try {
-        const proceed = await modal.confirm({
-          confirmLabel: t('app:actions.discard'),
-          message: t('feature.modInfoEdit:save.unsavedMessage'),
-          title: t('app:modals.unsavedChanges.title'),
-        });
-        if (!active) return;
-        if (proceed) blocker.proceed?.();
-        else blocker.reset?.();
-      } catch {
-        if (!active) return;
-        blocker.reset?.();
-      }
-    })();
-    return () => {
-      active = false;
+      return astToFormValues(refreshedAst, schema) as EntityFormValues;
     };
-  }, [blocker, modal, t]);
 
-  const schemaKeys = Object.keys(schema.shape);
-  const extensionKeys = schemaKeys.filter((k) => !BASE_FIELD_ORDER.includes(k));
-  const orderedKeys = [
-    ...BASE_FIELD_ORDER.filter((k) => schemaKeys.includes(k)),
-    ...extensionKeys,
-  ];
+    return {
+      // The mod descriptor supplies its own Zod schema via the existing
+      // plugin-extension path (ADR 010/011) through the shell's external-schema
+      // resolver input (ADR 018), rather than the descriptor-generated path.
+      blocks: buildDescriptorBlocks(
+        schema,
+        defaultValues,
+        fieldLabel,
+        t('feature.modInfoEdit:form.fields.tags.placeholder'),
+      ),
+      errorMessage: () => t('feature.modInfoEdit:errors.message'),
+      errorTitle: t('feature.modInfoEdit:errors.title'),
+      save,
+      schema: () => schema,
+    };
+  }, [
+    astRef,
+    defaultValues,
+    descriptorPath,
+    originalSourceRef,
+    plugin,
+    schema,
+    t,
+  ]);
 
   return (
-    <FormProvider {...methods}>
-      <Stack spacing={2}>
-        {orderedKeys.map((key) =>
-          isTagsField(key) ? (
-            <ModInfoEditTagsField
-              key={key}
-              label={fieldLabel(key)}
-              name={key}
-            />
-          ) : (
-            <ModInfoEditTextField
-              key={key}
-              label={fieldLabel(key)}
-              name={key}
-            />
-          ),
-        )}
+    <Stack spacing={2}>
+      <EntityFormShell model={model} onSaved={() => setSavedAt(Date.now())} />
 
-        {saveError !== null && (
-          <Alert severity="error">{saveError.message}</Alert>
-        )}
-
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Button
-            disabled={!methods.formState.isDirty || save.isPending}
-            startIcon={
-              save.isPending ? (
-                <CircularProgress color="inherit" size={16} />
-              ) : null
-            }
-            variant="contained"
-            onClick={methods.handleSubmit(
-              (values) => void save.execute(values),
-            )}
-          >
-            {t('app:actions.save')}
-          </Button>
-        </Box>
-
-        {parseErrors.length > 0 && (
-          <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="body2">
-                {t('feature.modInfoEdit:warnings.parser.title', {
-                  count: parseErrors.length,
-                })}
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <List dense>
-                {parseErrors.map((err, idx) => (
-                  <ListItem key={`${err.from}-${err.to}-${idx}`} disableGutters>
-                    <ListItemText
-                      primary={err.message}
-                      secondary={t(
-                        'feature.modInfoEdit:warnings.parser.offset',
-                        {
-                          from: err.from,
-                          to: err.to,
-                        },
-                      )}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            </AccordionDetails>
-          </Accordion>
-        )}
-      </Stack>
+      {parseErrors.length > 0 && (
+        <Accordion>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="body2">
+              {t('feature.modInfoEdit:warnings.parser.title', {
+                count: parseErrors.length,
+              })}
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <List dense>
+              {parseErrors.map((err, idx) => (
+                <ListItem key={`${err.from}-${err.to}-${idx}`} disableGutters>
+                  <ListItemText
+                    primary={err.message}
+                    secondary={t('feature.modInfoEdit:warnings.parser.offset', {
+                      from: err.from,
+                      to: err.to,
+                    })}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </AccordionDetails>
+        </Accordion>
+      )}
 
       <Snackbar
         autoHideDuration={3000}
@@ -263,10 +160,73 @@ export function ModInfoEditForm({
         open={savedAt !== null}
         onClose={() => setSavedAt(null)}
       />
-    </FormProvider>
+    </Stack>
   );
 }
 
-function isTagsField(name: string): boolean {
-  return name === 'tags';
+function asString(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
+
+function asStringArray(value: unknown): readonly string[] {
+  return Array.isArray(value) ? (value as readonly string[]) : [];
+}
+
+// Walks the schema keys in their declared order, emitting fixed-field bags and
+// a tags list block in place so field order matches the pre-migration form.
+// `name` is read-only.
+function buildDescriptorBlocks(
+  schema: ResolvedModDescriptorSchema,
+  defaultValues: Record<string, unknown>,
+  fieldLabel: (name: string) => string,
+  tagsPlaceholder: string,
+): readonly EntityFormBlock[] {
+  const schemaKeys = Object.keys(schema.shape);
+  const extensionKeys = schemaKeys.filter((k) => !BASE_FIELD_ORDER.includes(k));
+  const orderedKeys = [
+    ...BASE_FIELD_ORDER.filter((k) => schemaKeys.includes(k)),
+    ...extensionKeys,
+  ];
+
+  const blocks: EntityFormBlock[] = [];
+  let fields: {
+    label: string;
+    readonly: boolean;
+    spec: string;
+    value: string;
+  }[] = [];
+
+  const flushFields = (): void => {
+    if (fields.length === 0) return;
+    blocks.push({
+      kind: 'propertyBag',
+      members: { fields, mode: 'fixed' },
+      scope: null,
+    });
+    fields = [];
+  };
+
+  for (const key of orderedKeys) {
+    if (key === 'tags') {
+      flushFields();
+      blocks.push({
+        kind: 'listOfScalars',
+        label: fieldLabel('tags'),
+        name: 'tags',
+        placeholder: tagsPlaceholder,
+        scope: null,
+        values: asStringArray(defaultValues[key]),
+      });
+      continue;
+    }
+    fields.push({
+      label: fieldLabel(key),
+      readonly: key === 'name',
+      spec: key,
+      value: asString(defaultValues[key]),
+    });
+  }
+  flushFields();
+
+  return blocks;
 }

@@ -3,6 +3,7 @@ import { EntityTableData, EntityTableRecognizer, TranslateFn } from '@r-core';
 
 import { buildModuleActions } from './module-actions';
 import { MODULE_COLUMNS } from './module-columns.const';
+import { MODULE_ENTITY_ID } from './module-entity-id.const';
 import { mapModuleRow } from './module-row.util';
 import { compareModuleEntities } from './module-sort.util';
 
@@ -50,7 +51,7 @@ function matchesModulePath(filePath: string): boolean {
 }
 
 export const MODULE_RECOGNIZER: EntityTableRecognizer = {
-  id: 'hoi4-module',
+  id: MODULE_ENTITY_ID,
   load,
   matches: matchesModulePath,
 };

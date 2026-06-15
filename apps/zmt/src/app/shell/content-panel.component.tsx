@@ -11,6 +11,7 @@ import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { EntityTable, PlainEditor } from '../../features/mod-content';
+import { entityFormRegistry, EntityFormShell } from '../../shared/entity-form';
 import { useModal } from '../../shared/modal';
 import { SelectSomethingPlaceholder } from './select-something-placeholder.component';
 import { useShell } from './shell-context';
@@ -99,11 +100,28 @@ function RecognizedEntityPanel({
       dismissForm: () => setPresentedForm(null),
       modal,
       modId,
+      presentEntityForm: (gameId, entityId, subject) => {
+        if (modId === null) return;
+        const descriptor = entityFormRegistry.resolve(gameId, entityId);
+        if (descriptor === null) return;
+        const model = descriptor.project(subject, {
+          modId,
+          relativePath,
+          translate,
+        });
+        setPresentedForm(
+          <EntityFormShell
+            model={model}
+            onClose={() => setPresentedForm(null)}
+            onSaved={() => setVersion((value) => value + 1)}
+          />,
+        );
+      },
       presentForm: (node) => setPresentedForm(node),
       refresh: () => setVersion((value) => value + 1),
       relativePath,
     }),
-    [modId, modal, relativePath],
+    [modId, modal, relativePath, translate],
   );
 
   useEffect(() => {
