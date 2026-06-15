@@ -48,6 +48,9 @@ function coerceDeltas(value: unknown): readonly EntityBlockDelta[] {
   if (!Array.isArray(value)) {
     throw badRequest('deltas must be an array');
   }
+  if (value.length === 0) {
+    throw badRequest('deltas must not be empty');
+  }
   return value.map((entry, index) =>
     coerceBlockDelta(entry, `deltas[${String(index)}]`),
   );
