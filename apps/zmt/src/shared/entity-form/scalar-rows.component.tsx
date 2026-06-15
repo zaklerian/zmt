@@ -1,50 +1,28 @@
-import {
-  Autocomplete,
-  Box,
-  Button,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Autocomplete, Box, Button, Stack, TextField } from '@mui/material';
 import {
   Control,
   Controller,
   FieldValues,
   useFieldArray,
 } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
-interface ScalarBagProps {
-  readonly addLabel: string;
-  // The parent form's control. Typed loosely so one bag serves forms with
-  // differently-shaped value objects; the field-array name selects the slice.
+interface ScalarRowsProps {
   readonly control: Control<FieldValues>;
-  readonly keyLabel: string;
   readonly keySuggestions: readonly string[];
   readonly name: string;
-  readonly removeLabel: string;
-  readonly sectionLabel?: string;
-  readonly valueLabel: string;
 }
 
-export function ScalarBag({
-  addLabel,
-  control,
-  keyLabel,
-  keySuggestions,
-  name,
-  removeLabel,
-  sectionLabel,
-  valueLabel,
-}: ScalarBagProps) {
+// The flat key→value rows shared by the open property-bag block and the
+// named-nested block (a key→scalar map reuses the property-bag rendering, ADR
+// 018). Keys are a free-text combobox over the curated known set. Controlled by
+// the shell's RHF control (A-REACT-1).
+export function ScalarRows({ control, keySuggestions, name }: ScalarRowsProps) {
+  const { t } = useTranslation(['feature.entityForm']);
   const { append, fields, remove } = useFieldArray({ control, name });
 
   return (
     <Stack spacing={2}>
-      {sectionLabel !== undefined && (
-        <Typography color="text.secondary" variant="subtitle2">
-          {sectionLabel}
-        </Typography>
-      )}
       {fields.map((field, index) => (
         <Stack
           key={field.id}
@@ -67,7 +45,7 @@ export function ScalarBag({
                     {...params}
                     error={fieldState.error !== undefined}
                     helperText={fieldState.error?.message}
-                    label={keyLabel}
+                    label={t('feature.entityForm:fields.key.label')}
                   />
                 )}
                 size="small"
@@ -82,7 +60,7 @@ export function ScalarBag({
             render={({ field: valueField }) => (
               <TextField
                 {...valueField}
-                label={valueLabel}
+                label={t('feature.entityForm:fields.value.label')}
                 size="small"
                 sx={{ flex: 1 }}
                 value={
@@ -92,13 +70,13 @@ export function ScalarBag({
             )}
           />
           <Button color="error" onClick={() => remove(index)}>
-            {removeLabel}
+            {t('feature.entityForm:actions.remove')}
           </Button>
         </Stack>
       ))}
       <Box>
         <Button onClick={() => append({ key: '', value: '' })}>
-          {addLabel}
+          {t('feature.entityForm:actions.addField')}
         </Button>
       </Box>
     </Stack>

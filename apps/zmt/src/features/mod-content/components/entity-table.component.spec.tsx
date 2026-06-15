@@ -16,6 +16,7 @@ const actionEnv: EntityActionEnvironment = {
     info: () => Promise.resolve(),
   },
   modId: null,
+  presentEntityForm: () => undefined,
   presentForm: () => undefined,
   refresh: () => undefined,
   relativePath: '',

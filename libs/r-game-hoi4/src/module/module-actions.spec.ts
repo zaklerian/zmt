@@ -34,6 +34,7 @@ function context(
       info: () => Promise.resolve(),
     },
     modId: 'mod-a',
+    presentEntityForm: () => undefined,
     presentForm: () => undefined,
     refresh: () => undefined,
     relativePath: 'common/units/equipment/modules/00_air.txt',

@@ -12,6 +12,15 @@ export interface EntityActionEnvironment {
   readonly dismissForm: () => void;
   readonly modal: ModalService;
   readonly modId: null | string;
+  // Opens the host-side entity-form shell on the registered descriptor for
+  // (gameId, entityId). The host resolves the descriptor, projects the subject,
+  // and mounts the shell — keeping the shell host-side while a plugin-owned
+  // action triggers it (ADR 015: capabilities ride the context; ADR 018).
+  readonly presentEntityForm: (
+    gameId: string,
+    entityId: string,
+    subject: unknown,
+  ) => void;
   readonly presentForm: (node: ReactNode) => void;
   readonly refresh: () => void;
   readonly relativePath: string;

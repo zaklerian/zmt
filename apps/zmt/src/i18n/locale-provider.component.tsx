@@ -7,7 +7,11 @@ import {
 } from '@mui/material';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 
-import { KNOWN_RENDERER_PLUGINS, registerPluginRecognizers } from '../plugins';
+import {
+  KNOWN_RENDERER_PLUGINS,
+  registerPluginFormDescriptors,
+  registerPluginRecognizers,
+} from '../plugins';
 import { i18next, initI18n } from './i18n.config';
 import { Locale, LOCALES } from './i18n.model';
 import { en as enAppStrings } from './locales/en/app';
@@ -37,6 +41,7 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
       await initI18n(initial);
       registerPluginNamespaces(KNOWN_RENDERER_PLUGINS);
       registerPluginRecognizers(KNOWN_RENDERER_PLUGINS);
+      registerPluginFormDescriptors(KNOWN_RENDERER_PLUGINS);
       if (!cancelled) {
         setLocaleState(initial);
         setReady(true);

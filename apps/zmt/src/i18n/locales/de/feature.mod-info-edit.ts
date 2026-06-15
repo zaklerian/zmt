@@ -1,6 +1,11 @@
 import type { en } from '../en/feature.mod-info-edit';
 
 export const de: typeof en = {
+  errors: {
+    message:
+      'Der Deskriptor konnte nicht gespeichert werden. Bitte erneut versuchen.',
+    title: 'Speichern fehlgeschlagen',
+  },
   form: {
     fields: {
       name: { label: 'Name' },

@@ -1,14 +1,14 @@
 import {
   AppApiModel,
+  GAME_IDS,
   IPC_ERROR_CODES,
   IpcError,
   isIpcError,
   ModuleEntity,
 } from '@contracts';
 import { Action, EntityToolbarContext, TranslateFn } from '@r-core';
-import { createElement } from 'react';
 
-import { ModuleEditForm } from './module-edit-form.component';
+import { MODULE_ENTITY_ID } from './module-entity-id.const';
 import { moduleErrorMessageKey } from './module-error.util';
 
 const DELETE = 'plugin.hoi4:module.actions.delete';
@@ -31,16 +31,7 @@ export function buildModuleActions(
   const openEditForm = (context: EntityToolbarContext): void => {
     const entity = selectedEntity(context);
     if (entity === undefined || context.modId === null) return;
-    context.presentForm(
-      createElement(ModuleEditForm, {
-        entity,
-        modal: context.modal,
-        modId: context.modId,
-        onClose: context.dismissForm,
-        onSaved: context.refresh,
-        relativePath: context.relativePath,
-      }),
-    );
+    context.presentEntityForm(GAME_IDS.hoi4, MODULE_ENTITY_ID, entity);
   };
 
   const deleteEntity = async (context: EntityToolbarContext): Promise<void> => {
