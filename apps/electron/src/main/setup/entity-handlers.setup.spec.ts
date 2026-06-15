@@ -370,4 +370,128 @@ describe('registerEntityHandlers', () => {
       }),
     ).rejects.toSatisfy((error) => extractIpcError(error).code === 403);
   });
+
+  it('applies a root + named-child batch against one snapshot, reconciling the offset shift of an earlier removal against a later block edit', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [],
+          block: null,
+          changed: [{ key: 'reliability', value: '0.85' }],
+          removed: ['max_organisation'],
+        },
+        {
+          added: [],
+          block: 'modules',
+          changed: [{ key: 'slot', value: 'no' }],
+          removed: [],
+        },
+      ],
+      entityName: 'infantry_equipment',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    expect(await readFile(filePath, 'utf8')).toBe(
+      FIXTURE.replace('reliability = 0.8\n', 'reliability = 0.85\n')
+        .replace('\t\tmax_organisation = 60\n', '')
+        .replace('slot = yes', 'slot = no'),
+    );
+  });
+
+  it('creates one child block and drops another within a single batch', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [],
+          block: 'add_stats',
+          changed: [],
+          removed: ['air_range', 'reliability'],
+        },
+        {
+          added: [{ key: 'air_attack', value: '1' }],
+          block: 'remove_stats',
+          changed: [],
+          removed: [],
+        },
+      ],
+      entityName: 'engine_module',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    expect(await readFile(filePath, 'utf8')).toBe(
+      FIXTURE.replace(
+        '\t\tadd_stats = {\n\t\t\t# tuned for range\n\t\t\tair_range = 100\n\t\t\treliability = 0.4\n\t\t}\n',
+        '',
+      ).replace(
+        '\t\tname = engine\n\t}',
+        '\t\tname = engine\n\t\tremove_stats = {\n\t\t\tair_attack = 1\n\t\t}\n\t}',
+      ),
+    );
+  });
+
+  it('writes nothing when any delta in the batch fails, leaving the file byte-identical (atomicity)', async () => {
+    await expect(
+      writeVia({
+        deltas: [
+          {
+            added: [],
+            block: null,
+            changed: [{ key: 'reliability', value: '0.85' }],
+            removed: [],
+          },
+          {
+            added: [],
+            block: null,
+            changed: [{ key: 'unknown_field', value: '1' }],
+            removed: [],
+          },
+        ],
+        entityName: 'infantry_equipment',
+        modId: MOD_ID,
+        relativePath: RELATIVE_PATH,
+      }),
+    ).rejects.toSatisfy((error) => extractIpcError(error).code === 409);
+
+    expect(await readFile(filePath, 'utf8')).toBe(FIXTURE);
+  });
+
+  it('applies a single-element batch identically to the equivalent standalone delta', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [{ key: 'cost', value: '10' }],
+          block: null,
+          changed: [{ key: 'reliability', value: '0.9' }],
+          removed: ['max_organisation'],
+        },
+      ],
+      entityName: 'infantry_equipment',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    expect(await readFile(filePath, 'utf8')).toBe(
+      FIXTURE.replace('reliability = 0.8', 'reliability = 0.9')
+        .replace('\t\tmax_organisation = 60\n', '')
+        .replace(
+          '\t\t}\n\t}\n\tartillery_equipment',
+          '\t\t}\n\t\tcost = 10\n\t}\n\tartillery_equipment',
+        ),
+    );
+  });
+
+  it('rejects with 400 when the batch is empty', async () => {
+    await expect(
+      writeVia({
+        deltas: [],
+        entityName: 'infantry_equipment',
+        modId: MOD_ID,
+        relativePath: RELATIVE_PATH,
+      }),
+    ).rejects.toSatisfy((error) => extractIpcError(error).code === 400);
+
+    expect(await readFile(filePath, 'utf8')).toBe(FIXTURE);
+  });
 });
