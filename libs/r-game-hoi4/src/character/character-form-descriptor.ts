@@ -1,4 +1,4 @@
-import { AppApiModel, GAME_IDS } from '@contracts';
+import { AppApiModel, CharacterEntity, GAME_IDS } from '@contracts';
 import {
   defineEntityFormDescriptor,
   EntityFormBlock,
@@ -18,7 +18,6 @@ import {
   computeCharacterDeltas,
 } from './character-delta.util';
 import { CHARACTER_ENTITY_ID } from './character-entity-id.const';
-import { CharacterEntity } from './character-entity.model';
 import { characterErrorMessageKey } from './character-error.util';
 import {
   GENDER_VALUES,

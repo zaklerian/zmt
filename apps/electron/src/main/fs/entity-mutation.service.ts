@@ -153,13 +153,17 @@ async function readSource(absolutePath: string): Promise<string> {
 function renderFields(indent: string, fields: readonly EntityField[]): string {
   let text = '';
   for (const field of fields) {
-    // An empty value is a bare value-list token (e.g. a `traits` entry), written
-    // as the token alone; a `key = ` line would be invalid script. A non-empty
-    // value is a `key = value` scalar.
-    text +=
-      field.value === ''
-        ? `${indent}${field.key}\n`
-        : `${indent}${field.key} = ${field.value}\n`;
+    // An absent value (null) is a bare value-list token (e.g. a `traits` entry),
+    // written as the token alone; a `key = ` line would be invalid script. ANY
+    // value is a `key = value` scalar — including the empty string, which emits
+    // `key = ""` (a distinct empty-string scalar, never a bare token; A-TS-1).
+    if (field.value === null) {
+      text += `${indent}${field.key}\n`;
+    } else if (field.value === '') {
+      text += `${indent}${field.key} = ""\n`;
+    } else {
+      text += `${indent}${field.key} = ${field.value}\n`;
+    }
   }
   return text;
 }
@@ -280,7 +284,9 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
       if (node === undefined) throw conflict(field.key);
       deltaEdits.push({
         from: node.value.from,
-        text: field.value,
+        // A changed scalar always carries a concrete value; the bare-token marker
+        // (absent value) is add/remove-only, never a change to an `= value` RHS.
+        text: field.value ?? '',
         to: node.value.to,
       });
     }

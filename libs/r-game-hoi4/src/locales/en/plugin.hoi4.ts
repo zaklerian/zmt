@@ -1,5 +1,13 @@
 export const en = {
   character: {
+    actions: {
+      edit: 'Edit',
+    },
+    columns: {
+      gender: 'Gender',
+      name: 'Name',
+      roles: 'Roles',
+    },
     errors: {
       conflict:
         'This character changed on disk since you opened it. Reload and try again.',

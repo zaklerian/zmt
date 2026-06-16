@@ -32,7 +32,7 @@ export interface CharacterSnapshot {
 // Diffs every projected surface against its open-time snapshot and collects the
 // non-empty path-scoped deltas (ADR 019, amended ZMT-13). Root scalars target
 // `block: null`; portrait groups and roles target their child paths; trait
-// tokens lower to bare value-list items (empty value) at a two-element path.
+// tokens lower to bare value-list items (absent value, null) at a two-element path.
 // Block existence is the handler's call — it creates a block on first add and
 // drops it when emptied — so only per-block adds/changes/removes are sent here.
 export function computeCharacterDeltas(
@@ -65,10 +65,10 @@ export function computeCharacterDeltas(
   return deltas;
 }
 
-// A bare value-list token carries no value: the empty value is the resolver's
-// signal to write the token alone, without an `= value`.
-function asBareRows(tokens: readonly string[]): readonly ScalarRow[] {
-  return tokens.map((token) => ({ key: token, value: '' }));
+// A bare value-list token carries no value: the absent value (null) is the
+// resolver's signal to write the token alone, without an `= value` (A-TS-1).
+function asBareRows(tokens: readonly string[]): readonly EntityField[] {
+  return tokens.map((token) => ({ key: token, value: null }));
 }
 
 function isEmptyDelta(delta: EntityScalarDelta): boolean {

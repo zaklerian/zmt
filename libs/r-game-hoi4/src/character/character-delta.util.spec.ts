@@ -64,7 +64,7 @@ describe('computeCharacterDeltas', () => {
     ]);
   });
 
-  it('lowers trait add and remove to bare value-list items (empty value) at the traits path', () => {
+  it('lowers trait add and remove to bare value-list items (absent value, null) at the traits path', () => {
     const deltas = computeCharacterDeltas(snapshot, {
       army: [
         { key: 'large', value: '"gfx/large.dds"' },
@@ -78,7 +78,7 @@ describe('computeCharacterDeltas', () => {
 
     expect(deltas).toEqual([
       {
-        added: [{ key: 'trait_three', value: '' }],
+        added: [{ key: 'trait_three', value: null }],
         block: ['corps_commander', 'traits'],
         changed: [],
         removed: ['trait_one'],

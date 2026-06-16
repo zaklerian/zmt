@@ -31,6 +31,8 @@ Depth is bounded by the form layer's two-level nesting cap (ADR 018, as extended
 same date); the path representation itself carries no artificial limit, but no descriptor
 emits a path beyond that cap.
 
+Bare-token list items. A list-of-scalars block — for example a character's `traits` — holds bare value tokens, not `key = value` pairs. A list item is represented as an `EntityField` whose value is absent (`null`/`undefined`), never the empty string. `key = ""` is a legal, distinct empty-string scalar and must round-trip as itself, so the empty string cannot double as the bare-token marker. On serialization: an `EntityField` with an absent value emits a bare token; an `EntityField` with any value, including `""`, emits `key = value`. The wire contract's only widening therefore remains the `block` → path change; list items need no discriminant field.
+
 ## Context
 
 Entity writes are scoped deltas applied to a lossless parsed node. A delta targets either the node root or a named child block, and is applied by surgical field-level offset patching: only the changed bytes are rewritten, leaving comments, nested blocks, and unrecognized content byte-identical. The contract carries one scope per call. The base scoped-delta write contract shipped during the S-1 entity work as code; it has no standalone ADR (it is referenced only in ledger L-011 and L-012). This ADR formalizes the contract's shape for the case that motivated revisiting it.

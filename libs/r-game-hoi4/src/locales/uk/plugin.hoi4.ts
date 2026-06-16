@@ -2,6 +2,14 @@ import type { en } from '../en/plugin.hoi4';
 
 export const uk: typeof en = {
   character: {
+    actions: {
+      edit: 'Редагувати',
+    },
+    columns: {
+      gender: 'Стать',
+      name: 'Імʼя',
+      roles: 'Ролі',
+    },
     errors: {
       conflict:
         'Цей персонаж змінився на диску відколи ви його відкрили. Перезавантажте та спробуйте ще раз.',
