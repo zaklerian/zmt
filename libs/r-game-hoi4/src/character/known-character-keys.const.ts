@@ -1,6 +1,5 @@
+import { CharacterRoleId } from '@contracts';
 import { FieldSpec } from '@r-core';
-
-import { CharacterRoleId } from './character-entity.model';
 
 // Curated suggestion sets for the character edit form's combobox keys. Only
 // file-local intrinsic values carry a closed spec; cross-entity values

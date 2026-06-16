@@ -2,6 +2,14 @@ import type { en } from '../en/plugin.hoi4';
 
 export const de: typeof en = {
   character: {
+    actions: {
+      edit: 'Bearbeiten',
+    },
+    columns: {
+      gender: 'Geschlecht',
+      name: 'Name',
+      roles: 'Rollen',
+    },
     errors: {
       conflict:
         'Dieser Charakter wurde auf der Festplatte geändert, seit Sie ihn geöffnet haben. Neu laden und erneut versuchen.',

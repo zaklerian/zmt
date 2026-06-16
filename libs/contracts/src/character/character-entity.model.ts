@@ -1,4 +1,4 @@
-import type { EntityField } from '@contracts';
+import type { EntityField } from '../entity';
 
 // The editable surface of a HOI4 character. `token` is the entity identifier (the
 // `token = { ... }` key under `characters`) and the dialog title; `name` and

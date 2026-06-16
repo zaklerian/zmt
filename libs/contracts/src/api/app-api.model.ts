@@ -1,3 +1,4 @@
+import { CharacterEntity } from '../character';
 import { EntityDeleteRequest, EntityWriteRequest } from '../entity';
 import {
   EquipmentEntity,
@@ -11,6 +12,9 @@ import { PreferenceKey, Preferences } from '../preferences';
 import { ModId, Workspace } from '../workspace';
 
 export interface AppApiModel {
+  readonly character: {
+    readonly list: (filePath: string) => Promise<readonly CharacterEntity[]>;
+  };
   readonly entity: {
     readonly delete: (request: EntityDeleteRequest) => Promise<void>;
     readonly write: (request: EntityWriteRequest) => Promise<void>;

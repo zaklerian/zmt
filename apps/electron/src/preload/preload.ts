@@ -1,6 +1,7 @@
 import {
   AppApiModel,
   CatalogModule,
+  CharacterEntity,
   EntityDeleteRequest,
   EntityWriteRequest,
   EquipmentEntity,
@@ -20,6 +21,13 @@ import { contextBridge } from 'electron';
 import { invokeStructured } from './ipc-invoke.util';
 
 const API = {
+  character: {
+    list: (filePath: string) =>
+      invokeStructured<readonly CharacterEntity[]>(
+        IPC_CHANNELS.character.list,
+        filePath,
+      ),
+  },
   entity: {
     delete: (request: EntityDeleteRequest) =>
       invokeStructured<void>(IPC_CHANNELS.entity.delete, request),

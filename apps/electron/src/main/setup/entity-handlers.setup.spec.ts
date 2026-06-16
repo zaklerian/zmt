@@ -5,6 +5,7 @@ import {
   IPC_CHANNELS,
   ProjectedSource,
 } from '@contracts';
+import { type BlockChild, type BlockNode, parse } from '@paradox-parser';
 import { ipcMain } from 'electron';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -567,7 +568,7 @@ describe('registerEntityHandlers — grandchild path scope and value lists', () 
     await writeVia({
       deltas: [
         {
-          added: [{ key: 'trait_three', value: '' }],
+          added: [{ key: 'trait_three', value: null }],
           block: ['corps_commander', 'traits'],
           changed: [],
           removed: [],
@@ -674,5 +675,129 @@ describe('registerEntityHandlers — grandchild path scope and value lists', () 
         relativePath: RELATIVE_PATH,
       }),
     ).rejects.toSatisfy((error) => extractIpcError(error).code === 409);
+  });
+});
+
+// Parses `source` and descends the named-block path, returning the block at the
+// end of the path. Params are deeply-readonly (string + string path) so the
+// helper stays clear of P-1's mutable-AST-node parameter bar; the mutable parser
+// nodes are touched only through locals.
+function blockAtPath(
+  source: string,
+  path: readonly string[],
+): BlockNode | undefined {
+  let children: readonly BlockChild[] = parse(source, {
+    dialects: [],
+  }).children;
+  let block: BlockNode | undefined;
+  for (const key of path) {
+    block = undefined;
+    for (const child of children) {
+      if (child.kind !== 'Assignment' || child.value.kind !== 'Block') continue;
+      const name =
+        child.key.kind === 'Identifier' ? child.key.name : child.key.value;
+      if (name === key) {
+        block = child.value;
+        break;
+      }
+    }
+    if (block === undefined) return undefined;
+    children = block.children;
+  }
+  return block;
+}
+
+// Pins the bare-token vs empty-string-scalar serialization asymmetry (ZMT-13.1,
+// A-TS-1) end to end: a delta is serialized by the write path, then re-parsed, so
+// the assertions are on AST shape — locale-independent (R-CODE-7).
+describe('registerEntityHandlers — bare-token vs empty-string scalar round-trip', () => {
+  beforeEach(async () => {
+    vi.mocked(ipcMain.handle).mockReset();
+
+    modRoot = await mkdtemp(path.join(tmpdir(), 'zmt-roundtrip-'));
+    filePath = path.join(modRoot, RELATIVE_PATH);
+    await writeFile(filePath, CHARACTER_FIXTURE);
+
+    state.sources = [{ path: modRoot, permission: 'editable' }];
+    state.workspace = {
+      includedMods: [
+        { id: MOD_ID, name: 'mod', path: modRoot, permission: 'editable' },
+      ],
+    };
+
+    registerEntityHandlers();
+  });
+
+  afterEach(async () => {
+    await rm(modRoot, { force: true, recursive: true });
+  });
+
+  it('round-trips a bare value-list token (absent value) as a bare token, never a `key = ""` scalar', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [{ key: 'trait_three', value: null }],
+          block: ['corps_commander', 'traits'],
+          changed: [],
+          removed: [],
+        },
+      ],
+      entityName: 'Some_Leader',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    const written = await readFile(filePath, 'utf8');
+    const traits = blockAtPath(written, [
+      'characters',
+      'Some_Leader',
+      'corps_commander',
+      'traits',
+    ]);
+    const token = traits?.children.find(
+      (child) => child.kind === 'Identifier' && child.name === 'trait_three',
+    );
+
+    expect(token).toBeDefined();
+    // A bare token parses as a value node, not a key/value Assignment.
+    expect(token?.kind).toBe('Identifier');
+  });
+
+  it('round-trips an empty-string scalar as `key = ""`, distinct from a bare token', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [{ key: 'description', value: '' }],
+          block: ['corps_commander'],
+          changed: [],
+          removed: [],
+        },
+      ],
+      entityName: 'Some_Leader',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    const written = await readFile(filePath, 'utf8');
+    expect(written).toContain('description = ""');
+
+    const corps = blockAtPath(written, [
+      'characters',
+      'Some_Leader',
+      'corps_commander',
+    ]);
+    const scalar = corps?.children.find(
+      (child) =>
+        child.kind === 'Assignment' &&
+        (child.key.kind === 'Identifier' ? child.key.name : child.key.value) ===
+          'description',
+    );
+
+    // The empty string survives as a key/value Assignment whose value is the
+    // empty string — not a bare token, not a dropped field.
+    expect(scalar?.kind).toBe('Assignment');
+    if (scalar?.kind === 'Assignment' && scalar.value.kind === 'StringValue') {
+      expect(scalar.value.value).toBe('');
+    }
   });
 });

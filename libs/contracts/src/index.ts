@@ -1,4 +1,5 @@
 export * from './api';
+export * from './character';
 export * from './entity';
 export * from './equipment';
 export * from './fs';

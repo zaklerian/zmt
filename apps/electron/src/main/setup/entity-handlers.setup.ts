@@ -82,9 +82,21 @@ function requireFields(value: unknown, field: string): readonly EntityField[] {
     const record = requireRecord(entry, `${field}[${String(index)}]`);
     return {
       key: requireString(record.key, `${field}[${String(index)}].key`),
-      value: requireString(record.value, `${field}[${String(index)}].value`),
+      value: requireFieldValue(
+        record.value,
+        `${field}[${String(index)}].value`,
+      ),
     };
   });
+}
+
+// A field value is a string scalar, or absent (null/undefined) for a bare
+// value-list token (A-TS-1). An absent value normalizes to null at the wire so
+// the serializer's bare-token branch keys on a single marker.
+function requireFieldValue(value: unknown, field: string): null | string {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string') return value;
+  throw badRequest(`${field} must be a string or null`);
 }
 
 function requireRecord(value: unknown, field: string): Record<string, unknown> {

@@ -10,7 +10,9 @@ export interface BagMessages {
 
 const toRow = (row: EntityFormRow): { key: string; value: string } => ({
   key: row.key,
-  value: row.value,
+  // A form row is always a concrete scalar; an absent value (the bare-token
+  // marker on EntityField) cannot occur here and binds as the empty string.
+  value: row.value ?? '',
 });
 
 // Seeds RHF default values from the descriptor's blocks. Open bags and named

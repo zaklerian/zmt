@@ -17,10 +17,14 @@ export interface EntityFormFixedField {
   readonly value: string;
 }
 
-// One editable key→value row inside a property-bag / named-nested block.
+// One editable key→value row inside a property-bag / named-nested block. `value`
+// mirrors the source `EntityField`, whose value is absent (`null`) only for a
+// bare value-list token (A-TS-1). Form rows are always concrete `key = value`
+// scalars — bare-token lists render through `ListOfScalarsBlock`, not here — so
+// the RHF seam normalizes an absent value to the empty string.
 export interface EntityFormRow {
   readonly key: string;
-  readonly value: string;
+  readonly value: null | string;
 }
 
 // Write scope per the ADR 019 scoped-delta contract (amended ZMT-13): null or an

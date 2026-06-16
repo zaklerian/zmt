@@ -1,3 +1,4 @@
+export * from './character-handlers.setup';
 export * from './entity-handlers.setup';
 export * from './equipment-handlers.setup';
 export * from './fs-handlers.setup';
