@@ -1,4 +1,4 @@
-import { IpcError, isIpcError } from '@contracts';
+import { IpcError } from '@contracts';
 import { Alert, Box, Button, CircularProgress, Snackbar } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +8,10 @@ import { useShell } from '../../../app/shell/shell-context';
 import { useAsyncCallback } from '../../../shared/hooks';
 import { useModal } from '../../../shared/modal';
 import { useCodeMirror } from '../hooks';
+import {
+  plainEditorActions,
+  PlainEditorSurfaceContext,
+} from '../plain-editor-actions';
 import { modContentService } from '../services/mod-content.service';
 
 interface PlainEditorProps {
@@ -27,6 +31,7 @@ type Settled =
 
 export function PlainEditor({ filePath, writable }: PlainEditorProps) {
   const { t } = useTranslation(['app']);
+  const translate = t as (key: string) => string;
   const [version, setVersion] = useState(0);
   const [settled, setSettled] = useState<null | Settled>(null);
 
@@ -74,6 +79,7 @@ export function PlainEditor({ filePath, writable }: PlainEditorProps) {
   }
 
   if (current.kind === 'error') {
+    const retryContext = { retry: () => setVersion((value) => value + 1) };
     return (
       <Box sx={{ p: 3 }}>
         <Alert
@@ -81,9 +87,9 @@ export function PlainEditor({ filePath, writable }: PlainEditorProps) {
             <Button
               color="inherit"
               size="small"
-              onClick={() => setVersion((value) => value + 1)}
+              onClick={() => plainEditorActions.retry.execute(retryContext)}
             >
-              {t('app:actions.retry')}
+              {translate(plainEditorActions.retry.label(retryContext))}
             </Button>
           }
           severity="error"
@@ -110,6 +116,7 @@ function PlainEditorSurface({
   writable,
 }: PlainEditorSurfaceProps) {
   const { t } = useTranslation(['feature.modContent', 'app']);
+  const translate = t as (key: string) => string;
   const modal = useModal();
   const { consumeLeaveConfirmed, registerEditGuard } = useShell();
   const originalRef = useRef(initialText);
@@ -140,7 +147,7 @@ function PlainEditorSurface({
     onDocChange: handleDocChange,
   });
 
-  const cancel = useCallback(() => {
+  const resetEditor = useCallback(() => {
     const view = viewRef.current;
     if (view === null) return;
     view.dispatch({
@@ -153,23 +160,39 @@ function PlainEditorSurface({
     setDirty(false);
   }, [viewRef]);
 
+  const getText = useCallback(
+    () => viewRef.current?.state.doc.toString() ?? null,
+    [viewRef],
+  );
+
+  const handleSaved = useCallback((text: string) => {
+    originalRef.current = text;
+    setDirty(false);
+    setSavedAt(Date.now());
+  }, []);
+
+  // Capability slice for execute, consumed only inside the deferred onClick
+  // handlers below — never read during render, so its ref-backed closures stay
+  // out of the render path.
+  const executeContext: PlainEditorSurfaceContext = {
+    dirty,
+    filePath,
+    getText,
+    onSaved: handleSaved,
+    reset: resetEditor,
+    setSaveError,
+  };
+  // Render-safe slice for isAvailable/label.
+  const renderContext: PlainEditorSurfaceContext = { dirty };
+
   const save = useAsyncCallback(async () => {
-    const view = viewRef.current;
-    if (view === null) return;
-    setSaveError(null);
-    const text = view.state.doc.toString();
-    try {
-      await modContentService.writeTextFile(filePath, text);
-      originalRef.current = text;
-      setDirty(false);
-      setSavedAt(Date.now());
-    } catch (rawError: unknown) {
-      const error: IpcError = isIpcError(rawError)
-        ? rawError
-        : { code: 500, message: String(rawError) };
-      setSaveError(error);
-    }
+    await plainEditorActions.save.execute(executeContext);
   });
+
+  const cancelAvailable = plainEditorActions.cancel.isAvailable(renderContext);
+  const cancelLabel = translate(plainEditorActions.cancel.label(renderContext));
+  const saveAvailable = plainEditorActions.save.isAvailable(renderContext);
+  const saveLabel = translate(plainEditorActions.save.label(renderContext));
 
   const blocker = useBlocker(({ currentLocation, nextLocation }) => {
     // The gate already obtained consent for this one transition; skip the
@@ -216,15 +239,15 @@ function PlainEditorSurface({
           }}
         >
           <Button
-            disabled={!dirty || save.isPending}
+            disabled={!cancelAvailable || save.isPending}
             size="small"
             variant="outlined"
-            onClick={cancel}
+            onClick={() => plainEditorActions.cancel.execute(executeContext)}
           >
-            {t('app:actions.cancel')}
+            {cancelLabel}
           </Button>
           <Button
-            disabled={!dirty || save.isPending}
+            disabled={!saveAvailable || save.isPending}
             size="small"
             startIcon={
               save.isPending ? (
@@ -234,7 +257,7 @@ function PlainEditorSurface({
             variant="contained"
             onClick={() => void save.execute()}
           >
-            {t('app:actions.save')}
+            {saveLabel}
           </Button>
         </Box>
       )}

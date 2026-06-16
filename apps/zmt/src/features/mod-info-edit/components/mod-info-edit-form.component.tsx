@@ -26,6 +26,7 @@ import type { ResolvedModDescriptorSchema } from '../mod-info-edit.model';
 
 import { EntityFormShell } from '../../../shared/entity-form';
 import { applyFormValuesToAst, astToFormValues } from '../ast-adapter';
+import { modInfoEditActions } from '../mod-info-edit-actions';
 import { modInfoEditService } from '../services/mod-info-edit.service';
 
 interface ModInfoEditFormProps {
@@ -77,7 +78,7 @@ export function ModInfoEditForm({
       return key === undefined ? name : (t as (k: string) => string)(key);
     };
 
-    const save = async (
+    const persist = async (
       values: EntityFormValues,
     ): Promise<EntityFormValues | void> => {
       const ast = astRef.current;
@@ -96,6 +97,20 @@ export function ModInfoEditForm({
       astRef.current = refreshedAst;
       originalSourceRef.current = newText;
       return astToFormValues(refreshedAst, schema) as EntityFormValues;
+    };
+
+    const save = async (
+      values: EntityFormValues,
+    ): Promise<EntityFormValues | void> => {
+      let refreshed: EntityFormValues | void = undefined;
+      await modInfoEditActions.save.execute({
+        onRefreshed: (next) => {
+          refreshed = next;
+        },
+        save: persist,
+        values,
+      });
+      return refreshed;
     };
 
     return {

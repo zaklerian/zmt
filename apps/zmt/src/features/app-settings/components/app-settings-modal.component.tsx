@@ -1,4 +1,4 @@
-import { GamePlugin, IpcError, isIpcError, Preferences } from '@contracts';
+import { GamePlugin, IpcError, Preferences } from '@contracts';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Alert,
@@ -22,12 +22,15 @@ import { useTranslation } from 'react-i18next';
 import { useAsyncCallback } from '../../../shared/hooks';
 import { useModal } from '../../../shared/modal';
 import {
+  AppSettingsActionContext,
+  appSettingsActions,
+} from '../app-settings-actions';
+import {
   buildInitialFormValues,
   usePluginConfig,
 } from '../hooks/use-plugin-config.hook';
 import { PluginConfigFormValues } from '../plugin-config.model';
 import { pluginConfigSchema } from '../plugin-config.schema';
-import { pluginConfigService } from '../services/plugin-config.service';
 import { PluginConfigForm } from './plugin-config-form.component';
 
 interface AppSettingsModalContentProps {
@@ -73,7 +76,9 @@ function AppSettingsModalContent({
   onClose,
 }: AppSettingsModalContentProps) {
   const { t } = useTranslation(['feature.appSettings', 'app']);
+  const translate = t as (key: string) => string;
   const { status } = usePluginConfig();
+  const closeContext = { close: onClose };
 
   if (status.kind === 'loading') {
     return (
@@ -96,7 +101,11 @@ function AppSettingsModalContent({
           <Alert severity="error">{status.error.message}</Alert>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>{t('app:actions.close')}</Button>
+          <Button
+            onClick={() => appSettingsActions.close.execute(closeContext)}
+          >
+            {translate(appSettingsActions.close.label(closeContext))}
+          </Button>
         </DialogActions>
       </Dialog>
     );
@@ -112,7 +121,11 @@ function AppSettingsModalContent({
           </Alert>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>{t('app:actions.close')}</Button>
+          <Button
+            onClick={() => appSettingsActions.close.execute(closeContext)}
+          >
+            {translate(appSettingsActions.close.label(closeContext))}
+          </Button>
         </DialogActions>
       </Dialog>
     );
@@ -167,77 +180,38 @@ function AppSettingsReadyView({
 
   const [saveError, setSaveError] = useState<IpcError | null>(null);
 
-  const save = useAsyncCallback(async (values: PluginConfigFormValues) => {
-    setSaveError(null);
-    try {
-      const pluginFormDirty = methods.formState.isDirty;
-      if (pluginFormDirty || gameFolderPathChanged) {
-        const current = (await pluginConfigService.getPluginSettings()) ?? {};
-        const stored = current[values.activeGameId];
-        const features = pluginFormDirty
-          ? { ...values.features }
-          : (stored?.features ?? {});
-        const resolvedGameFolderPath = gameFolderPathChanged
-          ? gameFolderPath
-          : stored?.gameFolderPath;
-        const next = {
-          ...current,
-          [values.activeGameId]:
-            resolvedGameFolderPath === undefined
-              ? { features }
-              : { features, gameFolderPath: resolvedGameFolderPath },
-        };
-        await pluginConfigService.setPluginSettings(next);
-      }
-      if (toggleChanged) {
-        await window.api.preferences.set(
-          'hideUnsupportedFiles',
-          hideUnsupported,
-        );
-      }
-      if (hideVanillaChanged) {
-        await window.api.preferences.set('hideVanilla', hideVanilla);
-      }
-      onClose();
-    } catch (rawError: unknown) {
-      const error: IpcError = isIpcError(rawError)
-        ? rawError
-        : { code: 500, message: String(rawError) };
-      setSaveError(error);
-    }
+  const translate = t as (key: string) => string;
+  const actionContext: AppSettingsActionContext = {
+    close: onClose,
+    formDirty: methods.formState.isDirty,
+    gameFolderPath,
+    gameFolderPathChanged,
+    getValues: () => methods.getValues(),
+    hideUnsupported,
+    hideVanilla,
+    hideVanillaChanged,
+    modal,
+    setGameFolderPath,
+    setSaveError,
+    toggleChanged,
+    translate,
+  };
+
+  const save = useAsyncCallback(async () => {
+    await appSettingsActions.save.execute(actionContext);
   });
 
   const browse = useAsyncCallback(async () => {
-    try {
-      const picked = await window.api.fs.openFolderDialog();
-      if (picked !== null) setGameFolderPath(picked);
-    } catch (rawError: unknown) {
-      const error: IpcError = isIpcError(rawError)
-        ? rawError
-        : { code: 500, message: String(rawError) };
-      setSaveError(error);
-    }
+    await appSettingsActions.browse.execute(actionContext);
   });
 
-  const requestClose = async () => {
-    if (
-      methods.formState.isDirty ||
-      toggleChanged ||
-      hideVanillaChanged ||
-      gameFolderPathChanged
-    ) {
-      const proceed = await modal.confirm({
-        confirmLabel: t('app:actions.discard'),
-        message: t('feature.appSettings:close.unsavedMessage'),
-        title: t('app:modals.unsavedChanges.title'),
-      });
-      if (!proceed) return;
-    }
-    onClose();
-  };
-
   return (
-    <Dialog fullWidth maxWidth="sm" open onClose={() => void requestClose()}>
+    <Dialog
+      fullWidth
+      maxWidth="sm"
+      open
+      onClose={() => void appSettingsActions.cancel.execute(actionContext)}
+    >
       <DialogTitle>{t('feature.appSettings:modal.title')}</DialogTitle>
       <FormProvider {...methods}>
         <DialogContent>
@@ -260,7 +234,7 @@ function AppSettingsReadyView({
                 variant="outlined"
                 onClick={() => void browse.execute()}
               >
-                {t('feature.appSettings:form.gameFolder.browse')}
+                {translate(appSettingsActions.browse.label(actionContext))}
               </Button>
             </Stack>
           </Box>
@@ -300,15 +274,17 @@ function AppSettingsReadyView({
           )}
         </DialogContent>
         <DialogActions>
-          <Button disabled={save.isPending} onClick={() => void requestClose()}>
-            {t('app:actions.cancel')}
+          <Button
+            disabled={save.isPending}
+            onClick={() =>
+              void appSettingsActions.cancel.execute(actionContext)
+            }
+          >
+            {translate(appSettingsActions.cancel.label(actionContext))}
           </Button>
           <Button
             disabled={
-              (!methods.formState.isDirty &&
-                !toggleChanged &&
-                !hideVanillaChanged &&
-                !gameFolderPathChanged) ||
+              !appSettingsActions.save.isAvailable(actionContext) ||
               save.isPending
             }
             startIcon={
@@ -317,11 +293,9 @@ function AppSettingsReadyView({
               ) : null
             }
             variant="contained"
-            onClick={methods.handleSubmit(
-              (values) => void save.execute(values),
-            )}
+            onClick={methods.handleSubmit(() => void save.execute())}
           >
-            {t('app:actions.save')}
+            {translate(appSettingsActions.save.label(actionContext))}
           </Button>
         </DialogActions>
       </FormProvider>

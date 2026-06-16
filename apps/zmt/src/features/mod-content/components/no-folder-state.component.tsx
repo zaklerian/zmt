@@ -2,12 +2,20 @@ import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
+import { appChromeActions } from '../../../app/layout/app-chrome-actions';
+
 interface NoFolderStateProps {
   onOpenFolder: () => void;
 }
 
 export function NoFolderState({ onOpenFolder }: NoFolderStateProps) {
   const { t } = useTranslation(['feature.modContent', 'app']);
+  const translate = t as (key: string) => string;
+  const addModContext = {
+    hasSource: false,
+    openFolder: onOpenFolder,
+    present: true,
+  };
   return (
     <Box
       sx={{
@@ -28,9 +36,9 @@ export function NoFolderState({ onOpenFolder }: NoFolderStateProps) {
         <Button
           startIcon={<FolderOpenIcon />}
           variant="contained"
-          onClick={onOpenFolder}
+          onClick={() => void appChromeActions.addMod.execute(addModContext)}
         >
-          {t('app:actions.openModFolder')}
+          {translate(appChromeActions.addMod.label(addModContext))}
         </Button>
       </Stack>
     </Box>
