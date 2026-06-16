@@ -5,6 +5,7 @@ import { Box, Drawer, IconButton, Tooltip } from '@mui/material';
 import { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { appChromeActions } from './app-chrome-actions';
 import { AppFooter } from './app-footer.component';
 import { AppHeader } from './app-header.component';
 import { PanelBreadcrumbs } from './panel-breadcrumbs.component';
@@ -39,6 +40,8 @@ export function AppLayout({
   sources,
 }: AppLayoutProps) {
   const { t } = useTranslation(['app']);
+  const translate = t as (key: string) => string;
+  const drawerContext = { open: drawerOpen, toggle: onToggleDrawer };
   const width = drawerOpen ? DRAWER_WIDTH_OPEN : DRAWER_WIDTH_MINI;
 
   return (
@@ -76,13 +79,16 @@ export function AppLayout({
             >
               <Tooltip
                 placement="right"
-                title={
-                  drawerOpen
-                    ? t('layout.drawer.collapse')
-                    : t('layout.drawer.expand')
-                }
+                title={translate(
+                  appChromeActions.drawerToggle.label(drawerContext),
+                )}
               >
-                <IconButton size="small" onClick={onToggleDrawer}>
+                <IconButton
+                  size="small"
+                  onClick={() =>
+                    appChromeActions.drawerToggle.execute(drawerContext)
+                  }
+                >
                   {drawerOpen ? (
                     <ChevronLeftIcon fontSize="small" />
                   ) : (

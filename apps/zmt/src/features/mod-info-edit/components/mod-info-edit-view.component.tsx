@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { useShell } from '../../../app/shell/shell-context';
 import { useRendererPlugin } from '../../../plugins';
 import { useModDescriptor } from '../hooks';
+import { modInfoEditActions } from '../mod-info-edit-actions';
 import { ModInfoEditForm } from './mod-info-edit-form.component';
 
 interface ModInfoEditLoadedProps {
@@ -48,9 +49,11 @@ export function ModInfoEditView() {
 
 function ModInfoEditLoaded({ modRootPath }: ModInfoEditLoadedProps) {
   const { t } = useTranslation(['feature.modInfoEdit', 'app']);
+  const translate = t as (key: string) => string;
   const { astRef, originalSourceRef, reload, status } = useModDescriptor({
     modRootPath,
   });
+  const retryContext = { reload };
 
   if (status.kind === 'loading') {
     return (
@@ -65,8 +68,12 @@ function ModInfoEditLoaded({ modRootPath }: ModInfoEditLoadedProps) {
       <Box sx={{ p: 3 }}>
         <Alert
           action={
-            <Button color="inherit" size="small" onClick={reload}>
-              {t('app:actions.retry')}
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => modInfoEditActions.retry.execute(retryContext)}
+            >
+              {translate(modInfoEditActions.retry.label(retryContext))}
             </Button>
           }
           severity="error"

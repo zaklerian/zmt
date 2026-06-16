@@ -10,6 +10,8 @@ import {
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
+import { appChromeActions } from './app-chrome-actions';
+
 interface AppHeaderProps {
   hasSource: boolean;
   onOpenAppSettings: () => void;
@@ -22,8 +24,17 @@ export function AppHeader({
   onOpenFolder,
 }: AppHeaderProps) {
   const { t } = useTranslation(['app']);
-  const addModLabel = t('actions.addMod');
-  const appSettingsLabel = t('header.appSettings.label');
+  const translate = t as (key: string) => string;
+  const addModContext = {
+    hasSource,
+    openFolder: onOpenFolder,
+    present: hasSource,
+  };
+  const openSettingsContext = { openSettings: onOpenAppSettings };
+  const addModLabel = translate(appChromeActions.addMod.label(addModContext));
+  const appSettingsLabel = translate(
+    appChromeActions.openSettings.label(openSettingsContext),
+  );
 
   return (
     <AppBar color="default" elevation={1} position="static">
@@ -32,12 +43,14 @@ export function AppHeader({
           {t('header.title')}
         </Typography>
         <Box sx={{ flexGrow: 1 }} />
-        {hasSource && (
+        {appChromeActions.addMod.isAvailable(addModContext) && (
           <Tooltip title={addModLabel}>
             <IconButton
               aria-label={addModLabel}
               size="small"
-              onClick={onOpenFolder}
+              onClick={() =>
+                void appChromeActions.addMod.execute(addModContext)
+              }
             >
               <CreateNewFolderIcon fontSize="small" />
             </IconButton>
@@ -47,7 +60,9 @@ export function AppHeader({
           <IconButton
             aria-label={appSettingsLabel}
             size="small"
-            onClick={onOpenAppSettings}
+            onClick={() =>
+              appChromeActions.openSettings.execute(openSettingsContext)
+            }
           >
             <SettingsIcon fontSize="small" />
           </IconButton>

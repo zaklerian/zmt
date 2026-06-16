@@ -1,3 +1,4 @@
+export * from './app-settings-actions';
 export * from './components';
 export * from './hooks';
 export * from './plugin-config.model';
