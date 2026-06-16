@@ -678,6 +678,174 @@ describe('registerEntityHandlers — grandchild path scope and value lists', () 
   });
 });
 
+const TECHNOLOGY_FIXTURE = `technologies = {
+\tinfantry_weapons = {
+\t\tresearch_cost = 2
+\t\tpath = {
+\t\t\tleads_to_tech = infantry_weapons1
+\t\t\tresearch_cost_coeff = 1
+\t\t}
+\t\tfolder = {
+\t\t\tname = infantry_folder
+\t\t\tposition = {
+\t\t\t\tx = 0
+\t\t\t\ty = 0
+\t\t\t}
+\t\t}
+\t\tpath = {
+\t\t\tleads_to_tech = infantry_at
+\t\t\tresearch_cost_coeff = 2
+\t\t}
+\t\tcategories = {
+\t\t\tinfantry_tech
+\t\t}
+\t}
+}
+`;
+
+// Indexed scope segments (ADR 019, amended ZMT-14): a `{ name, index }` segment
+// addresses the index-th of N repeated same-name blocks. The fixture interleaves
+// `path … folder … path` to exercise non-contiguity.
+describe('registerEntityHandlers — indexed scope for repeated same-name blocks', () => {
+  beforeEach(async () => {
+    vi.mocked(ipcMain.handle).mockReset();
+
+    modRoot = await mkdtemp(path.join(tmpdir(), 'zmt-technology-'));
+    filePath = path.join(modRoot, RELATIVE_PATH);
+    await writeFile(filePath, TECHNOLOGY_FIXTURE);
+
+    state.sources = [{ path: modRoot, permission: 'editable' }];
+    state.workspace = {
+      includedMods: [
+        { id: MOD_ID, name: 'mod', path: modRoot, permission: 'editable' },
+      ],
+    };
+
+    registerEntityHandlers();
+  });
+
+  afterEach(async () => {
+    await rm(modRoot, { force: true, recursive: true });
+  });
+
+  it('patches the second path block via an indexed segment, leaving the interleaved folder and the first path byte-identical', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [],
+          block: [{ index: 1, name: 'path' }],
+          changed: [{ key: 'leads_to_tech', value: 'infantry_at2' }],
+          removed: [],
+        },
+      ],
+      entityName: 'infantry_weapons',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    expect(await readFile(filePath, 'utf8')).toBe(
+      TECHNOLOGY_FIXTURE.replace(
+        'leads_to_tech = infantry_at\n',
+        'leads_to_tech = infantry_at2\n',
+      ),
+    );
+  });
+
+  it('patches a folder nested-object leaf via an indexed segment plus a nested name', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [],
+          block: [{ index: 0, name: 'folder' }, 'position'],
+          changed: [{ key: 'x', value: '5' }],
+          removed: [],
+        },
+      ],
+      entityName: 'infantry_weapons',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    expect(await readFile(filePath, 'utf8')).toBe(
+      TECHNOLOGY_FIXTURE.replace('x = 0', 'x = 5'),
+    );
+  });
+
+  it('materializes a new repeated block when the indexed segment is past the sibling count', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [
+            { key: 'leads_to_tech', value: 'infantry_radio' },
+            { key: 'research_cost_coeff', value: '3' },
+          ],
+          block: [{ index: 2, name: 'path' }],
+          changed: [],
+          removed: [],
+        },
+      ],
+      entityName: 'infantry_weapons',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    const written = await readFile(filePath, 'utf8');
+    const entity = blockAtPath(written, ['technologies', 'infantry_weapons']);
+    const paths = entity?.children.filter(
+      (child) =>
+        child.kind === 'Assignment' &&
+        (child.key.kind === 'Identifier' ? child.key.name : child.key.value) ===
+          'path',
+    );
+    expect(paths).toHaveLength(3);
+    // The first two repeated blocks survive verbatim; the new one is appended.
+    expect(written).toContain('leads_to_tech = infantry_weapons1');
+    expect(written).toContain('leads_to_tech = infantry_at');
+    expect(written).toContain('leads_to_tech = infantry_radio');
+  });
+
+  it('drops the addressed repeated block when its fields are all removed, leaving the other path and the folder intact', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [],
+          block: [{ index: 1, name: 'path' }],
+          changed: [],
+          removed: ['leads_to_tech', 'research_cost_coeff'],
+        },
+      ],
+      entityName: 'infantry_weapons',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    expect(await readFile(filePath, 'utf8')).toBe(
+      TECHNOLOGY_FIXTURE.replace(
+        '\t\tpath = {\n\t\t\tleads_to_tech = infantry_at\n\t\t\tresearch_cost_coeff = 2\n\t\t}\n',
+        '',
+      ),
+    );
+  });
+
+  it('still rejects a duplicate scalar key in a property bag (relaxation is object-list-only)', async () => {
+    await expect(
+      writeVia({
+        deltas: [
+          {
+            added: [{ key: 'research_cost', value: '4' }],
+            block: null,
+            changed: [],
+            removed: [],
+          },
+        ],
+        entityName: 'infantry_weapons',
+        modId: MOD_ID,
+        relativePath: RELATIVE_PATH,
+      }),
+    ).rejects.toSatisfy((error) => extractIpcError(error).code === 409);
+  });
+});
+
 // Parses `source` and descends the named-block path, returning the block at the
 // end of the path. Params are deeply-readonly (string + string path) so the
 // helper stays clear of P-1's mutable-AST-node parameter bar; the mutable parser

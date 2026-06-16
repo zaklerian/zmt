@@ -5,5 +5,6 @@ export * from './field-spec-to-zod.util';
 export * from './field-value-control.component';
 export * from './list-of-scalars-block.component';
 export * from './named-nested-block.component';
+export * from './object-list-block.component';
 export * from './property-bag-block.component';
 export * from './scalar-rows.component';

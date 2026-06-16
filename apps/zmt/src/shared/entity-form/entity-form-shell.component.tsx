@@ -26,6 +26,7 @@ import {
 } from './entity-form-rhf.util';
 import { ListOfScalarsBlockView } from './list-of-scalars-block.component';
 import { NamedNestedBlockView } from './named-nested-block.component';
+import { ObjectListBlockView } from './object-list-block.component';
 import { PropertyBagBlockView } from './property-bag-block.component';
 
 interface EntityFormShellProps {
@@ -207,7 +208,11 @@ export function EntityFormShell({
 }
 
 function blockKey(block: EntityFormBlock, index: number): string {
-  if (block.kind === 'listOfScalars' || block.kind === 'namedNested') {
+  if (
+    block.kind === 'listOfScalars' ||
+    block.kind === 'namedNested' ||
+    block.kind === 'objectList'
+  ) {
     return block.name;
   }
   return block.members.mode === 'open' ? block.members.name : `fixed-${index}`;
@@ -224,6 +229,9 @@ function renderBlock(
   }
   if (block.kind === 'namedNested') {
     return <NamedNestedBlockView key={key} block={block} control={control} />;
+  }
+  if (block.kind === 'objectList') {
+    return <ObjectListBlockView key={key} block={block} control={control} />;
   }
   return <PropertyBagBlockView key={key} block={block} control={control} />;
 }

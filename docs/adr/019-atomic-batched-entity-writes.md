@@ -33,6 +33,39 @@ emits a path beyond that cap.
 
 Bare-token list items. A list-of-scalars block — for example a character's `traits` — holds bare value tokens, not `key = value` pairs. A list item is represented as an `EntityField` whose value is absent (`null`/`undefined`), never the empty string. `key = ""` is a legal, distinct empty-string scalar and must round-trip as itself, so the empty string cannot double as the bare-token marker. On serialization: an `EntityField` with an absent value emits a bare token; an `EntityField` with any value, including `""`, emits `key = value`. The wire contract's only widening therefore remains the `block` → path change; list items need no discriminant field.
 
+## Update (2026-06-16, TECHNOLOGY) — positional addressing of repeated same-name blocks
+
+A logical "list of objects" in Paradox script is N repeated same-named blocks on one entity
+(`path {} path {} path {}`), parsed as flat, independent sibling nodes with no grouping
+concept, and not guaranteed contiguous in source (`path {} folder {} path {}` is legal).
+The name-keyed scope from the prior update addresses one named child and stops at the first
+match, so it cannot address "the second `path`."
+
+- A scope segment gains an indexed form. `EntityWriteScope` (r-core) and
+  `EntityBlockDelta.block` (contracts) become `null | readonly (string | { readonly name:
+string; readonly index: number })[]`. A bare-string segment keeps its meaning — the sole
+  named child (existing behavior, unchanged). A `{ name, index }` segment selects the
+  index-th sibling named `name`. The indexed segment composes with the ordered path, so a
+  field two levels below an indexed block is reachable (e.g. `[{ name: 'folder', index: 1 },
+'position']`).
+- The resolver selects the Nth name-matching sibling rather than breaking on the first; the
+  emptied-block guard and the leaf-materialization path tolerate duplicate names.
+- Writes stay **item-surgical**, not wholesale. Only the addressed block's changed fields
+  are patched; untouched repeated blocks keep their bytes and their comments/trivia. Adding
+  or removing a list item inserts or deletes one rendered block. Wholesale re-serialization
+  of "all `path` blocks as one region" was rejected: the blocks are non-contiguous in
+  general, so a single bounding edit would swallow interleaved keys, and re-rendering from
+  the model drops intra-list comments — both fail on normally-formatted files, which a
+  lossless editor must not do.
+- The duplicate-name guard relaxes **conditionally**: repeated same-name blocks are
+  permitted under an object-list (indexed) scope; duplicate scalar keys in a property bag
+  are still rejected as a real error. The relaxation is scoped to the object-list case, not
+  global — a global relaxation would hide genuine prop-bag key collisions.
+
+Existing entities address blocks with bare-string segments and are unaffected by the type
+widening; only the shared resolver descent changes, so existing-entity save parity is the
+regression gate.
+
 ## Context
 
 Entity writes are scoped deltas applied to a lossless parsed node. A delta targets either the node root or a named child block, and is applied by surgical field-level offset patching: only the changed bytes are rewritten, leaving comments, nested blocks, and unrecognized content byte-identical. The contract carries one scope per call. The base scoped-delta write contract shipped during the S-1 entity work as code; it has no standalone ADR (it is referenced only in ledger L-011 and L-012). This ADR formalizes the contract's shape for the case that motivated revisiting it.

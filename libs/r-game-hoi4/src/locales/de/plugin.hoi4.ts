@@ -165,4 +165,58 @@ export const de: typeof en = {
       },
     },
   },
+  technology: {
+    actions: {
+      edit: 'Bearbeiten',
+    },
+    columns: {
+      categories: 'Kategorien',
+      name: 'Name',
+      paths: 'Pfade',
+    },
+    errors: {
+      conflict:
+        'Diese Technologie wurde auf der Festplatte geändert, seit Sie sie geöffnet haben. Neu laden und erneut versuchen.',
+      forbidden:
+        'Diese Datei ist schreibgeschützt und kann nicht geändert werden.',
+      notFound: 'Diese Technologie existiert nicht mehr.',
+      title: 'Aktion fehlgeschlagen',
+      unknown: 'Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.',
+    },
+    form: {
+      fields: {
+        doctrine: 'Doktrin',
+        doctrine_name: 'Doktrinname',
+        research_cost: 'Forschungskosten',
+        show_equipment_icon: 'Ausrüstungssymbol anzeigen',
+        start_year: 'Startjahr',
+      },
+      folder: {
+        add: 'Ordner hinzufügen',
+        item: 'Ordner',
+        name: 'Name',
+        title: 'Ordner',
+      },
+      path: {
+        add: 'Pfad hinzufügen',
+        item: 'Pfad',
+        leads_to_tech: 'Führt zu Technologie',
+        research_cost_coeff: 'Forschungskostenkoeffizient',
+        title: 'Pfade',
+      },
+      position: {
+        title: 'Position',
+        x: 'X',
+        y: 'Y',
+      },
+      refLists: {
+        categories: 'Kategorien',
+        dependencies: 'Abhängigkeiten',
+        enableEquipmentModules: 'Ausrüstungsmodule freischalten',
+        enableEquipments: 'Ausrüstungen freischalten',
+        enableSubunits: 'Untereinheiten freischalten',
+        xor: 'Gegenseitig ausschließend (xor)',
+      },
+    },
+  },
 };

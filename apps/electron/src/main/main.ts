@@ -14,6 +14,7 @@ import {
   registerPluginsHandlers,
   registerPreferencesHandlers,
   registerSystemHandlers,
+  registerTechnologyHandlers,
   registerWorkspaceHandlers,
 } from './setup';
 import { workspaceStoreService } from './workspace';
@@ -26,6 +27,7 @@ async function bootstrap(): Promise<void> {
   registerFsHandlers();
   registerModuleHandlers();
   registerPreferencesHandlers();
+  registerTechnologyHandlers();
   registerWorkspaceHandlers();
   initializePlugins();
   registerPluginsHandlers();

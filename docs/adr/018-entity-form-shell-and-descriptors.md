@@ -36,6 +36,32 @@ correction to the expansion principle:
 
 The original decision text below is retained as the record.
 
+## Update (2026-06-16, TECHNOLOGY) — object-list block
+
+Point 3 deferred "repeated object blocks … designed against a concrete consumer when one
+requires them." TECHNOLOGY is that consumer (`path`, `folder`), so the object-list block
+lands:
+
+- **Object-list block.** A list of repeated same-named blocks (e.g. `path`), items
+  positional. Each item is a set of scalar field-specs, optionally plus ONE nested
+  named-object (e.g. `folder`'s `position { x y }`) within the two-level nesting cap — no
+  deeper. The block renders as repeatable item cards.
+- **Item add/remove.** Adding or removing a list item inserts or deletes one rendered
+  block. This is block-level editing within an existing entity; it is distinct from entity
+  create/insert (creating a whole new named entity), which stays deferred. The form layer
+  binds items by position; the write addresses them by the indexed scope segment (ADR 019,
+  as amended the same date).
+- **Intrinsic line holds.** Item values defined by other entities (`leads_to_tech`,
+  `folder`'s `name`) are free-text; local scalars (`research_cost_coeff`, `position` x/y)
+  use the validation vocabulary. Item sub-blocks the descriptor does not model are carried
+  verbatim through a save, as elsewhere.
+- **Keyed object-maps remain deferred.** The other shape point 3 deferred (a map of
+  variable keys to object values) is not built here; it is designed against its own
+  concrete consumer when one requires it.
+
+A descriptor reaches an object-list through the indexed scope; the shell and resolver are
+otherwise unchanged. Adding an object-list-bearing entity stays "register a descriptor."
+
 ## Context
 
 Entity _lists_ render through a game-agnostic table shell driven by per-(game, entity) recognizers (shipped in S-1; no standalone ADR — code only). Entity _editing_ exists only as bespoke forms — the mod-descriptor form, the equipment/plane scalar form, and the module form — each hand-wired. As editable types multiply, hand-wiring duplicates the cross-cutting form concerns (field rendering, validation, dirty-tracking, write dispatch) and lets them drift.

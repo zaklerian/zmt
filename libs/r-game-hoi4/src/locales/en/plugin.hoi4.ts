@@ -158,4 +158,57 @@ export const en = {
       },
     },
   },
+  technology: {
+    actions: {
+      edit: 'Edit',
+    },
+    columns: {
+      categories: 'Categories',
+      name: 'Name',
+      paths: 'Paths',
+    },
+    errors: {
+      conflict:
+        'This technology changed on disk since you opened it. Reload and try again.',
+      forbidden: 'This file is read-only and cannot be modified.',
+      notFound: 'This technology no longer exists.',
+      title: 'Action failed',
+      unknown: 'Something went wrong. Please try again.',
+    },
+    form: {
+      fields: {
+        doctrine: 'Doctrine',
+        doctrine_name: 'Doctrine name',
+        research_cost: 'Research cost',
+        show_equipment_icon: 'Show equipment icon',
+        start_year: 'Start year',
+      },
+      folder: {
+        add: 'Add folder',
+        item: 'Folder',
+        name: 'Name',
+        title: 'Folders',
+      },
+      path: {
+        add: 'Add path',
+        item: 'Path',
+        leads_to_tech: 'Leads to tech',
+        research_cost_coeff: 'Research cost coefficient',
+        title: 'Paths',
+      },
+      position: {
+        title: 'Position',
+        x: 'X',
+        y: 'Y',
+      },
+      refLists: {
+        categories: 'Categories',
+        dependencies: 'Dependencies',
+        enableEquipmentModules: 'Enable equipment modules',
+        enableEquipments: 'Enable equipments',
+        enableSubunits: 'Enable subunits',
+        xor: 'Mutually exclusive (xor)',
+      },
+    },
+  },
 };

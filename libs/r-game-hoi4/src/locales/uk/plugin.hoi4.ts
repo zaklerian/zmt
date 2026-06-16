@@ -162,4 +162,57 @@ export const uk: typeof en = {
       },
     },
   },
+  technology: {
+    actions: {
+      edit: 'Редагувати',
+    },
+    columns: {
+      categories: 'Категорії',
+      name: 'Назва',
+      paths: 'Шляхи',
+    },
+    errors: {
+      conflict:
+        'Ця технологія змінилася на диску відколи ви її відкрили. Перезавантажте та спробуйте ще раз.',
+      forbidden: 'Цей файл доступний лише для читання і не може бути змінений.',
+      notFound: 'Ця технологія більше не існує.',
+      title: 'Не вдалося виконати дію',
+      unknown: 'Щось пішло не так. Будь ласка, спробуйте ще раз.',
+    },
+    form: {
+      fields: {
+        doctrine: 'Доктрина',
+        doctrine_name: 'Назва доктрини',
+        research_cost: 'Вартість дослідження',
+        show_equipment_icon: 'Показувати значок спорядження',
+        start_year: 'Рік початку',
+      },
+      folder: {
+        add: 'Додати теку',
+        item: 'Тека',
+        name: 'Назва',
+        title: 'Теки',
+      },
+      path: {
+        add: 'Додати шлях',
+        item: 'Шлях',
+        leads_to_tech: 'Веде до технології',
+        research_cost_coeff: 'Коефіцієнт вартості дослідження',
+        title: 'Шляхи',
+      },
+      position: {
+        title: 'Позиція',
+        x: 'X',
+        y: 'Y',
+      },
+      refLists: {
+        categories: 'Категорії',
+        dependencies: 'Залежності',
+        enableEquipmentModules: 'Увімкнути модулі спорядження',
+        enableEquipments: 'Увімкнути спорядження',
+        enableSubunits: 'Увімкнути підрозділи',
+        xor: 'Взаємовиключні (xor)',
+      },
+    },
+  },
 };

@@ -14,6 +14,7 @@ import {
   ModuleEntity,
   PreferenceKey,
   Preferences,
+  TechnologyEntity,
   Workspace,
 } from '@contracts';
 import { contextBridge } from 'electron';
@@ -85,6 +86,13 @@ const API = {
   },
   system: {
     ping: () => invokeStructured<string>(IPC_CHANNELS.system.ping),
+  },
+  technology: {
+    list: (filePath: string) =>
+      invokeStructured<readonly TechnologyEntity[]>(
+        IPC_CHANNELS.technology.list,
+        filePath,
+      ),
   },
   workspace: {
     addMod: (path: string) =>

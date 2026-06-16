@@ -1,5 +1,6 @@
 import {
   EntityBlockDelta,
+  EntityBlockScopeSegment,
   EntityDeleteRequest,
   EntityField,
   EntityWriteRequest,
@@ -69,9 +70,29 @@ function coerceWriteRequest(value: unknown): EntityWriteRequest {
 function requireBlockPath(
   value: unknown,
   field: string,
-): null | readonly string[] {
+): null | readonly EntityBlockScopeSegment[] {
   if (value === null) return null;
-  return requireStrings(value, field);
+  if (!Array.isArray(value)) {
+    throw badRequest(`${field} must be an array`);
+  }
+  return value.map((entry, index) =>
+    requireBlockSegment(entry, `${field}[${String(index)}]`),
+  );
+}
+
+// A scope segment is a bare-string child name or an indexed `{ name, index }`
+// selecting the index-th repeated same-name block (ADR 019, amended ZMT-14).
+function requireBlockSegment(
+  value: unknown,
+  field: string,
+): EntityBlockScopeSegment {
+  if (typeof value === 'string') return value;
+  const record = requireRecord(value, field);
+  const index = record.index;
+  if (typeof index !== 'number' || !Number.isInteger(index) || index < 0) {
+    throw badRequest(`${field}.index must be a non-negative integer`);
+  }
+  return { index, name: requireString(record.name, `${field}.name`) };
 }
 
 function requireFields(value: unknown, field: string): readonly EntityField[] {
