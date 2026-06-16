@@ -70,7 +70,7 @@ function project(
         knownKeys: KNOWN_MODULE_STAT_KEYS,
         name: block,
         rows: statBlocks[block],
-        scope: block,
+        scope: [block],
         sectionLabel: translate(SECTION_LABEL_KEYS[block] ?? block),
       })),
     ],

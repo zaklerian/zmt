@@ -17,7 +17,7 @@ export function buildDefaultModulesDelta(
     .filter(([, moduleName]) => moduleName !== '')
     .map(([key, value]) => ({ key, value }));
   return {
-    block: DEFAULT_MODULES_BLOCK,
+    block: [DEFAULT_MODULES_BLOCK],
     ...computeScalarDelta(snapshot, rows),
   };
 }

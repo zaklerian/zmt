@@ -1,8 +1,12 @@
 import type { ModId } from '../workspace';
 
 export interface EntityBlockDelta extends EntityScalarDelta {
-  // null targets the entity's own scalars; a string names a direct child block.
-  readonly block: null | string;
+  // null or an empty path targets the entity's own scalars; each element descends
+  // one named child block, so a multi-element path reaches a grandchild and below
+  // (ADR 019, amended ZMT-13). An item whose `value` is empty is a bare value-list
+  // token (e.g. a `traits` entry), written without an `= value`; a non-empty value
+  // is a `key = value` scalar.
+  readonly block: null | readonly string[];
 }
 
 export interface EntityDeleteRequest {

@@ -1,4 +1,34 @@
 export const en = {
+  character: {
+    errors: {
+      conflict:
+        'This character changed on disk since you opened it. Reload and try again.',
+      forbidden: 'This file is read-only and cannot be modified.',
+      notFound: 'This character no longer exists.',
+      title: 'Action failed',
+      unknown: 'Something went wrong. Please try again.',
+    },
+    form: {
+      fields: {
+        gender: 'Gender',
+        name: 'Name',
+      },
+      portraits: {
+        army: 'Army portraits',
+        civilian: 'Civilian portraits',
+        navy: 'Navy portraits',
+        title: 'Portraits',
+      },
+      roles: {
+        advisor: 'Advisor',
+        corps_commander: 'Corps commander',
+        country_leader: 'Country leader',
+        field_marshal: 'Field marshal',
+        navy_leader: 'Navy leader',
+      },
+      traits: 'Traits',
+    },
+  },
   equipment: {
     actions: {
       add: 'Add',

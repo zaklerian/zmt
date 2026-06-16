@@ -31,10 +31,10 @@ export const MODULE_STAT_BLOCKS: readonly ModuleStatBlock[] = [
 ];
 
 // Diffs every bag against its open-time snapshot and collects the non-empty
-// block deltas. block is null for the top-level scalar bag and the stat-block
-// name for each stat sub-bag. Block existence is the handler's call — it creates
-// a block on first add and drops it when emptied — so only per-block
-// adds/changes/removes are sent here.
+// block deltas. block is null for the top-level scalar bag and a one-element path
+// (the stat-block name) for each stat sub-bag (ADR 019, amended ZMT-13). Block
+// existence is the handler's call — it creates a block on first add and drops it
+// when emptied — so only per-block adds/changes/removes are sent here.
 export function computeModuleDeltas(
   snapshot: ModuleBagSnapshot,
   values: ModuleBagValues,
@@ -49,7 +49,7 @@ export function computeModuleDeltas(
 
   for (const block of MODULE_STAT_BLOCKS) {
     const delta = computeScalarDelta(snapshot[block], normalize(values[block]));
-    if (!isEmptyDelta(delta)) deltas.push({ block, ...delta });
+    if (!isEmptyDelta(delta)) deltas.push({ block: [block], ...delta });
   }
 
   return deltas;

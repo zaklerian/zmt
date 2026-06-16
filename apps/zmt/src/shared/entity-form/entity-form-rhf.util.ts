@@ -25,6 +25,12 @@ export function buildEntityFormDefaults(
       values[block.name] = [...block.values];
     } else if (block.kind === 'namedNested') {
       values[block.name] = block.rows.map(toRow);
+      for (const child of block.listChildren ?? []) {
+        values[child.name] = [...child.values];
+      }
+      for (const child of block.namedChildren ?? []) {
+        values[child.name] = child.rows.map(toRow);
+      }
     } else if (block.members.mode === 'open') {
       values[block.members.name] = block.members.rows.map(toRow);
     } else {
@@ -50,6 +56,12 @@ export function buildEntityFormSchema(
       shape[block.name] = z.array(z.string());
     } else if (block.kind === 'namedNested') {
       shape[block.name] = bagSchema(messages);
+      for (const child of block.listChildren ?? []) {
+        shape[child.name] = z.array(z.string());
+      }
+      for (const child of block.namedChildren ?? []) {
+        shape[child.name] = bagSchema(messages);
+      }
     } else if (block.members.mode === 'open') {
       shape[block.members.name] = bagSchema(messages);
     } else {

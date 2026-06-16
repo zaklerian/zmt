@@ -29,7 +29,7 @@ function coerceBlockDelta(value: unknown, field: string): EntityBlockDelta {
   const record = requireRecord(value, field);
   return {
     added: requireFields(record.added, `${field}.added`),
-    block: requireBlockName(record.block, `${field}.block`),
+    block: requireBlockPath(record.block, `${field}.block`),
     changed: requireFields(record.changed, `${field}.changed`),
     removed: requireStrings(record.removed, `${field}.removed`),
   };
@@ -66,10 +66,12 @@ function coerceWriteRequest(value: unknown): EntityWriteRequest {
   };
 }
 
-function requireBlockName(value: unknown, field: string): null | string {
+function requireBlockPath(
+  value: unknown,
+  field: string,
+): null | readonly string[] {
   if (value === null) return null;
-  if (typeof value === 'string') return value;
-  throw badRequest(`${field} must be a string or null`);
+  return requireStrings(value, field);
 }
 
 function requireFields(value: unknown, field: string): readonly EntityField[] {

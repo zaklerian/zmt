@@ -5,10 +5,15 @@ export type FieldSpec =
   | { readonly name: string; readonly validation?: FieldValidation }
   | string;
 
-// Closed structural validation vocabulary (ADR 018). Exactly these keys — adding
-// a sixth requires a real third case and an ADR amendment (R-WORK-7). The exact
-// key set is what lets the type system reject unknown validation keys.
+// Closed structural validation vocabulary (ADR 018, extended ZMT-13). The exact
+// key set is what lets the type system reject unknown validation keys. A keyword
+// is admitted when the need recurs by design and its shape is known and stable.
 export interface FieldValidation {
+  // A closed set of allowed string values, lowering to `z.enum([...])` and
+  // rendered as a closed select that rejects out-of-set values. Distinct from a
+  // property bag's known-key set, which is an open free-text suggestion list.
+  // Applies only to intrinsic closed value sets (e.g. character `gender`).
+  readonly enum?: readonly string[];
   readonly max?: number;
   readonly min?: number;
   readonly pattern?: string;

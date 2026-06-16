@@ -1,6 +1,37 @@
 import type { en } from '../en/plugin.hoi4';
 
 export const de: typeof en = {
+  character: {
+    errors: {
+      conflict:
+        'Dieser Charakter wurde auf der Festplatte geändert, seit Sie ihn geöffnet haben. Neu laden und erneut versuchen.',
+      forbidden:
+        'Diese Datei ist schreibgeschützt und kann nicht geändert werden.',
+      notFound: 'Dieser Charakter existiert nicht mehr.',
+      title: 'Aktion fehlgeschlagen',
+      unknown: 'Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.',
+    },
+    form: {
+      fields: {
+        gender: 'Geschlecht',
+        name: 'Name',
+      },
+      portraits: {
+        army: 'Heeresporträts',
+        civilian: 'Zivilporträts',
+        navy: 'Marineporträts',
+        title: 'Porträts',
+      },
+      roles: {
+        advisor: 'Berater',
+        corps_commander: 'Korpskommandeur',
+        country_leader: 'Staatsführer',
+        field_marshal: 'Feldmarschall',
+        navy_leader: 'Flottenkommandant',
+      },
+      traits: 'Eigenschaften',
+    },
+  },
   equipment: {
     actions: {
       add: 'Hinzufügen',
