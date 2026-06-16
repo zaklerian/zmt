@@ -1,3 +1,4 @@
+export * from './character';
 export * from './equipment';
 export * from './hoi4-renderer-plugin.const';
 export * from './hoi4-traits.component';

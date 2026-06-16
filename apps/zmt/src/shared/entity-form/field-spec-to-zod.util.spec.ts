@@ -42,6 +42,21 @@ describe('lowerFieldSpec', () => {
     expect(schema.safeParse('nope').success).toBe(false);
   });
 
+  it('accepts only in-set values for an enum field, passing absent and empty', () => {
+    const schema = lowerFieldSpec(
+      { name: 'gender', validation: { enum: ['male', 'female'] } },
+      { invalid: 'Invalid' },
+    );
+
+    expect(schema.safeParse('male').success).toBe(true);
+    expect(schema.safeParse('female').success).toBe(true);
+    // Out-of-set value fails the closed set.
+    expect(schema.safeParse('other').success).toBe(false);
+    // Absent / empty pass — an enum does not assert the key must exist.
+    expect(schema.safeParse(undefined).success).toBe(true);
+    expect(schema.safeParse('').success).toBe(true);
+  });
+
   it('coerces and bounds a number-typed field', () => {
     const schema = lowerFieldSpec({
       name: 'weight',

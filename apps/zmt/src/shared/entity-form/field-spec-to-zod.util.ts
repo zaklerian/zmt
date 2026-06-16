@@ -27,7 +27,28 @@ function lowerValidation(
   validation: FieldValidation,
   messages: FieldSpecMessages,
 ): z.ZodTypeAny {
-  const { max, min, pattern, required, type = 'string' } = validation;
+  const {
+    enum: allowed,
+    max,
+    min,
+    pattern,
+    required,
+    type = 'string',
+  } = validation;
+
+  // A closed set: a present non-empty value must be in the set; an absent or
+  // empty value passes (editing existing files that omit optional keys). The
+  // preprocess maps '' → undefined so the enum check only sees real values.
+  if (allowed !== undefined && allowed.length > 0) {
+    return z.preprocess(
+      (value) => (value === '' ? undefined : value),
+      z
+        .enum([...allowed] as [string, ...string[]], {
+          message: messages.invalid,
+        })
+        .optional(),
+    );
+  }
 
   if (type === 'number') {
     let schema = z.coerce.number({ message: messages.invalid });

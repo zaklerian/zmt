@@ -153,7 +153,13 @@ async function readSource(absolutePath: string): Promise<string> {
 function renderFields(indent: string, fields: readonly EntityField[]): string {
   let text = '';
   for (const field of fields) {
-    text += `${indent}${field.key} = ${field.value}\n`;
+    // An empty value is a bare value-list token (e.g. a `traits` entry), written
+    // as the token alone; a `key = ` line would be invalid script. A non-empty
+    // value is a `key = value` scalar.
+    text +=
+      field.value === ''
+        ? `${indent}${field.key}\n`
+        : `${indent}${field.key} = ${field.value}\n`;
   }
   return text;
 }
@@ -174,60 +180,98 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
   const edits: SourceEdit[] = [];
 
   for (const delta of request.deltas) {
-    let target: BlockNode = entityBlock;
-    let childAssignment: AssignmentNode | null = null;
+    const path = delta.block ?? [];
 
-    if (delta.block !== null) {
+    // Descend the scope path one named child at a time, re-binding the target
+    // block at each level and tracking the deepest assignment for the
+    // emptied-block guard. A missing segment is either a stale-edit conflict or,
+    // for a leaf add, the create-the-block-on-first-write case.
+    let target: BlockNode = entityBlock;
+    let deepestAssignment: AssignmentNode | null = null;
+    let missingParent: BlockNode | null = null;
+    let missingName: null | string = null;
+    let missingIsLeaf = false;
+
+    for (let i = 0; i < path.length; i += 1) {
+      const segment = path[i];
+      let childAssignment: AssignmentNode | null = null;
       let childBlock: BlockNode | null = null;
-      for (const child of entityBlock.children) {
+      for (const child of target.children) {
         if (child.kind !== 'Assignment' || child.value.kind !== 'Block') {
           continue;
         }
         const name =
           child.key.kind === 'Identifier' ? child.key.name : child.key.value;
-        if (name === delta.block) {
+        if (name === segment) {
           childAssignment = child;
           childBlock = child.value;
           break;
         }
       }
-
       if (childAssignment === null || childBlock === null) {
-        if (delta.changed.length > 0) throw conflict(delta.changed[0].key);
-        if (delta.removed.length > 0) throw conflict(delta.removed[0]);
-        if (delta.added.length > 0) {
-          let firstFrom: null | number = null;
-          for (const child of entityBlock.children) {
-            if (child.kind === 'Assignment') {
-              firstFrom = child.from;
-              break;
-            }
-          }
-          const indent = indentFor(source, firstFrom, entityBlock.to);
-          const open = `${indent}${delta.block} = {\n`;
-          const text = `${open}${renderFields(indent + '\t', delta.added)}${indent}}\n`;
-          const insertAt = lineStartOf(source, entityBlock.to - 1);
-          edits.push({ from: insertAt, text, to: insertAt });
-        }
-        continue;
+        missingParent = target;
+        missingName = segment;
+        missingIsLeaf = i === path.length - 1;
+        break;
       }
-
+      deepestAssignment = childAssignment;
       target = childBlock;
     }
 
-    // Build this delta's edits locally first: the scalar passes below validate
-    // (409 on a stale key) before the emptied-block decision discards them.
+    if (missingName !== null && missingParent !== null) {
+      if (delta.changed.length > 0) throw conflict(delta.changed[0].key);
+      if (delta.removed.length > 0) throw conflict(delta.removed[0]);
+      if (delta.added.length > 0) {
+        // Only a leaf block can be materialized on first write; an absent
+        // intermediate segment of a deeper path is a stale edit.
+        if (!missingIsLeaf) throw conflict(delta.added[0].key);
+        let firstFrom: null | number = null;
+        for (const child of missingParent.children) {
+          if (child.kind === 'Assignment') {
+            firstFrom = child.from;
+            break;
+          }
+        }
+        const indent = indentFor(source, firstFrom, missingParent.to);
+        const open = `${indent}${missingName} = {\n`;
+        const text = `${open}${renderFields(indent + '\t', delta.added)}${indent}}\n`;
+        const insertAt = lineStartOf(source, missingParent.to - 1);
+        edits.push({ from: insertAt, text, to: insertAt });
+      }
+      continue;
+    }
+
+    // Build this delta's edits locally first: the passes below validate (409 on
+    // a stale key) before the emptied-block decision discards them.
     const deltaEdits: SourceEdit[] = [];
 
+    // `key = value` scalars index by key; bare value-list tokens (e.g. `traits`
+    // entries) parse as non-Assignment values and index by their token text.
+    // Both feed the changed/removed lookups and the add-duplicate guard.
     const scalarByKey = new Map<string, AssignmentNode>();
+    const valueByToken = new Map<string, LineRange>();
     const allKeys = new Set<string>();
     for (const child of target.children) {
-      if (child.kind !== 'Assignment') continue;
-      const name =
-        child.key.kind === 'Identifier' ? child.key.name : child.key.value;
-      allKeys.add(name);
-      if (child.value.kind !== 'Block' && !scalarByKey.has(name)) {
-        scalarByKey.set(name, child);
+      if (child.kind === 'Assignment') {
+        const name =
+          child.key.kind === 'Identifier' ? child.key.name : child.key.value;
+        allKeys.add(name);
+        if (child.value.kind !== 'Block' && !scalarByKey.has(name)) {
+          scalarByKey.set(name, child);
+        }
+        continue;
+      }
+      let token: null | string = null;
+      if (child.kind === 'Identifier') token = child.name;
+      else if (child.kind === 'StringValue') token = child.value;
+      else if (child.kind === 'NumberValue' || child.kind === 'DateValue') {
+        token = child.raw;
+      } else if (child.kind === 'BooleanValue')
+        token = child.value ? 'yes' : 'no';
+      if (token === null) continue;
+      allKeys.add(token);
+      if (!valueByToken.has(token)) {
+        valueByToken.set(token, lineRangeOf(source, child));
       }
     }
 
@@ -244,10 +288,16 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
     const removed = new Set<string>();
     for (const key of delta.removed) {
       const node = scalarByKey.get(key);
-      if (node === undefined) throw conflict(key);
+      if (node !== undefined) {
+        removed.add(key);
+        const { from, to } = lineRangeOf(source, node);
+        deltaEdits.push({ from, text: '', to });
+        continue;
+      }
+      const tokenRange = valueByToken.get(key);
+      if (tokenRange === undefined) throw conflict(key);
       removed.add(key);
-      const { from, to } = lineRangeOf(source, node);
-      deltaEdits.push({ from, text: '', to });
+      deltaEdits.push({ from: tokenRange.from, text: '', to: tokenRange.to });
     }
 
     for (const field of delta.added) {
@@ -256,7 +306,7 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
     if (delta.added.length > 0) {
       let firstFrom: null | number = null;
       for (const child of target.children) {
-        if (child.kind === 'Assignment') {
+        if (child.kind !== 'OrphanComment') {
           firstFrom = child.from;
           break;
         }
@@ -271,27 +321,33 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
     }
 
     // A removal that clears the last surviving child of a named block drops the
-    // whole block rather than leaving `name = { }` behind.
+    // whole block rather than leaving `name = { }` behind — at any depth, keyed
+    // on the deepest descended assignment.
     let emptied =
-      childAssignment !== null &&
+      deepestAssignment !== null &&
       delta.added.length === 0 &&
       delta.removed.length > 0;
     if (emptied) {
       for (const child of target.children) {
-        const name =
-          child.kind === 'Assignment'
-            ? child.key.kind === 'Identifier'
-              ? child.key.name
-              : child.key.value
-            : null;
+        let name: null | string = null;
+        if (child.kind === 'Assignment') {
+          name =
+            child.key.kind === 'Identifier' ? child.key.name : child.key.value;
+        } else if (child.kind === 'Identifier') name = child.name;
+        else if (child.kind === 'StringValue') name = child.value;
+        else if (child.kind === 'NumberValue' || child.kind === 'DateValue') {
+          name = child.raw;
+        } else if (child.kind === 'BooleanValue') {
+          name = child.value ? 'yes' : 'no';
+        }
         if (name === null || !removed.has(name)) {
           emptied = false;
           break;
         }
       }
     }
-    if (emptied && childAssignment !== null) {
-      const { from, to } = lineRangeOf(source, childAssignment);
+    if (emptied && deepestAssignment !== null) {
+      const { from, to } = lineRangeOf(source, deepestAssignment);
       edits.push({ from, text: '', to });
     } else {
       edits.push(...deltaEdits);

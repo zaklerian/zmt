@@ -3,6 +3,39 @@
 - **Status**: Accepted
 - **Date**: 2026-06-15
 
+## Update (2026-06-16) — extended at the CHARACTER deep-dive
+
+This ADR is extended (not superseded) by the first task-2 entity. Three changes, plus a
+correction to the expansion principle:
+
+- **Point 3 — block composition.** The named nested block gains an optional
+  list-of-scalars child: a named child may hold its key→scalar rows AND a list-of-scalars
+  child. No fixed-fields facet is added — a role's scalars ride the existing known-key
+  rows, since editing operates on existing files (keys-when-present), so always-shown
+  labelled fields are not required. One additional bounded level of nesting is admitted:
+  a named block → named child → scalar leaves (e.g. `portraits -> army -> large`). Recursion
+  is still rejected; the cap is two levels, and anything deeper stays in the lossless node
+  for plain mode.
+
+- **Point 4 — validation vocabulary.** The vocabulary gains `enum`: a closed set of
+  allowed values for a single field, lowering to `z.enum([...])` and rendered as a closed
+  select that rejects values outside the set. This is distinct from the property bag's
+  known-key set, which is an open suggestion list permitting free-text; `enum` is closed.
+  It applies only to intrinsic closed value sets (e.g. character `gender`); cross-entity
+  value sets remain free-text per the intrinsic/relational line. A boolean field uses
+  `type` (rendered as a yes/no select), not `enum`.
+
+- **Expansion principle — corrected.** Point 4 originally gated vocabulary growth on "a
+  real third case (R-WORK-7)." That borrowed the post-hoc extraction heuristic — R-WORK-7
+  and A-PROJ-1 govern extracting already-duplicated code, where waiting buys
+  variation-and-shape discovery — and applied it to a forward, design-time decision where
+  it does not fit. A keyword is admitted when the need recurs by design AND its shape is
+  known and stable; `enum` meets both, so it is not speculative. Keywords whose shape is
+  genuinely uncertain — arbitrary predicates, cross-field rules — remain out of scope, and
+  that exclusion stands on shape-uncertainty, not on a count.
+
+The original decision text below is retained as the record.
+
 ## Context
 
 Entity _lists_ render through a game-agnostic table shell driven by per-(game, entity) recognizers (shipped in S-1; no standalone ADR — code only). Entity _editing_ exists only as bespoke forms — the mod-descriptor form, the equipment/plane scalar form, and the module form — each hand-wired. As editable types multiply, hand-wiring duplicates the cross-cutting form concerns (field rendering, validation, dirty-tracking, write dispatch) and lets them drift.
@@ -15,9 +48,9 @@ A second constraint bounds scope. Entities routinely embed large shared sub-voca
 
 2. **Per-entity form-descriptor registry, separate from the recognizer registry.** A per-(game, entity) form-descriptor registry drives the shell, kept separate from the read-side recognizer registry. Read and write evolve independently — a type may be listable without being editable — and a shared entity-identifier constant prevents the two registries from drifting. Descriptors are code modules composing shared form blocks, exactly as recognizers are code modules, not a runtime-interpreted schema. The shell and registry are host-side; concrete descriptors are owned by the per-game `r-game-{x}` library that owns that game's entity UI (ADR 010).
 
-3. **Three form blocks.** Scalar/property bag (flat key→value rows; keys optionally drawn from a curated known set with free-text entry); named nested block (one level deep, no recursion); list of scalar values. Each block pairs its render shape with its write scope — root scope or a named child block — matching the scoped-delta write contract of ADR 019; a key→scalar map reuses the property-bag block rather than introducing a new one. Repeated object blocks and keyed object-maps are out of scope and deferred — designed against a concrete consumer when one requires them, not speculatively.
+3. **Three form blocks.** Scalar/property bag (flat key->value rows; keys optionally drawn from a curated known set with free-text entry); named nested block (one level deep, no recursion); list of scalar values. Each block pairs its render shape with its write scope — root scope or a named child block — matching the scoped-delta write contract of ADR 019; a key->scalar map reuses the property-bag block rather than introducing a new one. Repeated object blocks and keyed object-maps are out of scope and deferred — designed against a concrete consumer when one requires them, not speculatively. _(Extended 2026-06-16 — see Update.)_
 
-4. **Field specification.** A field, and each member of a known set, is specified as either a bare name or an object carrying the name plus optional validation: `string | { name, validation? }` — the same shape for fixed fields and for property-bag members. `validation` is a small closed structural vocabulary (required, type, bounds, pattern) that lowers to a generated Zod schema feeding the shell's RHF resolver (ADR 011). It is deliberately not a general validation language; arbitrary predicates and cross-field rules are out of scope. `required` means a value must be non-empty when its key is present; it does not assert the key must exist, because editing operates on existing files that legitimately omit optional keys. The vocabulary expands only when a real third case demands it (R-WORK-7).
+4. **Field specification.** A field, and each member of a known set, is specified as either a bare name or an object carrying the name plus optional validation: `string | { name, validation? }` — the same shape for fixed fields and for property-bag members. `validation` is a small closed structural vocabulary (required, type, bounds, pattern) that lowers to a generated Zod schema feeding the shell's RHF resolver (ADR 011). It is deliberately not a general validation language; arbitrary predicates and cross-field rules are out of scope. `required` means a value must be non-empty when its key is present; it does not assert the key must exist, because editing operates on existing files that legitimately omit optional keys. _(Extended 2026-06-16 — `enum` added; expansion principle corrected; see Update.)_
 
 5. **Intrinsic-only surface.** A form edits only the fields whose meaning is intrinsic to the open file. A field whose known set is intrinsic to the file is offered as that set plus free-text; a field whose legal values are defined by other entities is plain free-text input, since the open file cannot enumerate them. The shared ecosystem sub-vocabularies (condition/effect/modifier blocks) are never rendered or rewritten — they are preserved verbatim in the lossless parsed node and carried through a save untouched (R-CODE-5). Cross-entity-aware editing of those blocks is deferred.
 
@@ -32,16 +65,14 @@ A second constraint bounds scope. Entities routinely embed large shared sub-voca
 **Negative / accepted**
 
 - The bespoke mod-descriptor, plane, and module forms migrate onto the shell in one change; a single consumer would leave the abstraction unproven, so all three migrate together and the blocks are proven across them. The shell is app-shared infrastructure under `apps/zmt/src/shared/` (A-PROJ-4), not a library — A-PROJ-1's library-extraction gate does not govern it; "prove the abstraction across the three concrete forms before trusting it" is the bar, not a third-library-consumer count.
-- **Schema-sourcing reconciliation — resolved.** ADR 011 names per-feature hand-written Zod schemas as future work, and the mod-descriptor form validates via ADR 010's `modDescriptorSchemaExtension` through `resolveSchemaForPlugin` → `baseModDescriptorSchema.extend` → `zodResolver`. That is a second schema-sourcing path alongside this ADR's descriptor-generated Zod. Resolution: the shell's resolver accepts both. Module and plane descriptors use the generated path; the mod-descriptor form supplies its own schema via the existing plugin-extension path; ADR 011's deferred per-feature hand-written schemas use the same externally-supplied input when they arrive. The closed validation vocabulary is therefore not stretched to subsume `baseModDescriptorSchema` — the two paths coexist rather than one absorbing the other.
+- **Schema-sourcing reconciliation — resolved.** ADR 011 names per-feature hand-written Zod schemas as future work, and the mod-descriptor form validates via ADR 010's `modDescriptorSchemaExtension` through `resolveSchemaForPlugin` -> `baseModDescriptorSchema.extend` -> `zodResolver`. That is a second schema-sourcing path alongside this ADR's descriptor-generated Zod. Resolution: the shell's resolver accepts both. Module and plane descriptors use the generated path; the mod-descriptor form supplies its own schema via the existing plugin-extension path; ADR 011's deferred per-feature hand-written schemas use the same externally-supplied input when they arrive. The closed validation vocabulary is therefore not stretched to subsume `baseModDescriptorSchema` — the two paths coexist rather than one absorbing the other.
 - The closed validation vocabulary will feel limiting — intended. It buys serializable specs and avoids a second validation framework shadowing Zod.
 - Deferring object-list and object-map blocks leaves some entity surfaces not-yet-fully-editable; those entities surface the concrete block shape needed before it is built.
 
 ## Alternatives considered
 
 - **Keep bespoke per-entity forms.** Rejected — duplicates the cross-cutting concerns once per entity and drifts as types multiply; the recurrence is the motivation.
-- **A runtime-interpreted declarative schema → form engine** (field-type interpreters, conditional-field DSL, nested-schema recursion). Rejected — that is a framework abstracted from three forms, and it duplicates Zod's job. Descriptors-as-code composing fixed blocks is the bounded form of the same idea.
+- **A runtime-interpreted declarative schema -> form engine** (field-type interpreters, conditional-field DSL, nested-schema recursion). Rejected — that is a framework abstracted from three forms, and it duplicates Zod's job. Descriptors-as-code composing fixed blocks is the bounded form of the same idea.
 - **One unified entity descriptor carrying both read (columns) and write (form) metadata.** Rejected — couples the read and write lifecycles and forces a form slot onto listable-but-not-editable types. Two registries with a shared id constant keep them independent without drift.
 - **Force the mod-descriptor schema onto the closed validation vocabulary** (one path absorbs the other). Rejected — either loses validation fidelity the hand-written schema carries or bloats the closed vocab to swallow `baseModDescriptorSchema`, defeating its deliberate limit. Accepting both schema sources is cheaper and keeps each path honest.
 - **Render the ecosystem blocks (conditions/effects/modifiers) in the form.** Rejected — their legal contents are cross-entity/ecosystem, unknowable from the open file; rendering them here would invent affordances the layer cannot back. They stay verbatim in the lossless node.
-
----

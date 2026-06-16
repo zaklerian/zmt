@@ -2,6 +2,7 @@ export * from './entity-form-registry.service';
 export * from './entity-form-rhf.util';
 export * from './entity-form-shell.component';
 export * from './field-spec-to-zod.util';
+export * from './field-value-control.component';
 export * from './list-of-scalars-block.component';
 export * from './named-nested-block.component';
 export * from './property-bag-block.component';

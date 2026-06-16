@@ -33,13 +33,13 @@ describe('computeModuleDeltas', () => {
       },
       {
         added: [{ key: 'air_range', value: '100' }],
-        block: 'add_stats',
+        block: ['add_stats'],
         changed: [],
         removed: [],
       },
       {
         added: [],
-        block: 'multiply_stats',
+        block: ['multiply_stats'],
         changed: [],
         removed: ['reliability'],
       },
@@ -74,7 +74,7 @@ describe('computeModuleDeltas', () => {
     expect(deltas).toEqual([
       {
         added: [{ key: 'air_agility', value: '2' }],
-        block: 'add_average_stats',
+        block: ['add_average_stats'],
         changed: [],
         removed: [],
       },

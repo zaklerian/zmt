@@ -1,7 +1,8 @@
-import { Stack, TextField, Typography } from '@mui/material';
-import { fieldName, PropertyBagBlock } from '@r-core';
-import { Control, Controller, FieldValues } from 'react-hook-form';
+import { Stack, Typography } from '@mui/material';
+import { fieldName, fieldValidation, PropertyBagBlock } from '@r-core';
+import { Control, FieldValues } from 'react-hook-form';
 
+import { FieldValueControl } from './field-value-control.component';
 import { ScalarRows } from './scalar-rows.component';
 
 interface PropertyBagBlockViewProps {
@@ -31,22 +32,14 @@ export function PropertyBagBlockView({
         />
       ) : (
         block.members.fields.map((field) => (
-          <Controller
+          <FieldValueControl
             key={fieldName(field.spec)}
             control={control}
+            disabled={field.readonly === true}
+            fullWidth
+            label={field.label}
             name={fieldName(field.spec)}
-            render={({ field: rhfField, fieldState }) => (
-              <TextField
-                {...rhfField}
-                disabled={field.readonly === true}
-                error={fieldState.error !== undefined}
-                fullWidth
-                helperText={fieldState.error?.message}
-                label={field.label}
-                size="small"
-                value={typeof rhfField.value === 'string' ? rhfField.value : ''}
-              />
-            )}
+            validation={fieldValidation(field.spec)}
           />
         ))
       )}

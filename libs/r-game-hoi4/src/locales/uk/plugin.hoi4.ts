@@ -1,6 +1,36 @@
 import type { en } from '../en/plugin.hoi4';
 
 export const uk: typeof en = {
+  character: {
+    errors: {
+      conflict:
+        'Цей персонаж змінився на диску відколи ви його відкрили. Перезавантажте та спробуйте ще раз.',
+      forbidden: 'Цей файл доступний лише для читання і не може бути змінений.',
+      notFound: 'Цей персонаж більше не існує.',
+      title: 'Не вдалося виконати дію',
+      unknown: 'Щось пішло не так. Будь ласка, спробуйте ще раз.',
+    },
+    form: {
+      fields: {
+        gender: 'Стать',
+        name: 'Імʼя',
+      },
+      portraits: {
+        army: 'Портрети армії',
+        civilian: 'Цивільні портрети',
+        navy: 'Портрети флоту',
+        title: 'Портрети',
+      },
+      roles: {
+        advisor: 'Радник',
+        corps_commander: 'Командир корпусу',
+        country_leader: 'Лідер країни',
+        field_marshal: 'Фельдмаршал',
+        navy_leader: 'Командувач флоту',
+      },
+      traits: 'Риси',
+    },
+  },
   equipment: {
     actions: {
       add: 'Додати',

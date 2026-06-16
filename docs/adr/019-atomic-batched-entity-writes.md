@@ -3,6 +3,34 @@
 - **Status**: Accepted
 - **Date**: 2026-06-15
 
+## Update (2026-06-16) — scope widened to an ordered path (ZMT-13)
+
+The scoped-delta write contract originally addressed a delta's scope as `null | string`:
+`null` targets the entity's own scalars, and a string names ONE direct child block. The
+CHARACTER entity requires writing scalars two levels below the entity root — a role
+block's `traits` list, and `portraits -> <group> -> <key>` — which a single child name
+cannot address.
+
+- The scope widens from `null | string` to `null | readonly string[]` — an ordered path
+  of block names from the entity root. `null` (or the empty path) targets the entity's own
+  scalars; each element descends one named child. This is `EntityWriteScope` in
+  `libs/r-core/src/entity-form/` and `EntityBlockDelta.block` on the wire in
+  `libs/contracts/src/entity/`. It is a breaking change to the `entity:write` channel
+  contract, acceptable because every caller is internal.
+- The main-side resolver (`writeEntity` in
+  `apps/electron/src/main/fs/entity-mutation.service.ts`) descends the path level by level,
+  re-binding the target block at each segment, and tracks the deepest assignment for the
+  emptied-block guard.
+- The descending-offset splice (`applyEdits`) is unaffected — it already tolerates patches
+  at any depth within the single buffer, so the atomicity and offset-rebase property of the
+  original decision holds for the batch.
+- A single-element path is exactly the previous single-child case; the existing module and
+  plane delta builders migrate to emit one-element paths with no behavior change.
+
+Depth is bounded by the form layer's two-level nesting cap (ADR 018, as extended on the
+same date); the path representation itself carries no artificial limit, but no descriptor
+emits a path beyond that cap.
+
 ## Context
 
 Entity writes are scoped deltas applied to a lossless parsed node. A delta targets either the node root or a named child block, and is applied by surgical field-level offset patching: only the changed bytes are rewritten, leaving comments, nested blocks, and unrecognized content byte-identical. The contract carries one scope per call. The base scoped-delta write contract shipped during the S-1 entity work as code; it has no standalone ADR (it is referenced only in ledger L-011 and L-012). This ADR formalizes the contract's shape for the case that motivated revisiting it.

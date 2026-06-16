@@ -182,7 +182,7 @@ describe('registerEntityHandlers', () => {
       deltas: [
         {
           added: [],
-          block: 'add_stats',
+          block: ['add_stats'],
           changed: [{ key: 'reliability', value: '0.45' }],
           removed: [],
         },
@@ -202,7 +202,7 @@ describe('registerEntityHandlers', () => {
       deltas: [
         {
           added: [{ key: 'air_attack', value: '7' }],
-          block: 'add_stats',
+          block: ['add_stats'],
           changed: [],
           removed: [],
         },
@@ -225,7 +225,7 @@ describe('registerEntityHandlers', () => {
       deltas: [
         {
           added: [],
-          block: 'add_stats',
+          block: ['add_stats'],
           changed: [],
           removed: ['air_range'],
         },
@@ -321,7 +321,7 @@ describe('registerEntityHandlers', () => {
         deltas: [
           {
             added: [],
-            block: 'add_stats',
+            block: ['add_stats'],
             changed: [],
             removed: ['unknown_stat'],
           },
@@ -339,7 +339,7 @@ describe('registerEntityHandlers', () => {
         deltas: [
           {
             added: [],
-            block: 'add_stats',
+            block: ['add_stats'],
             changed: [{ key: 'air_attack', value: '7' }],
             removed: [],
           },
@@ -382,7 +382,7 @@ describe('registerEntityHandlers', () => {
         },
         {
           added: [],
-          block: 'modules',
+          block: ['modules'],
           changed: [{ key: 'slot', value: 'no' }],
           removed: [],
         },
@@ -404,13 +404,13 @@ describe('registerEntityHandlers', () => {
       deltas: [
         {
           added: [],
-          block: 'add_stats',
+          block: ['add_stats'],
           changed: [],
           removed: ['air_range', 'reliability'],
         },
         {
           added: [{ key: 'air_attack', value: '1' }],
-          block: 'remove_stats',
+          block: ['remove_stats'],
           changed: [],
           removed: [],
         },
@@ -493,5 +493,186 @@ describe('registerEntityHandlers', () => {
     ).rejects.toSatisfy((error) => extractIpcError(error).code === 400);
 
     expect(await readFile(filePath, 'utf8')).toBe(FIXTURE);
+  });
+});
+
+const CHARACTER_FIXTURE = `characters = {
+\tSome_Leader = {
+\t\tname = "NAME_KEY"
+\t\tgender = male
+\t\tportraits = {
+\t\t\tarmy = {
+\t\t\t\tlarge = "gfx/large.dds"
+\t\t\t\tsmall = "gfx/small.dds"
+\t\t\t}
+\t\t}
+\t\tcorps_commander = {
+\t\t\tskill = 4
+\t\t\ttraits = {
+\t\t\t\ttrait_one
+\t\t\t\ttrait_two
+\t\t\t}
+\t\t}
+\t\tadvisor = {
+\t\t\tslot = political_advisor
+\t\t\tcan_be_fired = no
+\t\t}
+\t}
+}
+`;
+
+describe('registerEntityHandlers — grandchild path scope and value lists', () => {
+  beforeEach(async () => {
+    vi.mocked(ipcMain.handle).mockReset();
+
+    modRoot = await mkdtemp(path.join(tmpdir(), 'zmt-character-'));
+    filePath = path.join(modRoot, RELATIVE_PATH);
+    await writeFile(filePath, CHARACTER_FIXTURE);
+
+    state.sources = [{ path: modRoot, permission: 'editable' }];
+    state.workspace = {
+      includedMods: [
+        { id: MOD_ID, name: 'mod', path: modRoot, permission: 'editable' },
+      ],
+    };
+
+    registerEntityHandlers();
+  });
+
+  afterEach(async () => {
+    await rm(modRoot, { force: true, recursive: true });
+  });
+
+  it('patches a grandchild scalar via a two-element path, leaving siblings byte-identical', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [],
+          block: ['portraits', 'army'],
+          changed: [{ key: 'large', value: '"gfx/new.dds"' }],
+          removed: [],
+        },
+      ],
+      entityName: 'Some_Leader',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    expect(await readFile(filePath, 'utf8')).toBe(
+      CHARACTER_FIXTURE.replace('"gfx/large.dds"', '"gfx/new.dds"'),
+    );
+  });
+
+  it('adds a bare value-list token at depth two without an `= value`', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [{ key: 'trait_three', value: '' }],
+          block: ['corps_commander', 'traits'],
+          changed: [],
+          removed: [],
+        },
+      ],
+      entityName: 'Some_Leader',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    expect(await readFile(filePath, 'utf8')).toBe(
+      CHARACTER_FIXTURE.replace(
+        '\t\t\t\ttrait_two\n',
+        '\t\t\t\ttrait_two\n\t\t\t\ttrait_three\n',
+      ),
+    );
+  });
+
+  it('removes a bare value-list token, leaving the surviving tokens byte-identical', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [],
+          block: ['corps_commander', 'traits'],
+          changed: [],
+          removed: ['trait_one'],
+        },
+      ],
+      entityName: 'Some_Leader',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    expect(await readFile(filePath, 'utf8')).toBe(
+      CHARACTER_FIXTURE.replace('\t\t\t\ttrait_one\n', ''),
+    );
+  });
+
+  it('drops the whole value-list block when its last token is removed', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [],
+          block: ['corps_commander', 'traits'],
+          changed: [],
+          removed: ['trait_one', 'trait_two'],
+        },
+      ],
+      entityName: 'Some_Leader',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    expect(await readFile(filePath, 'utf8')).toBe(
+      CHARACTER_FIXTURE.replace(
+        '\t\t\ttraits = {\n\t\t\t\ttrait_one\n\t\t\t\ttrait_two\n\t\t\t}\n',
+        '',
+      ),
+    );
+  });
+
+  it('edits two coexisting roles independently in one atomic batch', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [],
+          block: ['corps_commander'],
+          changed: [{ key: 'skill', value: '5' }],
+          removed: [],
+        },
+        {
+          added: [],
+          block: ['advisor'],
+          changed: [{ key: 'can_be_fired', value: 'yes' }],
+          removed: [],
+        },
+      ],
+      entityName: 'Some_Leader',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    expect(await readFile(filePath, 'utf8')).toBe(
+      CHARACTER_FIXTURE.replace('skill = 4', 'skill = 5').replace(
+        'can_be_fired = no',
+        'can_be_fired = yes',
+      ),
+    );
+  });
+
+  it('rejects with 409 when an intermediate path segment is absent', async () => {
+    await expect(
+      writeVia({
+        deltas: [
+          {
+            added: [{ key: 'large', value: '"gfx/x.dds"' }],
+            block: ['portraits', 'navy'],
+            changed: [{ key: 'large', value: '"gfx/x.dds"' }],
+            removed: [],
+          },
+        ],
+        entityName: 'Some_Leader',
+        modId: MOD_ID,
+        relativePath: RELATIVE_PATH,
+      }),
+    ).rejects.toSatisfy((error) => extractIpcError(error).code === 409);
   });
 });

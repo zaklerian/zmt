@@ -18,7 +18,7 @@ describe('buildDefaultModulesDelta', () => {
 
     expect(delta).toEqual({
       added: [{ key: 'bomb_slot', value: 'bomb_locks_1' }],
-      block: 'default_modules',
+      block: ['default_modules'],
       changed: [{ key: 'engine_slot', value: 'engine_3' }],
       removed: ['gun_slot'],
     });
@@ -32,7 +32,7 @@ describe('buildDefaultModulesDelta', () => {
 
     expect(delta).toEqual({
       added: [],
-      block: 'default_modules',
+      block: ['default_modules'],
       changed: [],
       removed: [],
     });
@@ -46,7 +46,7 @@ describe('buildDefaultModulesDelta', () => {
 
     expect(delta).toEqual({
       added: [],
-      block: 'default_modules',
+      block: ['default_modules'],
       changed: [],
       removed: ['gun_slot'],
     });
