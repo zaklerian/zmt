@@ -7,4 +7,5 @@ export * from './ipc';
 export * from './module';
 export * from './plugin';
 export * from './preferences';
+export * from './technology';
 export * from './workspace';

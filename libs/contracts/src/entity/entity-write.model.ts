@@ -3,11 +3,21 @@ import type { ModId } from '../workspace';
 export interface EntityBlockDelta extends EntityScalarDelta {
   // null or an empty path targets the entity's own scalars; each element descends
   // one named child block, so a multi-element path reaches a grandchild and below
-  // (ADR 019, amended ZMT-13). An item whose `value` is absent (`null`) is a bare
-  // value-list token (e.g. a `traits` entry), written without an `= value`; any
-  // value, including the empty string `""`, is a `key = value` scalar.
-  readonly block: null | readonly string[];
+  // (ADR 019, amended ZMT-13). A bare-string segment selects the sole named child
+  // (unchanged); a `{ name, index }` segment selects the index-th sibling named
+  // `name`, addressing one of N repeated same-name blocks (ADR 019, amended
+  // ZMT-14). An item whose `value` is absent (`null`) is a bare value-list token
+  // (e.g. a `traits` entry), written without an `= value`; any value, including
+  // the empty string `""`, is a `key = value` scalar.
+  readonly block: null | readonly EntityBlockScopeSegment[];
 }
+
+// One step of a write scope path (ADR 019, amended ZMT-14). A bare string names
+// the sole child block; an indexed segment selects the index-th sibling sharing
+// `name`, the only form that can address repeated same-name blocks (object-list).
+export type EntityBlockScopeSegment =
+  | { readonly index: number; readonly name: string }
+  | string;
 
 export interface EntityDeleteRequest {
   readonly entityName: string;

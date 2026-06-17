@@ -1,8 +1,16 @@
 import { FieldSpec } from './field-spec.model';
 
+// Per-item field carrying an object-list item's original block index — the
+// position of its source block among the repeated same-name siblings — or null
+// for an item added in the form. The save maps each surviving item back to its
+// source block by this index so writes stay item-surgical across removals; a new
+// item (null) materializes a fresh block (ADR 019, amended ZMT-14).
+export const OBJECT_LIST_ITEM_INDEX_KEY = '__originalIndex';
+
 export type EntityFormBlock =
   | ListOfScalarsBlock
   | NamedNestedBlock
+  | ObjectListBlock
   | PropertyBagBlock;
 
 // A fixed, named scalar field rendered by the property-bag block in fixed mode.
@@ -27,11 +35,20 @@ export interface EntityFormRow {
   readonly value: null | string;
 }
 
-// Write scope per the ADR 019 scoped-delta contract (amended ZMT-13): null or an
-// empty path targets the entity's own scalars (root); each element descends one
-// named child block, so a two-element path reaches a grandchild (e.g.
-// `['portraits', 'army']`). Bounded by the form layer's two-level nesting cap.
-export type EntityWriteScope = null | readonly string[];
+// One step of a write scope path (ADR 019, amended ZMT-14). A bare string names
+// the sole child block (unchanged); a `{ name, index }` segment selects the
+// index-th sibling sharing `name` — the only form that addresses one of N
+// repeated same-name blocks (an object-list item).
+export type EntityScopeSegment =
+  | { readonly index: number; readonly name: string }
+  | string;
+
+// Write scope per the ADR 019 scoped-delta contract (amended ZMT-13, ZMT-14):
+// null or an empty path targets the entity's own scalars (root); each element
+// descends one child block, so a two-element path reaches a grandchild (e.g.
+// `['portraits', 'army']`, or `[{ name: 'folder', index: 1 }, 'position']`).
+// Bounded by the form layer's two-level nesting cap.
+export type EntityWriteScope = null | readonly EntityScopeSegment[];
 
 // A list of scalar values (e.g. a role's `traits`), bound to one value key. Used
 // both as a top-level block and as a named-nested block's list child.
@@ -68,6 +85,40 @@ export interface NamedScalarChild {
   readonly name: string;
   readonly rows: readonly EntityFormRow[];
   readonly scope: EntityWriteScope;
+  readonly sectionLabel?: string;
+}
+
+// Object-list block (ADR 018, extended ZMT-14). A list of repeated same-named
+// blocks (e.g. `path`), items positional and rendered as repeatable item cards
+// with add/remove. `name` is both the repeated block name and the RHF field-array
+// binding. Each item is the `fields` scalar field-specs, optionally plus ONE
+// `nested` named-object (e.g. `folder`'s `position { x y }`) within the two-level
+// cap. `items` carries the open-time item values (one record per item, scalar
+// fields flat plus the nested object under `nested.name`); add/remove insert or
+// delete one rendered block, addressed by the indexed scope segment (ADR 019).
+export interface ObjectListBlock extends BlockCommon {
+  readonly addLabel: string;
+  readonly fields: readonly ObjectListField[];
+  readonly itemLabel: string;
+  readonly items: readonly Readonly<Record<string, unknown>>[];
+  readonly kind: 'objectList';
+  readonly name: string;
+  readonly nested?: ObjectListNested;
+}
+
+// One scalar field of an object-list item. `label` is resolved by the descriptor;
+// `spec` drives the value control (enum → closed select, boolean → yes/no select,
+// otherwise free text), mirroring `EntityFormFixedField` without a per-item value.
+export interface ObjectListField {
+  readonly label: string;
+  readonly spec: FieldSpec;
+}
+
+// The one optional nested named-object an object-list item may carry (e.g.
+// `folder`'s `position`) — its own scalar fields, no deeper (two-level cap).
+export interface ObjectListNested {
+  readonly fields: readonly ObjectListField[];
+  readonly name: string;
   readonly sectionLabel?: string;
 }
 

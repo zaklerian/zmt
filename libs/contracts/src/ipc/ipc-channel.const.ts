@@ -33,6 +33,9 @@ export const IPC_CHANNELS = {
   system: {
     ping: 'system:ping',
   },
+  technology: {
+    list: 'technology:list',
+  },
   workspace: {
     addMod: 'workspace:addMod',
     get: 'workspace:get',

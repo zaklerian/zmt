@@ -9,6 +9,7 @@ import { FsNode, ListOptions } from '../fs';
 import { CatalogModule, ModuleEntity } from '../module';
 import { GamePlugin } from '../plugin';
 import { PreferenceKey, Preferences } from '../preferences';
+import { TechnologyEntity } from '../technology';
 import { ModId, Workspace } from '../workspace';
 
 export interface AppApiModel {
@@ -62,6 +63,9 @@ export interface AppApiModel {
   };
   readonly system: {
     readonly ping: () => Promise<string>;
+  };
+  readonly technology: {
+    readonly list: (filePath: string) => Promise<readonly TechnologyEntity[]>;
   };
   readonly workspace: {
     readonly addMod: (path: string) => Promise<Workspace>;

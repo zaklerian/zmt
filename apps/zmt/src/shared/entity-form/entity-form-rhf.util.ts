@@ -25,6 +25,10 @@ export function buildEntityFormDefaults(
   for (const block of blocks) {
     if (block.kind === 'listOfScalars') {
       values[block.name] = [...block.values];
+    } else if (block.kind === 'objectList') {
+      // Each item seeds as-is: scalar fields flat plus the nested object under
+      // its name, including the original-index marker the save maps back by.
+      values[block.name] = block.items.map((item) => ({ ...item }));
     } else if (block.kind === 'namedNested') {
       values[block.name] = block.rows.map(toRow);
       for (const child of block.listChildren ?? []) {
@@ -56,6 +60,11 @@ export function buildEntityFormSchema(
   for (const block of blocks) {
     if (block.kind === 'listOfScalars') {
       shape[block.name] = z.array(z.string());
+    } else if (block.kind === 'objectList') {
+      // Items are positional records (scalar fields + an optional nested object +
+      // the original-index marker); per-field value validation rides each item's
+      // FieldValueControl, so the array schema stays permissive.
+      shape[block.name] = z.array(z.record(z.string(), z.unknown()));
     } else if (block.kind === 'namedNested') {
       shape[block.name] = bagSchema(messages);
       for (const child of block.listChildren ?? []) {

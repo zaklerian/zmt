@@ -168,6 +168,21 @@ function renderFields(indent: string, fields: readonly EntityField[]): string {
   return text;
 }
 
+// Renders a whole `name = { … }` block for a first-write materialization. Used
+// both for a bare-string child created on first write (e.g. a stat block) and for
+// an object-list item inserted by an indexed materialization (ZMT-14). The body
+// is `renderFields`, which already emits a field whose value is itself a `{ … }`
+// block as `key = { … }` — that is how an object-list item's optional nested
+// object rides along; `renderFields` alone emits only the loose body lines, never
+// the wrapping `name = { … }`.
+function renderObjectBlock(
+  indent: string,
+  name: string,
+  fields: readonly EntityField[],
+): string {
+  return `${indent}${name} = {\n${renderFields(indent + '\t', fields)}${indent}}\n`;
+}
+
 async function writeEntity(request: EntityWriteRequest): Promise<void> {
   // AST nodes from @paradox-parser are mutable, so descent stays inline on
   // locals: prefer-readonly-parameter-types (P-1) bars node-typed helper params.
@@ -198,23 +213,33 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
 
     for (let i = 0; i < path.length; i += 1) {
       const segment = path[i];
+      // A bare-string segment selects the sole/first named child (existing
+      // behavior); an indexed segment selects the index-th same-named sibling —
+      // the only form that reaches one of N repeated blocks (object-list). Both
+      // count name-matching siblings, so duplicate names are tolerated, and a
+      // bare string is exactly index 0 (ADR 019, amended ZMT-14).
+      const segmentName = typeof segment === 'string' ? segment : segment.name;
+      const segmentIndex = typeof segment === 'string' ? 0 : segment.index;
       let childAssignment: AssignmentNode | null = null;
       let childBlock: BlockNode | null = null;
+      let matches = 0;
       for (const child of target.children) {
         if (child.kind !== 'Assignment' || child.value.kind !== 'Block') {
           continue;
         }
         const name =
           child.key.kind === 'Identifier' ? child.key.name : child.key.value;
-        if (name === segment) {
+        if (name !== segmentName) continue;
+        if (matches === segmentIndex) {
           childAssignment = child;
           childBlock = child.value;
           break;
         }
+        matches += 1;
       }
       if (childAssignment === null || childBlock === null) {
         missingParent = target;
-        missingName = segment;
+        missingName = segmentName;
         missingIsLeaf = i === path.length - 1;
         break;
       }
@@ -227,7 +252,12 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
       if (delta.removed.length > 0) throw conflict(delta.removed[0]);
       if (delta.added.length > 0) {
         // Only a leaf block can be materialized on first write; an absent
-        // intermediate segment of a deeper path is a stale edit.
+        // intermediate segment of a deeper path is a stale edit. The duplicate
+        // relaxation is conditional and lives here by construction: an indexed
+        // leaf segment whose index is past the current sibling count is "absent",
+        // so it materializes a fresh same-name block (an object-list item add) —
+        // the prop-bag scalar add-duplicate guard below (allKeys) is never reached
+        // for it, yet still rejects duplicate scalar keys for a resolved target.
         if (!missingIsLeaf) throw conflict(delta.added[0].key);
         let firstFrom: null | number = null;
         for (const child of missingParent.children) {
@@ -237,8 +267,7 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
           }
         }
         const indent = indentFor(source, firstFrom, missingParent.to);
-        const open = `${indent}${missingName} = {\n`;
-        const text = `${open}${renderFields(indent + '\t', delta.added)}${indent}}\n`;
+        const text = renderObjectBlock(indent, missingName, delta.added);
         const insertAt = lineStartOf(source, missingParent.to - 1);
         edits.push({ from: insertAt, text, to: insertAt });
       }
@@ -249,10 +278,14 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
     // a stale key) before the emptied-block decision discards them.
     const deltaEdits: SourceEdit[] = [];
 
-    // `key = value` scalars index by key; bare value-list tokens (e.g. `traits`
-    // entries) parse as non-Assignment values and index by their token text.
-    // Both feed the changed/removed lookups and the add-duplicate guard.
+    // `key = value` scalars index by key; named sub-blocks index by their block
+    // name (so removing an object-list item that carries a nested object — e.g. a
+    // `folder` with a `position` block — drops the whole sub-block, not only its
+    // scalars); bare value-list tokens (e.g. `traits` entries) parse as
+    // non-Assignment values and index by their token text. All three feed the
+    // changed/removed lookups and the add-duplicate guard.
     const scalarByKey = new Map<string, AssignmentNode>();
+    const blockByKey = new Map<string, AssignmentNode>();
     const valueByToken = new Map<string, LineRange>();
     const allKeys = new Set<string>();
     for (const child of target.children) {
@@ -260,7 +293,9 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
         const name =
           child.key.kind === 'Identifier' ? child.key.name : child.key.value;
         allKeys.add(name);
-        if (child.value.kind !== 'Block' && !scalarByKey.has(name)) {
+        if (child.value.kind === 'Block') {
+          if (!blockByKey.has(name)) blockByKey.set(name, child);
+        } else if (!scalarByKey.has(name)) {
           scalarByKey.set(name, child);
         }
         continue;
@@ -297,6 +332,13 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
       if (node !== undefined) {
         removed.add(key);
         const { from, to } = lineRangeOf(source, node);
+        deltaEdits.push({ from, text: '', to });
+        continue;
+      }
+      const blockNode = blockByKey.get(key);
+      if (blockNode !== undefined) {
+        removed.add(key);
+        const { from, to } = lineRangeOf(source, blockNode);
         deltaEdits.push({ from, text: '', to });
         continue;
       }
