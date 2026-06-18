@@ -1042,6 +1042,53 @@ describe('registerEntityHandlers — intermediate-block materialization', () => 
     expect(written).toContain('victory_points = { 100 5 }');
   });
 
+  it('coalesces a shared absent intermediate across the batch into exactly one buildings block', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [{ key: 'arms_factory', value: '2' }],
+          block: ['buildings'],
+          changed: [],
+          removed: [],
+        },
+        {
+          added: [{ key: '12', value: '1' }],
+          block: ['buildings', 'naval_base'],
+          changed: [],
+          removed: [],
+        },
+      ],
+      entityName: 'state',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    const written = await readFile(filePath, 'utf8');
+    const stateBlock = blockAtPath(written, ['state']);
+    const buildingsBlocks = stateBlock?.children.filter(
+      (child) =>
+        child.kind === 'Assignment' &&
+        (child.key.kind === 'Identifier' ? child.key.name : child.key.value) ===
+          'buildings',
+    );
+    // Exactly ONE buildings block, not one per delta — this is the coalescing
+    // guarantee (ADR 019, amended ZMT-15.1).
+    expect(buildingsBlocks).toHaveLength(1);
+
+    const navalBase = blockAtPath(written, [
+      'state',
+      'buildings',
+      'naval_base',
+    ]);
+    expect(navalBase).toBeDefined();
+    // The building-row scalar and the naval_base child both nest inside the one
+    // materialized block, at the right depths.
+    expect(written).toContain('\t\tarms_factory = 2\n');
+    expect(written).toContain('\t\t\t12 = 1\n');
+    // The rest of the file is untouched.
+    expect(written).toContain('victory_points = { 100 5 }');
+  });
+
   it('materializes a single block when only the terminal segment is absent (regression)', async () => {
     await writeVia({
       deltas: [
@@ -1102,6 +1149,86 @@ describe('registerEntityHandlers — intermediate-block materialization', () => 
     ).rejects.toSatisfy((error) => extractIpcError(error).code === 409);
 
     expect(await readFile(filePath, 'utf8')).toBe(STATE_FIXTURE);
+  });
+});
+
+// Batch-coalesced materialization at a DEEPER absent prefix (ADR 019, amended
+// ZMT-15.1): the shared absent block is a grandchild of a present parent, not a
+// top-level child. Two added-only deltas sharing that prefix must still
+// materialize it once. `present` exists; `present -> absent` does not.
+const NESTED_FIXTURE = `root = {
+\tpresent = {
+\t\tkeep = 1
+\t}
+}
+`;
+
+describe('registerEntityHandlers — coalescing a deeper shared absent prefix', () => {
+  beforeEach(async () => {
+    vi.mocked(ipcMain.handle).mockReset();
+
+    modRoot = await mkdtemp(path.join(tmpdir(), 'zmt-nested-'));
+    filePath = path.join(modRoot, RELATIVE_PATH);
+    await writeFile(filePath, NESTED_FIXTURE);
+
+    state.sources = [{ path: modRoot, permission: 'editable' }];
+    state.workspace = {
+      includedMods: [
+        { id: MOD_ID, name: 'mod', path: modRoot, permission: 'editable' },
+      ],
+    };
+
+    registerEntityHandlers();
+  });
+
+  afterEach(async () => {
+    await rm(modRoot, { force: true, recursive: true });
+  });
+
+  it('materializes a shared absent grandchild once for two deltas, nesting both leaves', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [{ key: 'x', value: '1' }],
+          block: ['present', 'absent', 'first'],
+          changed: [],
+          removed: [],
+        },
+        {
+          added: [{ key: 'y', value: '2' }],
+          block: ['present', 'absent', 'second'],
+          changed: [],
+          removed: [],
+        },
+      ],
+      entityName: 'root',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    const written = await readFile(filePath, 'utf8');
+    const present = blockAtPath(written, ['root', 'present']);
+    const absentBlocks = present?.children.filter(
+      (child) =>
+        child.kind === 'Assignment' &&
+        (child.key.kind === 'Identifier' ? child.key.name : child.key.value) ===
+          'absent',
+    );
+    expect(absentBlocks).toHaveLength(1);
+
+    const first = blockAtPath(written, ['root', 'present', 'absent', 'first']);
+    const second = blockAtPath(written, [
+      'root',
+      'present',
+      'absent',
+      'second',
+    ]);
+    expect(first).toBeDefined();
+    expect(second).toBeDefined();
+    expect(written).toContain('x = 1');
+    expect(written).toContain('y = 2');
+    // The pre-existing scalar in the present parent is untouched.
+    expect(written).toContain('keep = 1');
   });
 });
 
