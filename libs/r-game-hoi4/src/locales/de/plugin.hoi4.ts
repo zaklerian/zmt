@@ -165,6 +165,51 @@ export const de: typeof en = {
       },
     },
   },
+  state: {
+    actions: {
+      edit: 'Bearbeiten',
+    },
+    columns: {
+      category: 'Kategorie',
+      id: 'ID',
+      name: 'Name',
+      provinces: 'Provinzen',
+    },
+    errors: {
+      conflict:
+        'Dieser Staat wurde seit dem Öffnen auf der Festplatte geändert. Neu laden und erneut versuchen.',
+      forbidden:
+        'Diese Datei ist schreibgeschützt und kann nicht geändert werden.',
+      notFound: 'Dieser Staat existiert nicht mehr.',
+      title: 'Aktion fehlgeschlagen',
+      unknown: 'Etwas ist schiefgelaufen. Bitte erneut versuchen.',
+    },
+    form: {
+      buildings: {
+        title: 'Gebäude',
+      },
+      fields: {
+        id: 'ID',
+        impassable: 'Unpassierbar',
+        local_supplies: 'Lokaler Nachschub',
+        manpower: 'Arbeitskräfte',
+        name: 'Name',
+        state_category: 'Staatskategorie',
+      },
+      history: {
+        title: 'Geschichte (Besitzer / Kontrolleur)',
+      },
+      navalBase: {
+        title: 'Marinebasis (Provinz → Stufe)',
+      },
+      provinces: {
+        label: 'Provinzen',
+      },
+      resources: {
+        title: 'Ressourcen',
+      },
+    },
+  },
   technology: {
     actions: {
       edit: 'Bearbeiten',

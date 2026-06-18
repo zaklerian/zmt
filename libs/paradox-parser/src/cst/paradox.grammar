@@ -2,7 +2,7 @@
 
 Assignment { Key Operator Value }
 
-Key { Identifier | StringValue }
+Key { Identifier | StringValue | NumberValue }
 
 Operator {
   Equals | LessEq | LessThan | GreaterEq | GreaterThan | NotEqual

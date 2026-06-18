@@ -30,6 +30,9 @@ export const IPC_CHANNELS = {
     getAll: 'preferences:getAll',
     set: 'preferences:set',
   },
+  state: {
+    list: 'state:list',
+  },
   system: {
     ping: 'system:ping',
   },

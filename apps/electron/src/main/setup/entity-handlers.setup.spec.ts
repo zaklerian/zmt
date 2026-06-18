@@ -969,3 +969,239 @@ describe('registerEntityHandlers — bare-token vs empty-string scalar round-tri
     }
   });
 });
+
+// Intermediate-block materialization (ADR 019, amended ZMT-15): an added-only
+// delta whose scope has an absent INTERMEDIATE block materializes the missing
+// tail (nesting rendered blocks down the path) before the add. The state fixture
+// has no `buildings` block, so `['buildings', 'naval_base']` is an absent
+// intermediate; a changed/removed delta against the same missing target still
+// conflicts.
+const STATE_FIXTURE = `state = {
+\tid = 1
+\tname = "STATE_1"
+\tprovinces = {
+\t\t1 2 3
+\t}
+\thistory = {
+\t\towner = GER
+\t\tcontroller = GER
+\t\tvictory_points = { 100 5 }
+\t}
+}
+`;
+
+describe('registerEntityHandlers — intermediate-block materialization', () => {
+  beforeEach(async () => {
+    vi.mocked(ipcMain.handle).mockReset();
+
+    modRoot = await mkdtemp(path.join(tmpdir(), 'zmt-state-'));
+    filePath = path.join(modRoot, RELATIVE_PATH);
+    await writeFile(filePath, STATE_FIXTURE);
+
+    state.sources = [{ path: modRoot, permission: 'editable' }];
+    state.workspace = {
+      includedMods: [
+        { id: MOD_ID, name: 'mod', path: modRoot, permission: 'editable' },
+      ],
+    };
+
+    registerEntityHandlers();
+  });
+
+  afterEach(async () => {
+    await rm(modRoot, { force: true, recursive: true });
+  });
+
+  it('materializes the absent intermediate block then the leaf for an added-only delta', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [{ key: '12', value: '1' }],
+          block: ['buildings', 'naval_base'],
+          changed: [],
+          removed: [],
+        },
+      ],
+      entityName: 'state',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    const written = await readFile(filePath, 'utf8');
+    const buildings = blockAtPath(written, ['state', 'buildings']);
+    const navalBase = blockAtPath(written, [
+      'state',
+      'buildings',
+      'naval_base',
+    ]);
+
+    expect(buildings).toBeDefined();
+    expect(navalBase).toBeDefined();
+    expect(written).toContain('\t\t\t12 = 1\n');
+    // The rest of the file is byte-identical: only the new block is inserted.
+    expect(written).toContain('victory_points = { 100 5 }');
+  });
+
+  it('materializes a single block when only the terminal segment is absent (regression)', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [{ key: 'infrastructure', value: '3' }],
+          block: ['buildings'],
+          changed: [],
+          removed: [],
+        },
+      ],
+      entityName: 'state',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    const written = await readFile(filePath, 'utf8');
+    const buildings = blockAtPath(written, ['state', 'buildings']);
+
+    expect(buildings).toBeDefined();
+    expect(written).toContain('\t\tinfrastructure = 3\n');
+  });
+
+  it('rejects with 409 when a changed delta targets an absent intermediate block', async () => {
+    await expect(
+      writeVia({
+        deltas: [
+          {
+            added: [],
+            block: ['buildings', 'naval_base'],
+            changed: [{ key: '12', value: '2' }],
+            removed: [],
+          },
+        ],
+        entityName: 'state',
+        modId: MOD_ID,
+        relativePath: RELATIVE_PATH,
+      }),
+    ).rejects.toSatisfy((error) => extractIpcError(error).code === 409);
+
+    expect(await readFile(filePath, 'utf8')).toBe(STATE_FIXTURE);
+  });
+
+  it('rejects with 409 when a removed delta targets an absent intermediate block', async () => {
+    await expect(
+      writeVia({
+        deltas: [
+          {
+            added: [],
+            block: ['buildings', 'naval_base'],
+            changed: [],
+            removed: ['12'],
+          },
+        ],
+        entityName: 'state',
+        modId: MOD_ID,
+        relativePath: RELATIVE_PATH,
+      }),
+    ).rejects.toSatisfy((error) => extractIpcError(error).code === 409);
+
+    expect(await readFile(filePath, 'utf8')).toBe(STATE_FIXTURE);
+  });
+});
+
+// Numeric assignment keys (naval_base province id → level) round-trip through the
+// write path now that the grammar admits NumberValue keys (ZMT-15): they resolve
+// as scalars, so change / remove / add all target them surgically.
+const STATE_NAVAL_FIXTURE = `state = {
+\tid = 5
+\tbuildings = {
+\t\tinfrastructure = 3
+\t\tnaval_base = {
+\t\t\t1234 = 1
+\t\t\t5678 = 2
+\t\t}
+\t}
+}
+`;
+
+describe('registerEntityHandlers — numeric naval_base keys round-trip', () => {
+  beforeEach(async () => {
+    vi.mocked(ipcMain.handle).mockReset();
+
+    modRoot = await mkdtemp(path.join(tmpdir(), 'zmt-naval-'));
+    filePath = path.join(modRoot, RELATIVE_PATH);
+    await writeFile(filePath, STATE_NAVAL_FIXTURE);
+
+    state.sources = [{ path: modRoot, permission: 'editable' }];
+    state.workspace = {
+      includedMods: [
+        { id: MOD_ID, name: 'mod', path: modRoot, permission: 'editable' },
+      ],
+    };
+
+    registerEntityHandlers();
+  });
+
+  afterEach(async () => {
+    await rm(modRoot, { force: true, recursive: true });
+  });
+
+  it('changes the level of an existing province entry', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [],
+          block: ['buildings', 'naval_base'],
+          changed: [{ key: '1234', value: '3' }],
+          removed: [],
+        },
+      ],
+      entityName: 'state',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    expect(await readFile(filePath, 'utf8')).toBe(
+      STATE_NAVAL_FIXTURE.replace('1234 = 1', '1234 = 3'),
+    );
+  });
+
+  it('removes one province entry, leaving the sibling byte-identical', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [],
+          block: ['buildings', 'naval_base'],
+          changed: [],
+          removed: ['1234'],
+        },
+      ],
+      entityName: 'state',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    expect(await readFile(filePath, 'utf8')).toBe(
+      STATE_NAVAL_FIXTURE.replace('\t\t\t1234 = 1\n', ''),
+    );
+  });
+
+  it('adds a province entry into the existing naval_base block', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [{ key: '9012', value: '4' }],
+          block: ['buildings', 'naval_base'],
+          changed: [],
+          removed: [],
+        },
+      ],
+      entityName: 'state',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    expect(await readFile(filePath, 'utf8')).toBe(
+      STATE_NAVAL_FIXTURE.replace(
+        '\t\t\t5678 = 2\n',
+        '\t\t\t5678 = 2\n\t\t\t9012 = 4\n',
+      ),
+    );
+  });
+});

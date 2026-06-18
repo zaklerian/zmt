@@ -9,6 +9,7 @@ import { FsNode, ListOptions } from '../fs';
 import { CatalogModule, ModuleEntity } from '../module';
 import { GamePlugin } from '../plugin';
 import { PreferenceKey, Preferences } from '../preferences';
+import { StateEntity } from '../state';
 import { TechnologyEntity } from '../technology';
 import { ModId, Workspace } from '../workspace';
 
@@ -60,6 +61,9 @@ export interface AppApiModel {
       key: K,
       value: null | Preferences[K],
     ) => Promise<void>;
+  };
+  readonly state: {
+    readonly list: (filePath: string) => Promise<readonly StateEntity[]>;
   };
   readonly system: {
     readonly ping: () => Promise<string>;

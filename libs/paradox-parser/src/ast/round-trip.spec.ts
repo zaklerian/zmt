@@ -94,6 +94,54 @@ describe('large-file scale (ZMT-E10)', () => {
   });
 });
 
+describe('numeric assignment keys (ZMT-15)', () => {
+  // A numeric key (e.g. a naval_base province id) is admitted as an assignment
+  // Key and adapts to an Identifier node carrying the raw digits; a bare numeric
+  // value with no operator stays a value (no spurious assignment).
+  const NAVAL_SOURCE = 'naval_base={\n\t1234=1\n\t5678=2\n}\n';
+
+  it('parses a numeric key as an assignment and round-trips it byte-for-byte', () => {
+    const script = parse(NAVAL_SOURCE);
+
+    expect(script.errors).toEqual([]);
+    expect(serialize(script, NAVAL_SOURCE)).toBe(NAVAL_SOURCE);
+
+    const block = script.children[0];
+    if (block === undefined || block.kind !== 'Assignment') {
+      throw new Error(
+        'fixture invariant: NAVAL_SOURCE must start with a block',
+      );
+    }
+    if (block.value.kind !== 'Block') {
+      throw new Error('fixture invariant: naval_base must be a Block');
+    }
+    const entry = block.value.children[0];
+    if (entry === undefined || entry.kind !== 'Assignment') {
+      throw new Error('fixture invariant: first child must be an Assignment');
+    }
+    expect(entry.key.kind).toBe('Identifier');
+    expect(
+      entry.key.kind === 'Identifier' ? entry.key.name : entry.key.value,
+    ).toBe('1234');
+  });
+
+  it('keeps bare numeric values (no operator) as values, not keys', () => {
+    const source = 'provinces={\n\t1 2 3\n}\n';
+    const script = parse(source);
+
+    expect(script.errors).toEqual([]);
+    expect(serialize(script, source)).toBe(source);
+
+    const block = script.children[0];
+    if (block?.kind !== 'Assignment' || block.value.kind !== 'Block') {
+      throw new Error('fixture invariant: provinces must be a Block');
+    }
+    expect(
+      block.value.children.every((child) => child.kind === 'NumberValue'),
+    ).toBe(true);
+  });
+});
+
 describe('dialect flags', () => {
   const BRACKET_SOURCE = 'speed=@[base/2]\n';
 

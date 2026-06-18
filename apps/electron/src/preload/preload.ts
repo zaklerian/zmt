@@ -14,6 +14,7 @@ import {
   ModuleEntity,
   PreferenceKey,
   Preferences,
+  StateEntity,
   TechnologyEntity,
   Workspace,
 } from '@contracts';
@@ -83,6 +84,13 @@ const API = {
       invokeStructured<Preferences>(IPC_CHANNELS.preferences.getAll),
     set: <K extends PreferenceKey>(key: K, value: null | Preferences[K]) =>
       invokeStructured<void>(IPC_CHANNELS.preferences.set, key, value),
+  },
+  state: {
+    list: (filePath: string) =>
+      invokeStructured<readonly StateEntity[]>(
+        IPC_CHANNELS.state.list,
+        filePath,
+      ),
   },
   system: {
     ping: () => invokeStructured<string>(IPC_CHANNELS.system.ping),

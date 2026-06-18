@@ -168,6 +168,23 @@ function renderFields(indent: string, fields: readonly EntityField[]): string {
   return text;
 }
 
+// Renders the absent tail of a scope path as nested blocks, with the add fields at
+// the deepest level (ADR 019, amended ZMT-15). `names` is the missing segment
+// chain outermost-first: a one-element tail is exactly `renderObjectBlock` (the
+// terminal-materialization case, unchanged); a longer tail nests one block per
+// intermediate so an added-only write to a path whose intermediate is absent
+// materializes the whole chain before the add lands.
+function renderNestedObjectBlocks(
+  indent: string,
+  names: readonly string[],
+  fields: readonly EntityField[],
+): string {
+  const [head, ...rest] = names;
+  if (rest.length === 0) return renderObjectBlock(indent, head, fields);
+  const inner = renderNestedObjectBlocks(indent + '\t', rest, fields);
+  return `${indent}${head} = {\n${inner}${indent}}\n`;
+}
+
 // Renders a whole `name = { … }` block for a first-write materialization. Used
 // both for a bare-string child created on first write (e.g. a stat block) and for
 // an object-list item inserted by an indexed materialization (ZMT-14). The body
@@ -209,7 +226,7 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
     let deepestAssignment: AssignmentNode | null = null;
     let missingParent: BlockNode | null = null;
     let missingName: null | string = null;
-    let missingIsLeaf = false;
+    let missingTail: readonly string[] = [];
 
     for (let i = 0; i < path.length; i += 1) {
       const segment = path[i];
@@ -240,7 +257,12 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
       if (childAssignment === null || childBlock === null) {
         missingParent = target;
         missingName = segmentName;
-        missingIsLeaf = i === path.length - 1;
+        // The absent tail from this segment to the terminal, by name. A one-
+        // element tail is a terminal-absent materialization (unchanged); a longer
+        // tail is an absent intermediate, materialized for an added-only delta.
+        missingTail = path
+          .slice(i)
+          .map((seg) => (typeof seg === 'string' ? seg : seg.name));
         break;
       }
       deepestAssignment = childAssignment;
@@ -248,17 +270,21 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
     }
 
     if (missingName !== null && missingParent !== null) {
+      // A changed or removed delta against a missing target stays a stale-edit
+      // conflict: there is no content to change or remove, and materializing a
+      // parent to host a change would invent state the file never had (ADR 019,
+      // amended ZMT-15). Only a pure addition is well-defined when its container
+      // is absent.
       if (delta.changed.length > 0) throw conflict(delta.changed[0].key);
       if (delta.removed.length > 0) throw conflict(delta.removed[0]);
       if (delta.added.length > 0) {
-        // Only a leaf block can be materialized on first write; an absent
-        // intermediate segment of a deeper path is a stale edit. The duplicate
-        // relaxation is conditional and lives here by construction: an indexed
-        // leaf segment whose index is past the current sibling count is "absent",
-        // so it materializes a fresh same-name block (an object-list item add) —
-        // the prop-bag scalar add-duplicate guard below (allKeys) is never reached
-        // for it, yet still rejects duplicate scalar keys for a resolved target.
-        if (!missingIsLeaf) throw conflict(delta.added[0].key);
+        // An added-only delta materializes the absent tail. A one-element tail is
+        // the terminal-materialization case (a bare-string child created on first
+        // write, or an indexed leaf segment whose index is past the current
+        // sibling count — an object-list item add); a longer tail nests rendered
+        // blocks down the missing intermediate path before the add lands. The
+        // prop-bag scalar add-duplicate guard below (allKeys) is never reached
+        // here, yet still rejects duplicate scalar keys for a resolved target.
         let firstFrom: null | number = null;
         for (const child of missingParent.children) {
           if (child.kind === 'Assignment') {
@@ -267,7 +293,7 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
           }
         }
         const indent = indentFor(source, firstFrom, missingParent.to);
-        const text = renderObjectBlock(indent, missingName, delta.added);
+        const text = renderNestedObjectBlocks(indent, missingTail, delta.added);
         const insertAt = lineStartOf(source, missingParent.to - 1);
         edits.push({ from: insertAt, text, to: insertAt });
       }

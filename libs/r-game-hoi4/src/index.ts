@@ -6,4 +6,5 @@ export * from './locales';
 export * from './module';
 export * from './renderer-plugin.model';
 export * from './scalar-bag';
+export * from './state';
 export * from './technology';

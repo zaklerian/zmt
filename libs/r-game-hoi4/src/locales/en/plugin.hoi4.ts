@@ -158,6 +158,50 @@ export const en = {
       },
     },
   },
+  state: {
+    actions: {
+      edit: 'Edit',
+    },
+    columns: {
+      category: 'Category',
+      id: 'Id',
+      name: 'Name',
+      provinces: 'Provinces',
+    },
+    errors: {
+      conflict:
+        'This state changed on disk since you opened it. Reload and try again.',
+      forbidden: 'This file is read-only and cannot be modified.',
+      notFound: 'This state no longer exists.',
+      title: 'Action failed',
+      unknown: 'Something went wrong. Please try again.',
+    },
+    form: {
+      buildings: {
+        title: 'Buildings',
+      },
+      fields: {
+        id: 'Id',
+        impassable: 'Impassable',
+        local_supplies: 'Local supplies',
+        manpower: 'Manpower',
+        name: 'Name',
+        state_category: 'State category',
+      },
+      history: {
+        title: 'History (owner / controller)',
+      },
+      navalBase: {
+        title: 'Naval base (province → level)',
+      },
+      provinces: {
+        label: 'Provinces',
+      },
+      resources: {
+        title: 'Resources',
+      },
+    },
+  },
   technology: {
     actions: {
       edit: 'Edit',
