@@ -7,6 +7,28 @@ import { FieldSpec } from './field-spec.model';
 // item (null) materializes a fresh block (ADR 019, amended ZMT-14).
 export const OBJECT_LIST_ITEM_INDEX_KEY = '__originalIndex';
 
+// The reserved field-array element key carrying an editable keyed-object-map
+// entry's map key — the variable `<key>` of a `<key> = { … }` sub-block (ADR 018,
+// amended ZMT-18). Distinct from the entry's modeled scalar fields so the key is
+// edited (rename) without colliding with a templated field name.
+export const KEYED_MAP_ENTRY_KEY = '__key';
+
+// An OPT-IN editable keyed-object-map mode for a named-nested block's
+// `namedChildren` facet (ADR 018, amended ZMT-18). When present on a block, its
+// `namedChildren` render as an editable variable-key map: an add affordance, a
+// per-entry remove, and an editable key field, each entry a sub-block of the
+// `entryFields` scalar template. When ABSENT the facet is the read-only
+// data-driven set it has always been (the character-portraits baseline).
+// `addLabel`, `keyLabel`, and each `entryFields` label are descriptor-resolved
+// (game-specific); `entryFields` is the per-entry scalar field template a new
+// entry seeds from (the same labelled-spec shape an object-list item carries).
+export interface EditableKeyedMap {
+  readonly addLabel: string;
+  readonly entryFields: readonly ObjectListField[];
+  readonly keyLabel: string;
+  readonly keyPlaceholder?: string;
+}
+
 export type EntityFormBlock =
   | ListOfScalarsBlock
   | NamedNestedBlock
@@ -66,8 +88,11 @@ export interface ListOfScalarsBlock extends BlockCommon {
 // (list-of-scalars, e.g. `traits`) and `namedChildren` (the bounded second
 // nesting level, e.g. `portraits`'s `army`/`civilian`/`navy`); each child binds
 // flat under its own name. `knownKeys` may carry per-key validation so a known
-// key renders a closed/yes-no select.
+// key renders a closed/yes-no select. `editableKeyedMap`, when present, switches
+// the `namedChildren` facet into the opt-in editable variable-key map mode
+// (add/remove/rename keyed entries); absent → read-only as before (ZMT-18).
 export interface NamedNestedBlock extends BlockCommon {
+  readonly editableKeyedMap?: EditableKeyedMap;
   readonly kind: 'namedNested';
   readonly knownKeys: readonly FieldSpec[];
   readonly listChildren?: readonly ListOfScalarsBlock[];

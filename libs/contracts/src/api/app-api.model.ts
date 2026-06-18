@@ -6,6 +6,7 @@ import {
   EquipmentSlotsResult,
 } from '../equipment';
 import { FsNode, ListOptions } from '../fs';
+import { IdeologyEntity } from '../ideology';
 import { CatalogModule, ModuleEntity } from '../module';
 import { GamePlugin } from '../plugin';
 import { PreferenceKey, Preferences } from '../preferences';
@@ -44,6 +45,9 @@ export interface AppApiModel {
       content: Readonly<Uint8Array>,
     ) => Promise<void>;
     readonly writeTextFile: (path: string, content: string) => Promise<void>;
+  };
+  readonly ideology: {
+    readonly list: (filePath: string) => Promise<readonly IdeologyEntity[]>;
   };
   readonly module: {
     readonly catalog: () => Promise<readonly CatalogModule[]>;

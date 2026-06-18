@@ -105,6 +105,40 @@ export const en = {
       unresolved: 'Archetype not found',
     },
   },
+  ideology: {
+    actions: {
+      edit: 'Edit',
+    },
+    columns: {
+      name: 'Name',
+      types: 'Subideologies',
+    },
+    errors: {
+      conflict:
+        'This ideology changed on disk since you opened it. Reload and try again.',
+      forbidden: 'This file is read-only and cannot be modified.',
+      notFound: 'This ideology no longer exists.',
+      title: 'Action failed',
+      unknown: 'Something went wrong. Please try again.',
+    },
+    form: {
+      dynamicFactionNames: {
+        label: 'Dynamic faction names',
+      },
+      fields: {
+        faction_impact_on_world_tension: 'Faction impact on world tension',
+        war_impact_on_world_tension: 'War impact on world tension',
+      },
+      types: {
+        add: 'Add subideology',
+        fields: {
+          can_be_randomly_selected: 'Can be randomly selected',
+        },
+        key: 'Subideology key',
+        title: 'Subideologies (types)',
+      },
+    },
+  },
   module: {
     actions: {
       delete: 'Delete',

@@ -62,6 +62,63 @@ lands:
 A descriptor reaches an object-list through the indexed scope; the shell and resolver are
 otherwise unchanged. Adding an object-list-bearing entity stays "register a descriptor."
 
+## Update (2026-06-18, IDEOLOGY) — keyed-object-map editing (editable variable-key `namedChildren`)
+
+This lands the "keyed object-maps" shape ADR-018 had deferred.
+
+### Context
+
+The named-nested block's `namedChildren` facet already models a key→object map — a variable
+key naming a child block of scalar fields — and is populated data-driven from the file. But
+it rendered read-only: no affordance to add, remove, or rename an entry, and no key input.
+The last unbuilt ML shape was therefore not a new value type but the EDITING of this map.
+The motivating entity is IDEOLOGY, whose `types = { <subideology> = { … } }` is a variable-key
+map of objects the modder adds to and removes from.
+
+### Decision
+
+`namedChildren` gains an OPT-IN editable keyed-map mode, expressed as a flag on the
+named-nested block carrying an add label and the per-entry field template. When the flag is
+present the renderer shows an add affordance, a per-entry remove, and an editable key field,
+and seeds a new entry from the template; the key model is the freeSolo variable key already
+used by the scalar maps, now over an object value. When the flag is absent the facet behaves
+exactly as before — a read-only data-driven set — so the existing consumer (character
+portraits) is unchanged.
+
+Write semantics reuse the existing scoped-delta path: an entry is added or removed by a delta
+scoped to the map block keyed by the entry id, and its scalars are written one level deeper.
+A bodyless add materializes an empty `<key> = { }` block (vanilla map entries are frequently
+empty). **Renaming a key is remove-old + add-new**, not a key-mutation primitive — the write
+path has none and needs none. Keys of an entry that are not in the field template are carried
+lossless.
+
+The two-level nesting cap is unchanged. A value nested below an entry's scalars (e.g. a
+subideology's optional `color = { r g b }` block, a third level) is NOT modeled; it is carried
+lossless like any ecosystem block.
+
+### Consequences
+
+**Positive**
+
+- The keyed-object map — the shape ADR-018 deferred — is now editable, reusing the proven
+  key→object model and the existing write path rather than a new block kind.
+- The mode is opt-in, so no existing `namedChildren` consumer changes behavior.
+
+**Negative / accepted**
+
+- A value below an entry's scalar fields is not editable in ML (it exceeds the two-level
+  cap and is carried lossless). For IDEOLOGY this means subideology `color` is preserved but
+  not edited; RGB editing is a richer (color-picker) concern left to a later layer.
+
+### Alternatives considered
+
+- **A new `keyedObjectListBlock`** (keyed analogue of the object-list block). Rejected — it
+  duplicates the key→object model the `namedChildren` facet already carries; the smaller change
+  is to add the editing affordances to that facet.
+- **Extend the entry value to host a nested block** (lift the cap to three levels to edit
+  subideology `color`). Rejected — it breaches the two-level cap for a rare optional RGB
+  triple that wants a color picker, not a generic nested-block editor.
+
 ## Context
 
 Entity _lists_ render through a game-agnostic table shell driven by per-(game, entity) recognizers (shipped in S-1; no standalone ADR — code only). Entity _editing_ exists only as bespoke forms — the mod-descriptor form, the equipment/plane scalar form, and the module form — each hand-wired. As editable types multiply, hand-wiring duplicates the cross-cutting form concerns (field rendering, validation, dirty-tracking, write dispatch) and lets them drift.

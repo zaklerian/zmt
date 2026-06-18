@@ -8,6 +8,7 @@ import {
   EquipmentSlotsRequest,
   EquipmentSlotsResult,
   GamePlugin,
+  IdeologyEntity,
   IPC_CHANNELS,
   ListOptions,
   ModId,
@@ -61,6 +62,13 @@ const API = {
       invokeStructured<void>(IPC_CHANNELS.fs.writeBinaryFile, path, content),
     writeTextFile: (path: string, content: string) =>
       invokeStructured<void>(IPC_CHANNELS.fs.writeTextFile, path, content),
+  },
+  ideology: {
+    list: (filePath: string) =>
+      invokeStructured<readonly IdeologyEntity[]>(
+        IPC_CHANNELS.ideology.list,
+        filePath,
+      ),
   },
   module: {
     catalog: () =>

@@ -2,6 +2,7 @@ import { Stack, Typography } from '@mui/material';
 import { NamedNestedBlock } from '@r-core';
 import { Control, FieldValues } from 'react-hook-form';
 
+import { KeyedObjectMapBlockView } from './keyed-object-map-block.component';
 import { ListOfScalarsBlockView } from './list-of-scalars-block.component';
 import { ScalarRows } from './scalar-rows.component';
 
@@ -41,20 +42,28 @@ export function NamedNestedBlockView({
           control={control}
         />
       ))}
-      {block.namedChildren?.map((child) => (
-        <Stack key={child.name} spacing={2}>
-          {child.sectionLabel !== undefined && (
-            <Typography color="text.secondary" variant="subtitle2">
-              {child.sectionLabel}
-            </Typography>
-          )}
-          <ScalarRows
-            control={control}
-            keySuggestions={child.knownKeys}
-            name={child.name}
-          />
-        </Stack>
-      ))}
+      {block.editableKeyedMap !== undefined && (
+        <KeyedObjectMapBlockView
+          control={control}
+          map={block.editableKeyedMap}
+          name={block.name}
+        />
+      )}
+      {block.editableKeyedMap === undefined &&
+        block.namedChildren?.map((child) => (
+          <Stack key={child.name} spacing={2}>
+            {child.sectionLabel !== undefined && (
+              <Typography color="text.secondary" variant="subtitle2">
+                {child.sectionLabel}
+              </Typography>
+            )}
+            <ScalarRows
+              control={control}
+              keySuggestions={child.knownKeys}
+              name={child.name}
+            />
+          </Stack>
+        ))}
     </Stack>
   );
 }

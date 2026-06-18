@@ -292,21 +292,23 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
       // is absent.
       if (delta.changed.length > 0) throw conflict(delta.changed[0].key);
       if (delta.removed.length > 0) throw conflict(delta.removed[0]);
-      if (delta.added.length > 0) {
-        // An added-only delta records its absent tail against the shared
-        // `missingParent`; rendering is deferred until after the batch so deltas
-        // sharing an absent prefix coalesce into one materialized block. A
-        // one-element tail is the terminal-materialization case (a bare-string
-        // child created on first write, or an indexed leaf segment past the
-        // current sibling count — an object-list item add); a longer tail is an
-        // absent intermediate. The prop-bag scalar add-duplicate guard below
-        // (allKeys) is never reached here, yet still rejects duplicate scalar keys
-        // for a resolved target.
-        const add: AbsentAdd = { fields: delta.added, tail: missingTail };
-        const sharing = materializations.get(missingParent);
-        if (sharing === undefined) materializations.set(missingParent, [add]);
-        else sharing.push(add);
-      }
+      // An added-only delta records its absent tail against the shared
+      // `missingParent`; rendering is deferred until after the batch so deltas
+      // sharing an absent prefix coalesce into one materialized block. A
+      // one-element tail is the terminal-materialization case (a bare-string
+      // child created on first write, or an indexed leaf segment past the
+      // current sibling count — an object-list item add); a longer tail is an
+      // absent intermediate. An EMPTY field list is the bodyless keyed-map add
+      // (ZMT-18): the delta still materializes its tail, rendering `<key> = { }`
+      // with no body — changed/removed are guaranteed empty here by the throws
+      // above, so the all-empty delta is an explicit empty-block creation (the
+      // delta builders never emit a no-op empty delta). The prop-bag scalar
+      // add-duplicate guard below (allKeys) is never reached here, yet still
+      // rejects duplicate scalar keys for a resolved target.
+      const add: AbsentAdd = { fields: delta.added, tail: missingTail };
+      const sharing = materializations.get(missingParent);
+      if (sharing === undefined) materializations.set(missingParent, [add]);
+      else sharing.push(add);
       continue;
     }
 

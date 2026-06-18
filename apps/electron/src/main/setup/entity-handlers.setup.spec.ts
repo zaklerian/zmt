@@ -1332,3 +1332,159 @@ describe('registerEntityHandlers — numeric naval_base keys round-trip', () => 
     );
   });
 });
+
+// Keyed-object-map editing (ADR 018, amended ZMT-18): a subideology map (`types`)
+// under a wrapper-nested ideology entity. The entity block is located by name via
+// the BFS descent, so the `ideologies` wrapper is transparent. An add-only delta
+// at `['types', <k>]` materializes `<k> = { … }`; an EMPTY add-only delta
+// materializes the bodyless `<k> = { }`; a removal is a parent-scoped key removal
+// that drops the whole sub-block; unmodeled blocks (`color`) ride through.
+const IDEOLOGY_FIXTURE = `ideologies = {
+\tdemocratic = {
+\t\twar_impact_on_world_tension = 0.5
+\t\ttypes = {
+\t\t\tliberalism = {
+\t\t\t\tcan_be_randomly_selected = yes
+\t\t\t}
+\t\t\tconservatism = {
+\t\t\t}
+\t\t}
+\t\tcolor = { 0 100 200 }
+\t}
+\tneutrality = {
+\t\tcolor = { 80 80 80 }
+\t}
+}
+`;
+
+describe('registerEntityHandlers — keyed-object-map editing (ideology types)', () => {
+  beforeEach(async () => {
+    vi.mocked(ipcMain.handle).mockReset();
+
+    modRoot = await mkdtemp(path.join(tmpdir(), 'zmt-ideology-'));
+    filePath = path.join(modRoot, RELATIVE_PATH);
+    await writeFile(filePath, IDEOLOGY_FIXTURE);
+
+    state.sources = [{ path: modRoot, permission: 'editable' }];
+    state.workspace = {
+      includedMods: [
+        { id: MOD_ID, name: 'mod', path: modRoot, permission: 'editable' },
+      ],
+    };
+
+    registerEntityHandlers();
+  });
+
+  afterEach(async () => {
+    await rm(modRoot, { force: true, recursive: true });
+  });
+
+  it('materializes a bodyless subideology for an empty added-only delta', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [],
+          block: ['types', 'vanguardism'],
+          changed: [],
+          removed: [],
+        },
+      ],
+      entityName: 'democratic',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    const written = await readFile(filePath, 'utf8');
+    const vanguardism = blockAtPath(written, [
+      'ideologies',
+      'democratic',
+      'types',
+      'vanguardism',
+    ]);
+    expect(vanguardism).toBeDefined();
+    expect(vanguardism?.children).toHaveLength(0);
+    // The unmodeled color block rides through untouched.
+    expect(written).toContain('color = { 0 100 200 }');
+  });
+
+  it('materializes a subideology with a scalar body', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [{ key: 'can_be_randomly_selected', value: 'yes' }],
+          block: ['types', 'socialism'],
+          changed: [],
+          removed: [],
+        },
+      ],
+      entityName: 'democratic',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    const written = await readFile(filePath, 'utf8');
+    const socialism = blockAtPath(written, [
+      'ideologies',
+      'democratic',
+      'types',
+      'socialism',
+    ]);
+    expect(socialism).toBeDefined();
+    expect(written).toContain('can_be_randomly_selected = yes');
+  });
+
+  it('drops a whole subideology sub-block via a parent-scoped key removal', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [],
+          block: ['types'],
+          changed: [],
+          removed: ['conservatism'],
+        },
+      ],
+      entityName: 'democratic',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    const written = await readFile(filePath, 'utf8');
+    const types = blockAtPath(written, ['ideologies', 'democratic', 'types']);
+    const names = types?.children
+      .filter((child) => child.kind === 'Assignment')
+      .map((child) =>
+        child.kind === 'Assignment' && child.key.kind === 'Identifier'
+          ? child.key.name
+          : '',
+      );
+    expect(names).toEqual(['liberalism']);
+    expect(written).toContain('color = { 0 100 200 }');
+  });
+
+  it('materializes the absent types intermediate for a bodyless add', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [],
+          block: ['types', 'monarchism'],
+          changed: [],
+          removed: [],
+        },
+      ],
+      entityName: 'neutrality',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    const written = await readFile(filePath, 'utf8');
+    const monarchism = blockAtPath(written, [
+      'ideologies',
+      'neutrality',
+      'types',
+      'monarchism',
+    ]);
+    expect(monarchism).toBeDefined();
+    expect(monarchism?.children).toHaveLength(0);
+    expect(written).toContain('color = { 80 80 80 }');
+  });
+});

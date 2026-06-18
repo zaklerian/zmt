@@ -110,6 +110,42 @@ export const de: typeof en = {
       unresolved: 'Archetyp nicht gefunden',
     },
   },
+  ideology: {
+    actions: {
+      edit: 'Bearbeiten',
+    },
+    columns: {
+      name: 'Name',
+      types: 'Unterideologien',
+    },
+    errors: {
+      conflict:
+        'Diese Ideologie wurde auf der Festplatte geändert, seit Sie sie geöffnet haben. Neu laden und erneut versuchen.',
+      forbidden:
+        'Diese Datei ist schreibgeschützt und kann nicht geändert werden.',
+      notFound: 'Diese Ideologie existiert nicht mehr.',
+      title: 'Aktion fehlgeschlagen',
+      unknown: 'Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.',
+    },
+    form: {
+      dynamicFactionNames: {
+        label: 'Dynamische Fraktionsnamen',
+      },
+      fields: {
+        faction_impact_on_world_tension:
+          'Fraktionseinfluss auf die Weltspannung',
+        war_impact_on_world_tension: 'Kriegseinfluss auf die Weltspannung',
+      },
+      types: {
+        add: 'Unterideologie hinzufügen',
+        fields: {
+          can_be_randomly_selected: 'Kann zufällig ausgewählt werden',
+        },
+        key: 'Unterideologie-Schlüssel',
+        title: 'Unterideologien (types)',
+      },
+    },
+  },
   module: {
     actions: {
       delete: 'Löschen',

@@ -108,6 +108,41 @@ export const uk: typeof en = {
       unresolved: 'Архетип не знайдено',
     },
   },
+  ideology: {
+    actions: {
+      edit: 'Редагувати',
+    },
+    columns: {
+      name: 'Назва',
+      types: 'Підідеології',
+    },
+    errors: {
+      conflict:
+        'Ця ідеологія змінилася на диску відколи ви її відкрили. Перезавантажте та спробуйте знову.',
+      forbidden:
+        'Цей файл доступний лише для читання та не може бути змінений.',
+      notFound: 'Ця ідеологія більше не існує.',
+      title: 'Дію не виконано',
+      unknown: 'Щось пішло не так. Будь ласка, спробуйте ще раз.',
+    },
+    form: {
+      dynamicFactionNames: {
+        label: 'Динамічні назви фракцій',
+      },
+      fields: {
+        faction_impact_on_world_tension: 'Вплив фракції на світову напругу',
+        war_impact_on_world_tension: 'Вплив війни на світову напругу',
+      },
+      types: {
+        add: 'Додати підідеологію',
+        fields: {
+          can_be_randomly_selected: 'Можна обрати випадково',
+        },
+        key: 'Ключ підідеології',
+        title: 'Підідеології (types)',
+      },
+    },
+  },
   module: {
     actions: {
       delete: 'Видалити',
