@@ -102,6 +102,17 @@ token plus a syntax error, making the province → level map unreadable and un-r
   still do not parse as assignments; they stay in the lossless region and carry through a save
   verbatim, unchanged by this extension.
 
+Materialization is coordinated across the batch, not per-delta. Multiple added-only deltas
+in one save may target paths that share the same absent intermediate block — for example,
+one delta adds a `buildings` scalar and another adds a `buildings → naval_base` entry, on a
+state with no `buildings` block. Such deltas materialize the shared intermediate ONCE and
+route their additions into it; a save never emits duplicate intermediate blocks.
+Materialization tracks the blocks it creates within the batch (keyed by resolved path) and
+reuses them for later deltas sharing the path prefix. The deltas are still applied against
+the one parsed snapshot (the atomicity property is unchanged); only the materialization of
+absent parents is shared, so the snapshot's "no `buildings` block" is satisfied by a single
+created block rather than one per delta.
+
 ## Context
 
 Entity writes are scoped deltas applied to a lossless parsed node. A delta targets either the node root or a named child block, and is applied by surgical field-level offset patching: only the changed bytes are rewritten, leaving comments, nested blocks, and unrecognized content byte-identical. The contract carries one scope per call. The base scoped-delta write contract shipped during the S-1 entity work as code; it has no standalone ADR (it is referenced only in ledger L-011 and L-012). This ADR formalizes the contract's shape for the case that motivated revisiting it.

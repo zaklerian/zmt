@@ -20,6 +20,11 @@ import { workspaceStoreService } from '../workspace';
 import { assertWritable } from './path-guard.util';
 import { writeFileService } from './write-file.service';
 
+interface AbsentAdd {
+  readonly fields: readonly EntityField[];
+  readonly tail: readonly string[];
+}
+
 interface LineRange {
   readonly from: number;
   readonly to: number;
@@ -150,6 +155,41 @@ async function readSource(absolutePath: string): Promise<string> {
   }
 }
 
+// Renders the absent tails of one or more added-only deltas as nested blocks,
+// coalescing deltas that share a path prefix into a single materialized block
+// (ADR 019, amended ZMT-15.1). Each `AbsentAdd` carries the missing segment chain
+// outermost-first and the fields to place at its deepest level. Deltas are grouped
+// by head segment and each group renders as ONE block: those whose tail ends here
+// contribute their fields directly into it; those with a longer tail recurse into
+// the same shared block. A single delta is the one-element case — terminal
+// materialization (a leaf block, or an object-list item past the sibling count)
+// and intermediate materialization both fall out byte-identical to before. The
+// body emits `renderFields` (a field whose value is itself a `{ … }` block rides
+// along as `key = { … }`) before the nested child blocks.
+function renderCoalescedBlocks(
+  indent: string,
+  adds: readonly AbsentAdd[],
+): string {
+  const groups = new Map<string, AbsentAdd[]>();
+  for (const add of adds) {
+    const group = groups.get(add.tail[0]);
+    if (group === undefined) groups.set(add.tail[0], [add]);
+    else group.push(add);
+  }
+  let text = '';
+  for (const [head, group] of groups) {
+    const fields: EntityField[] = [];
+    const deeper: AbsentAdd[] = [];
+    for (const add of group) {
+      if (add.tail.length === 1) fields.push(...add.fields);
+      else deeper.push({ fields: add.fields, tail: add.tail.slice(1) });
+    }
+    const inner = indent + '\t';
+    text += `${indent}${head} = {\n${renderFields(inner, fields)}${renderCoalescedBlocks(inner, deeper)}${indent}}\n`;
+  }
+  return text;
+}
+
 function renderFields(indent: string, fields: readonly EntityField[]): string {
   let text = '';
   for (const field of fields) {
@@ -168,38 +208,6 @@ function renderFields(indent: string, fields: readonly EntityField[]): string {
   return text;
 }
 
-// Renders the absent tail of a scope path as nested blocks, with the add fields at
-// the deepest level (ADR 019, amended ZMT-15). `names` is the missing segment
-// chain outermost-first: a one-element tail is exactly `renderObjectBlock` (the
-// terminal-materialization case, unchanged); a longer tail nests one block per
-// intermediate so an added-only write to a path whose intermediate is absent
-// materializes the whole chain before the add lands.
-function renderNestedObjectBlocks(
-  indent: string,
-  names: readonly string[],
-  fields: readonly EntityField[],
-): string {
-  const [head, ...rest] = names;
-  if (rest.length === 0) return renderObjectBlock(indent, head, fields);
-  const inner = renderNestedObjectBlocks(indent + '\t', rest, fields);
-  return `${indent}${head} = {\n${inner}${indent}}\n`;
-}
-
-// Renders a whole `name = { … }` block for a first-write materialization. Used
-// both for a bare-string child created on first write (e.g. a stat block) and for
-// an object-list item inserted by an indexed materialization (ZMT-14). The body
-// is `renderFields`, which already emits a field whose value is itself a `{ … }`
-// block as `key = { … }` — that is how an object-list item's optional nested
-// object rides along; `renderFields` alone emits only the loose body lines, never
-// the wrapping `name = { … }`.
-function renderObjectBlock(
-  indent: string,
-  name: string,
-  fields: readonly EntityField[],
-): string {
-  return `${indent}${name} = {\n${renderFields(indent + '\t', fields)}${indent}}\n`;
-}
-
 async function writeEntity(request: EntityWriteRequest): Promise<void> {
   // AST nodes from @paradox-parser are mutable, so descent stays inline on
   // locals: prefer-readonly-parameter-types (P-1) bars node-typed helper params.
@@ -214,6 +222,13 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
   );
 
   const edits: SourceEdit[] = [];
+  // Absent-intermediate materializations are coordinated across the batch, not
+  // emitted per-delta (ADR 019, amended ZMT-15.1). Two added-only deltas whose
+  // paths share the same absent block (e.g. `['buildings']` and
+  // `['buildings', 'naval_base']` on a state with no `buildings`) resolve to the
+  // same `missingParent` in the one parsed snapshot; keying by that node lets a
+  // single rendered block host every sharing delta instead of one block each.
+  const materializations = new Map<BlockNode, AbsentAdd[]>();
 
   for (const delta of request.deltas) {
     const path = delta.block ?? [];
@@ -278,24 +293,19 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
       if (delta.changed.length > 0) throw conflict(delta.changed[0].key);
       if (delta.removed.length > 0) throw conflict(delta.removed[0]);
       if (delta.added.length > 0) {
-        // An added-only delta materializes the absent tail. A one-element tail is
-        // the terminal-materialization case (a bare-string child created on first
-        // write, or an indexed leaf segment whose index is past the current
-        // sibling count — an object-list item add); a longer tail nests rendered
-        // blocks down the missing intermediate path before the add lands. The
-        // prop-bag scalar add-duplicate guard below (allKeys) is never reached
-        // here, yet still rejects duplicate scalar keys for a resolved target.
-        let firstFrom: null | number = null;
-        for (const child of missingParent.children) {
-          if (child.kind === 'Assignment') {
-            firstFrom = child.from;
-            break;
-          }
-        }
-        const indent = indentFor(source, firstFrom, missingParent.to);
-        const text = renderNestedObjectBlocks(indent, missingTail, delta.added);
-        const insertAt = lineStartOf(source, missingParent.to - 1);
-        edits.push({ from: insertAt, text, to: insertAt });
+        // An added-only delta records its absent tail against the shared
+        // `missingParent`; rendering is deferred until after the batch so deltas
+        // sharing an absent prefix coalesce into one materialized block. A
+        // one-element tail is the terminal-materialization case (a bare-string
+        // child created on first write, or an indexed leaf segment past the
+        // current sibling count — an object-list item add); a longer tail is an
+        // absent intermediate. The prop-bag scalar add-duplicate guard below
+        // (allKeys) is never reached here, yet still rejects duplicate scalar keys
+        // for a resolved target.
+        const add: AbsentAdd = { fields: delta.added, tail: missingTail };
+        const sharing = materializations.get(missingParent);
+        if (sharing === undefined) materializations.set(missingParent, [add]);
+        else sharing.push(add);
       }
       continue;
     }
@@ -426,6 +436,28 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
     } else {
       edits.push(...deltaEdits);
     }
+  }
+
+  // Render each absent parent's coalesced materializations once, after the batch:
+  // one block per parent, hosting every delta that shared it. The insert point and
+  // child indentation match the prior per-delta path, so a lone delta is emitted
+  // byte-identically. Edits insert before the parent's closing brace; `applyEdits`
+  // rebases them against every other delta's offsets in the single buffer.
+  for (const [parent, adds] of materializations) {
+    let firstFrom: null | number = null;
+    for (const child of parent.children) {
+      if (child.kind === 'Assignment') {
+        firstFrom = child.from;
+        break;
+      }
+    }
+    const indent = indentFor(source, firstFrom, parent.to);
+    const insertAt = lineStartOf(source, parent.to - 1);
+    edits.push({
+      from: insertAt,
+      text: renderCoalescedBlocks(indent, adds),
+      to: insertAt,
+    });
   }
 
   await writeFileService.writeText(absolutePath, applyEdits(source, edits));
