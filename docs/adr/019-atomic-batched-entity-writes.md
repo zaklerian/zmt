@@ -66,6 +66,42 @@ Existing entities address blocks with bare-string segments and are unaffected by
 widening; only the shared resolver descent changes, so existing-entity save parity is the
 regression gate.
 
+## Update (2026-06-16, STATE) — materializing absent intermediate blocks
+
+A scoped write may target a path whose INTERMEDIATE block is absent in the file — e.g.
+`['buildings', 'naval_base']` on a state that has no `buildings` block at all. The resolver
+materialized only the TERMINAL segment; an absent intermediate caused a stale-edit conflict,
+which surfaces as a confusing failure when the real intent is "add this nested entry."
+
+- For an ADDED-ONLY delta, the descent now materializes absent intermediate blocks along the
+  missing tail — nesting rendered blocks down the path — before applying the add.
+- The added-only restriction IS the safety boundary. A `changed` or `removed` delta against
+  a missing target stays a stale-edit conflict: there is no existing content to change or
+  remove, and materializing a parent to host a change would invent state the file never had.
+  Only a pure addition has a well-defined meaning when its container is absent.
+- No contract-shape change. The scope path, the indexed segment form, and the delta kinds
+  are all unchanged; this completes the materialization behavior, it does not extend the
+  contract.
+
+### Enabling change — numeric assignment keys in the parser grammar
+
+STATE's `naval_base` map is keyed by province id (`1234 = 1`), and HOI4 writes those ids
+unquoted. The `@paradox-parser` grammar admitted only `Identifier | StringValue` as an
+assignment `Key`, and `Identifier` must start with a letter or underscore, so an unquoted
+numeric key did not parse as a `key = value` assignment — it degraded to a bare `NumberValue`
+token plus a syntax error, making the province → level map unreadable and un-round-trippable.
+
+- The grammar `Key` rule gains `NumberValue` (`Key { Identifier | StringValue | NumberValue }`).
+  A numeric key adapts to an `Identifier` node carrying the raw digits as its name, so
+  `keyName` reads numeric and letter-led keys uniformly and the write path resolves province
+  entries as scalars (surgical change / remove / add), not as bare tokens.
+- A bare numeric value with no operator (e.g. a `provinces` id list, `victory_points`
+  positional pairs) is unaffected — without a following operator it reduces to a value, not a
+  key, so those lossless surfaces keep their existing tokenization.
+- Date-shaped keys (the dated `<date> { … }` history event blocks) remain outside `Key` and
+  still do not parse as assignments; they stay in the lossless region and carry through a save
+  verbatim, unchanged by this extension.
+
 ## Context
 
 Entity writes are scoped deltas applied to a lossless parsed node. A delta targets either the node root or a named child block, and is applied by surgical field-level offset patching: only the changed bytes are rewritten, leaving comments, nested blocks, and unrecognized content byte-identical. The contract carries one scope per call. The base scoped-delta write contract shipped during the S-1 entity work as code; it has no standalone ADR (it is referenced only in ledger L-011 and L-012). This ADR formalizes the contract's shape for the case that motivated revisiting it.

@@ -237,6 +237,10 @@ function adaptKey(
   if (inner.name === 'StringValue') {
     return adaptString(inner, source);
   }
+  // A numeric key (e.g. a `naval_base` province id, `1234 = 1`) adapts to an
+  // Identifier node carrying the raw digits as its name — adaptIdentifier slices
+  // the source span verbatim, so the key text round-trips and `keyName` reads it
+  // uniformly with letter-led keys.
   return adaptIdentifier(inner, source);
 }
 

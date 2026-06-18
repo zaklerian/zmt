@@ -13,6 +13,7 @@ import {
   registerModuleHandlers,
   registerPluginsHandlers,
   registerPreferencesHandlers,
+  registerStateHandlers,
   registerSystemHandlers,
   registerTechnologyHandlers,
   registerWorkspaceHandlers,
@@ -27,6 +28,7 @@ async function bootstrap(): Promise<void> {
   registerFsHandlers();
   registerModuleHandlers();
   registerPreferencesHandlers();
+  registerStateHandlers();
   registerTechnologyHandlers();
   registerWorkspaceHandlers();
   initializePlugins();

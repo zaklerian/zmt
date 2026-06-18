@@ -6,6 +6,7 @@ import { Hoi4TraitsComponent } from './hoi4-traits.component';
 import { HOI4_LOCALE_RESOURCES } from './locales';
 import { MODULE_FORM_DESCRIPTOR, MODULE_RECOGNIZER } from './module';
 import { RendererPlugin } from './renderer-plugin.model';
+import { STATE_FORM_DESCRIPTOR, STATE_RECOGNIZER } from './state';
 import {
   TECHNOLOGY_FORM_DESCRIPTOR,
   TECHNOLOGY_RECOGNIZER,
@@ -19,6 +20,7 @@ export const HOI4_RENDERER_PLUGIN: RendererPlugin = {
     CHARACTER_FORM_DESCRIPTOR,
     MODULE_FORM_DESCRIPTOR,
     PLANE_FORM_DESCRIPTOR,
+    STATE_FORM_DESCRIPTOR,
     TECHNOLOGY_FORM_DESCRIPTOR,
   ],
   gameId: GAME_IDS.hoi4,
@@ -27,6 +29,7 @@ export const HOI4_RENDERER_PLUGIN: RendererPlugin = {
     CHARACTER_RECOGNIZER,
     EQUIPMENT_RECOGNIZER,
     MODULE_RECOGNIZER,
+    STATE_RECOGNIZER,
     TECHNOLOGY_RECOGNIZER,
   ],
 };
