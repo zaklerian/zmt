@@ -3,6 +3,7 @@ import { GAME_IDS } from '@contracts';
 import { CHARACTER_FORM_DESCRIPTOR, CHARACTER_RECOGNIZER } from './character';
 import { EQUIPMENT_RECOGNIZER, PLANE_FORM_DESCRIPTOR } from './equipment';
 import { Hoi4TraitsComponent } from './hoi4-traits.component';
+import { IDEOLOGY_FORM_DESCRIPTOR, IDEOLOGY_RECOGNIZER } from './ideology';
 import { HOI4_LOCALE_RESOURCES } from './locales';
 import { MODULE_FORM_DESCRIPTOR, MODULE_RECOGNIZER } from './module';
 import { RendererPlugin } from './renderer-plugin.model';
@@ -18,6 +19,7 @@ export const HOI4_RENDERER_PLUGIN: RendererPlugin = {
   },
   formDescriptors: [
     CHARACTER_FORM_DESCRIPTOR,
+    IDEOLOGY_FORM_DESCRIPTOR,
     MODULE_FORM_DESCRIPTOR,
     PLANE_FORM_DESCRIPTOR,
     STATE_FORM_DESCRIPTOR,
@@ -28,6 +30,7 @@ export const HOI4_RENDERER_PLUGIN: RendererPlugin = {
   recognizers: [
     CHARACTER_RECOGNIZER,
     EQUIPMENT_RECOGNIZER,
+    IDEOLOGY_RECOGNIZER,
     MODULE_RECOGNIZER,
     STATE_RECOGNIZER,
     TECHNOLOGY_RECOGNIZER,

@@ -1,0 +1,20 @@
+import { FieldSpec } from '@r-core';
+
+// Field specs for the ideology edit form. Only intrinsic closed values carry
+// validation; the world-tension scalars are free-text numbers. Order is the
+// render order (semantic, R-CODE-9 carve-out).
+
+// Modeled root scalar fields — the two world-tension impacts the real file
+// carries. Everything else at the ideology root (`color`, `rules`, `modifiers`,
+// `faction_modifiers`, `ai_*`, and any other root scalar) is carried lossless.
+export const IDEOLOGY_ROOT_SPECS: readonly FieldSpec[] = [
+  'war_impact_on_world_tension',
+  'faction_impact_on_world_tension',
+];
+
+// The per-entry scalar template of the `types` keyed-object map: each subideology
+// entry models the single boolean `can_be_randomly_selected` (rendered as a
+// yes/no select); its other keys ride through lossless (ZMT-18).
+export const IDEOLOGY_TYPE_SPECS: readonly FieldSpec[] = [
+  { name: 'can_be_randomly_selected', validation: { type: 'boolean' } },
+];

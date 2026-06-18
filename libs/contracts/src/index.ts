@@ -3,6 +3,7 @@ export * from './character';
 export * from './entity';
 export * from './equipment';
 export * from './fs';
+export * from './ideology';
 export * from './ipc';
 export * from './module';
 export * from './plugin';
