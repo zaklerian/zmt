@@ -1,6 +1,8 @@
 import { FieldSpec, fieldValidation, FieldValidation } from '@r-core';
 import { z } from 'zod';
 
+import { BOOLEAN_OPTIONS } from './boolean-options.const';
+
 export interface FieldSpecMessages {
   // Type / bounds / pattern violation.
   readonly invalid?: string;
@@ -38,12 +40,17 @@ function lowerValidation(
 
   // A closed set: a present non-empty value must be in the set; an absent or
   // empty value passes (editing existing files that omit optional keys). The
-  // preprocess maps '' → undefined so the enum check only sees real values.
-  if (allowed !== undefined && allowed.length > 0) {
+  // preprocess maps '' → undefined so the enum check only sees real values. A
+  // `type: boolean` field is the closed yes/no token set: it keeps its string
+  // token rather than coercing to a JS boolean, which would neither match a
+  // select option nor survive the string-keyed save delta (ZMT-E14).
+  const closedSet =
+    allowed ?? (type === 'boolean' ? BOOLEAN_OPTIONS : undefined);
+  if (closedSet !== undefined && closedSet.length > 0) {
     return z.preprocess(
       (value) => (value === '' ? undefined : value),
       z
-        .enum([...allowed] as [string, ...string[]], {
+        .enum([...closedSet] as [string, ...string[]], {
           message: messages.invalid,
         })
         .optional(),
@@ -55,10 +62,6 @@ function lowerValidation(
     if (min !== undefined) schema = schema.min(min, messages.invalid);
     if (max !== undefined) schema = schema.max(max, messages.invalid);
     return schema.optional();
-  }
-
-  if (type === 'boolean') {
-    return z.coerce.boolean().optional();
   }
 
   let schema = z.string();

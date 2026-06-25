@@ -2,6 +2,12 @@ import { MenuItem, TextField } from '@mui/material';
 import { FieldValidation } from '@r-core';
 import { Control, Controller, FieldValues } from 'react-hook-form';
 
+import {
+  BOOLEAN_FALSE,
+  BOOLEAN_OPTIONS,
+  BOOLEAN_TRUE,
+} from './boolean-options.const';
+
 interface FieldValueControlProps {
   readonly control: Control<FieldValues>;
   readonly disabled?: boolean;
@@ -10,10 +16,6 @@ interface FieldValueControlProps {
   readonly name: string;
   readonly validation?: FieldValidation;
 }
-
-// HOI4 booleans are the bare `yes` / `no` tokens; rendered raw, like a property
-// key, since they are intrinsic file tokens rather than UI chrome.
-const BOOLEAN_OPTIONS: readonly string[] = ['yes', 'no'];
 
 // One scalar value control (ADR 018, extended ZMT-13). An `enum` field renders a
 // closed select over its allowed values (no free-text); a `type: boolean` field
@@ -49,7 +51,7 @@ export function FieldValueControl({
           label={label}
           select={options !== null}
           size="small"
-          value={typeof field.value === 'string' ? field.value : ''}
+          value={selectedValue(field.value)}
         >
           {options?.map((option) => (
             <MenuItem key={option} value={option}>
@@ -60,4 +62,12 @@ export function FieldValueControl({
       )}
     />
   );
+}
+
+// The controlled select's bound value. A stored string binds directly; a JS
+// boolean (a value coerced upstream) maps to its yes/no token so the option still
+// matches; anything else binds empty rather than silently blanking the control.
+function selectedValue(value: unknown): string {
+  if (typeof value === 'boolean') return value ? BOOLEAN_TRUE : BOOLEAN_FALSE;
+  return typeof value === 'string' ? value : '';
 }
