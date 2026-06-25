@@ -119,6 +119,46 @@ lossless like any ecosystem block.
   subideology `color`). Rejected — it breaches the two-level cap for a rare optional RGB
   triple that wants a color picker, not a generic nested-block editor.
 
+## Update (2026-06-25, IDEOLOGY) — keyed-object-map entry value may be a prop-bag
+
+### Context
+
+The keyed-object-map editing amendment modeled each entry's value as a fixed-field template —
+a set of declared scalar specs. Real mod data showed entry values that are open scalar maps:
+ideology subideologies are open maps of modifier scalars (`political_power_factor = 0.075`, …),
+and state per-province buildings are open maps of building → level. A fixed template cannot
+represent these — it renders declared fields the data does not have and hides the open keys it
+does. (The earlier amendment's ideology example, `can_be_randomly_selected`, was grounded in
+vanilla, not real data; that key does not occur in the real subideologies.)
+
+### Decision
+
+A keyed-object-map entry's value may be EITHER a fixed-field template OR a **prop-bag** (open
+or known keys), chosen per descriptor. A prop-bag entry reuses the existing property-bag
+rendering — freeSolo keys, scalar values, add/remove — one level under the entry key. The
+fixed-template mode is retained for entries with a known, closed field set.
+
+The two-level nesting cap is unchanged: the entry's prop-bag is the entry value (the second
+level), not a third — so this needs no cap change.
+
+### Consequences
+
+- One capability serves both ideology subideology (open modifier maps) and state per-province
+  buildings (province → building maps); the keyed-object-map generalizes from
+  fixed-template-only to template-or-prop-bag.
+- Corrects the original amendment's implicit assumption that entry values are always a fixed
+  field set.
+
+### Alternatives considered
+
+- **Keep fixed-template only and carry the open maps lossless.** Rejected — it leaves
+  subideologies with no editable content (the form shows a key and nothing else) and hides the
+  per-province building data entirely.
+- **A distinct keyed-map-of-objects block + a two-level-cap lift for the deeper case.**
+  Rejected — the entry values are flat prop-bags, so one prop-bag entry-value variant covers
+  both consumers at the existing depth; a separate block and a cap lift would be redundant
+  machinery.
+
 ## Context
 
 Entity _lists_ render through a game-agnostic table shell driven by per-(game, entity) recognizers (shipped in S-1; no standalone ADR — code only). Entity _editing_ exists only as bespoke forms — the mod-descriptor form, the equipment/plane scalar form, and the module form — each hand-wired. As editable types multiply, hand-wiring duplicates the cross-cutting form concerns (field rendering, validation, dirty-tracking, write dispatch) and lets them drift.

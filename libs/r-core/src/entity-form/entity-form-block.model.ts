@@ -13,18 +13,22 @@ export const OBJECT_LIST_ITEM_INDEX_KEY = '__originalIndex';
 // edited (rename) without colliding with a templated field name.
 export const KEYED_MAP_ENTRY_KEY = '__key';
 
+// The reserved field key holding a prop-bag keyed-map entry's open key→value rows
+// — the bag one level under the entry key (ADR 018, amended ZMT-E15). Distinct from
+// KEYED_MAP_ENTRY_KEY so an entry's key and its rows never collide, and reserved
+// (double-underscore) so it never clashes with a user-entered bag key.
+export const KEYED_MAP_ENTRY_ROWS = '__rows';
+
 // An OPT-IN editable keyed-object-map mode for a named-nested block's
-// `namedChildren` facet (ADR 018, amended ZMT-18). When present on a block, its
-// `namedChildren` render as an editable variable-key map: an add affordance, a
-// per-entry remove, and an editable key field, each entry a sub-block of the
-// `entryFields` scalar template. When ABSENT the facet is the read-only
-// data-driven set it has always been (the character-portraits baseline).
-// `addLabel`, `keyLabel`, and each `entryFields` label are descriptor-resolved
-// (game-specific); `entryFields` is the per-entry scalar field template a new
-// entry seeds from (the same labelled-spec shape an object-list item carries).
+// `namedChildren` facet (ADR 018, amended ZMT-18, ZMT-E15). When present on a block,
+// its `namedChildren` render as an editable variable-key map: an add affordance, a
+// per-entry remove, and an editable key field. When ABSENT the facet is the
+// read-only data-driven set it has always been (the character-portraits baseline).
+// `entryValue` chooses the per-entry value form (fixed-field template or open
+// prop-bag); `addLabel` and `keyLabel` are descriptor-resolved (game-specific).
 export interface EditableKeyedMap {
   readonly addLabel: string;
-  readonly entryFields: readonly ObjectListField[];
+  readonly entryValue: KeyedMapEntryValue;
   readonly keyLabel: string;
   readonly keyPlaceholder?: string;
 }
@@ -71,6 +75,20 @@ export type EntityScopeSegment =
 // `['portraits', 'army']`, or `[{ name: 'folder', index: 1 }, 'position']`).
 // Bounded by the form layer's two-level nesting cap.
 export type EntityWriteScope = null | readonly EntityScopeSegment[];
+
+// The entry-value form of an editable keyed-object map, chosen per descriptor (ADR
+// 018, amended ZMT-E15). `fixed-fields` renders the value from a closed scalar
+// template — one labelled control per `fields` spec (the original mode, retained
+// for entries with a known, closed field set). `prop-bag` renders it as an open
+// key→value bag — freeSolo keys over `knownKeys` plus add/remove — reusing the
+// property-bag rendering one level under the entry key. The two-level cap is
+// unchanged: the bag IS the entry value (the second level), not a third.
+export type KeyedMapEntryValue =
+  | {
+      readonly fields: readonly ObjectListField[];
+      readonly kind: 'fixed-fields';
+    }
+  | { readonly kind: 'prop-bag'; readonly knownKeys: readonly FieldSpec[] };
 
 // A list of scalar values (e.g. a role's `traits`), bound to one value key. Used
 // both as a top-level block and as a named-nested block's list child.

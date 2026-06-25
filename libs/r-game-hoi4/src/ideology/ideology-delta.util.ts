@@ -1,5 +1,5 @@
 import { EntityBlockDelta, EntityField, EntityScalarDelta } from '@contracts';
-import { KEYED_MAP_ENTRY_KEY } from '@r-core';
+import { KEYED_MAP_ENTRY_KEY, KEYED_MAP_ENTRY_ROWS } from '@r-core';
 
 import {
   computeKeyedObjectMapDeltas,
@@ -13,13 +13,11 @@ const TYPES_BLOCK = 'types';
 // The open-time snapshot the save diffs against. `root` is the ideology's own
 // modeled root scalars; `rootKeys` the fixed root field names; `dynamicFactionNames`
 // the bare-token faction-name list; `types` the keyed-map entries (one per
-// subideology, each its modeled scalar rows); `typeFieldKeys` the template field
-// names a `types` entry projects.
+// subideology, each its open modifier prop-bag rows).
 export interface IdeologySnapshot {
   readonly dynamicFactionNames: readonly string[];
   readonly root: readonly EntityField[];
   readonly rootKeys: readonly string[];
-  readonly typeFieldKeys: readonly string[];
   readonly types: readonly KeyedMapEntry[];
 }
 
@@ -53,7 +51,7 @@ export function computeIdeologyDeltas(
     deltas.push({ block: [DYNAMIC_FACTION_NAMES_BLOCK], ...listDelta });
   }
 
-  const entries = entriesOf(values[TYPES_BLOCK], snapshot.typeFieldKeys);
+  const entries = entriesOf(values[TYPES_BLOCK]);
   deltas.push(
     ...computeKeyedObjectMapDeltas([TYPES_BLOCK], snapshot.types, entries),
   );
@@ -67,14 +65,30 @@ function asBareRows(tokens: readonly string[]): readonly EntityField[] {
   return tokens.map((token) => ({ key: token, value: null }));
 }
 
+// The prop-bag rows of one keyed-map entry: each `{ key, value }` row with a
+// trimmed non-empty key, deduped key-first (form validation guarantees
+// non-empty/unique by save; this is the defensive parse). The value keeps its
+// edited string so an unchanged row diffs to nothing against the snapshot, and a
+// bodyless `<key> = { }` survives when an entry has no rows.
+function bagRows(value: unknown): readonly EntityField[] {
+  if (!Array.isArray(value)) return [];
+  const rows: EntityField[] = [];
+  const seen = new Set<string>();
+  for (const raw of value) {
+    if (typeof raw !== 'object' || raw === null) continue;
+    const record = raw as Record<string, unknown>;
+    const key = stringValue(record.key).trim();
+    if (key === '' || seen.has(key)) continue;
+    seen.add(key);
+    rows.push({ key, value: stringValue(record.value).trim() });
+  }
+  return rows;
+}
+
 // Parses the keyed-map field-array into entries: each record's reserved map key
 // (trimmed; empty-key rows dropped — form validation guarantees non-empty/unique
-// by save) plus its modeled template rows (trimmed, empties dropped so an unset
-// field is absent, preserving a bodyless `<key> = { }`).
-function entriesOf(
-  value: unknown,
-  fieldKeys: readonly string[],
-): readonly KeyedMapEntry[] {
+// by save) plus its open prop-bag rows (ZMT-E15).
+function entriesOf(value: unknown): readonly KeyedMapEntry[] {
   if (!Array.isArray(value)) return [];
   const entries: KeyedMapEntry[] = [];
   for (const raw of value) {
@@ -82,12 +96,7 @@ function entriesOf(
     const record = raw as Record<string, unknown>;
     const key = stringValue(record[KEYED_MAP_ENTRY_KEY]).trim();
     if (key === '') continue;
-    const rows: EntityField[] = [];
-    for (const fieldKey of fieldKeys) {
-      const fieldValue = stringValue(record[fieldKey]).trim();
-      if (fieldValue !== '') rows.push({ key: fieldKey, value: fieldValue });
-    }
-    entries.push({ key, rows });
+    entries.push({ key, rows: bagRows(record[KEYED_MAP_ENTRY_ROWS]) });
   }
   return entries;
 }

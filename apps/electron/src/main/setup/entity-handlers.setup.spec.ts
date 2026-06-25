@@ -1344,7 +1344,7 @@ const IDEOLOGY_FIXTURE = `ideologies = {
 \t\twar_impact_on_world_tension = 0.5
 \t\ttypes = {
 \t\t\tliberalism = {
-\t\t\t\tcan_be_randomly_selected = yes
+\t\t\t\tpolitical_power_factor = 0.075
 \t\t\t}
 \t\t\tconservatism = {
 \t\t\t}
@@ -1411,7 +1411,7 @@ describe('registerEntityHandlers — keyed-object-map editing (ideology types)',
     await writeVia({
       deltas: [
         {
-          added: [{ key: 'can_be_randomly_selected', value: 'yes' }],
+          added: [{ key: 'political_power_factor', value: '0.05' }],
           block: ['types', 'socialism'],
           changed: [],
           removed: [],
@@ -1430,7 +1430,7 @@ describe('registerEntityHandlers — keyed-object-map editing (ideology types)',
       'socialism',
     ]);
     expect(socialism).toBeDefined();
-    expect(written).toContain('can_be_randomly_selected = yes');
+    expect(written).toContain('political_power_factor = 0.05');
   });
 
   it('drops a whole subideology sub-block via a parent-scoped key removal', async () => {

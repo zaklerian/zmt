@@ -135,9 +135,6 @@ export const uk: typeof en = {
       },
       types: {
         add: 'Додати підідеологію',
-        fields: {
-          can_be_randomly_selected: 'Можна обрати випадково',
-        },
         key: 'Ключ підідеології',
         title: 'Підідеології (types)',
       },
