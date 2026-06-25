@@ -1,4 +1,8 @@
-import type { EntityField, StateEntity } from '@contracts';
+import type {
+  EntityField,
+  StateEntity,
+  StateProvinceBuildings,
+} from '@contracts';
 import type {
   AssignmentNode,
   BlockChild,
@@ -10,7 +14,6 @@ import type {
 const STATE_BLOCK = 'state';
 const BUILDINGS_BLOCK = 'buildings';
 const HISTORY_BLOCK = 'history';
-const NAVAL_BASE_BLOCK = 'naval_base';
 const PROVINCES_BLOCK = 'provinces';
 const RESOURCES_BLOCK = 'resources';
 
@@ -47,20 +50,18 @@ export function extractStates(parsedTarget: Script): readonly StateEntity[] {
     const block = child.value;
     const buildings = findBlock(block, BUILDINGS_BLOCK);
     const history = findBlock(block, HISTORY_BLOCK);
-    const navalBase =
-      buildings === undefined
-        ? undefined
-        : findBlock(buildings, NAVAL_BASE_BLOCK);
     const resources = findBlock(block, RESOURCES_BLOCK);
     entities.push({
-      // `buildings` rows are variable building keys; its `naval_base` sub-block is
-      // a Block child and is skipped by scalarLeaves (it surfaces as navalBase).
+      // `buildings` rows are the state-wide building scalars; the per-province
+      // `<id> = { building = level … }` object children are Block-valued and are
+      // skipped by scalarLeaves (they surface as provinceBuildings).
       buildings: buildings === undefined ? [] : scalarLeaves(buildings),
       history:
         history === undefined ? [] : modeledScalars(history, HISTORY_KEYS),
       id: scalarOf(block, KEY_ID),
       name: scalarOf(block, KEY_NAME),
-      navalBase: navalBase === undefined ? [] : scalarLeaves(navalBase),
+      provinceBuildings:
+        buildings === undefined ? [] : provinceBuildings(buildings),
       provinces: tokenList(block, PROVINCES_BLOCK),
       resources: resources === undefined ? [] : scalarLeaves(resources),
       rootScalars: modeledScalars(block, ROOT_KEYS),
@@ -110,6 +111,22 @@ function modeledScalars(
   return fields;
 }
 
+// The per-province building objects of the `buildings` block: each Block-valued
+// `<province-id> = { building = level … }` child, keyed by its province id and
+// projected as the flat scalar leaves of its sub-block (ZMT-E16). Non-Block children
+// (the state-wide building scalars) are skipped — they surface as buildings rows.
+function provinceBuildings(
+  block: BlockNode,
+): readonly StateProvinceBuildings[] {
+  const entries: StateProvinceBuildings[] = [];
+  for (const child of block.children) {
+    if (child.kind === 'Assignment' && child.value.kind === 'Block') {
+      entries.push({ id: keyName(child), rows: scalarLeaves(child.value) });
+    }
+  }
+  return entries;
+}
+
 // Scalar values keep their raw source token (quotes included) so a save writes
 // them back byte-identically through the verbatim `key = value` path.
 function rawValueOf(value: ParadoxValue): string | undefined {
@@ -130,8 +147,9 @@ function rawValueOf(value: ParadoxValue): string | undefined {
 }
 
 // Every scalar leaf of the block, in file order — the variable-key map projection
-// (resources, buildings rows, naval_base). Block-valued children (e.g. buildings'
-// `naval_base`, history overrides) are skipped and stay verbatim (R-CODE-5).
+// (resources, the state-wide buildings rows, a province building object's rows).
+// Block-valued children (e.g. buildings' per-province `<id> = { … }` objects,
+// history overrides) are skipped and stay verbatim (R-CODE-5).
 function scalarLeaves(block: BlockNode): readonly EntityField[] {
   const fields: EntityField[] = [];
   for (const child of block.children) {

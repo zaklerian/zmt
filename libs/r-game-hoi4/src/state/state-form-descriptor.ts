@@ -9,13 +9,14 @@ import {
   fieldName,
   ListOfScalarsBlock,
   NamedNestedBlock,
-  NamedScalarChild,
+  namedNestedRowsBinding,
   PropertyBagBlock,
 } from '@r-core';
 
 import {
   KNOWN_BUILDING_KEYS,
   KNOWN_HISTORY_KEYS,
+  KNOWN_PROVINCE_BUILDING_KEYS,
   KNOWN_RESOURCE_KEYS,
   STATE_ROOT_SPECS,
 } from './known-state-keys.const';
@@ -28,7 +29,6 @@ import { stateErrorMessageKey } from './state-error.util';
 const STATE_BLOCK = 'state';
 const BUILDINGS_BLOCK = 'buildings';
 const HISTORY_BLOCK = 'history';
-const NAVAL_BASE_BLOCK = 'naval_base';
 const PROVINCES_BLOCK = 'provinces';
 const RESOURCES_BLOCK = 'resources';
 
@@ -40,7 +40,7 @@ function project(
     buildings,
     history,
     id,
-    navalBase,
+    provinceBuildings,
     provinces,
     resources,
     rootScalars,
@@ -68,24 +68,28 @@ function project(
     sectionLabel: translate('plugin.hoi4:state.form.resources.title'),
   };
 
-  // The naval_base depth-2 map: variable province-id keys (no suggestions),
-  // written to `['buildings', 'naval_base']`. When `buildings` is absent the
-  // write materializes it along the path (added-only, ZMT-15).
-  const navalBaseChild: NamedScalarChild = {
-    knownKeys: [],
-    name: NAVAL_BASE_BLOCK,
-    rows: navalBase,
-    scope: [BUILDINGS_BLOCK, NAVAL_BASE_BLOCK],
-    sectionLabel: translate('plugin.hoi4:state.form.navalBase.title'),
-  };
-
-  // First descriptor to co-populate `rows` (building → level) AND `namedChildren`
-  // (the naval_base map) on one named-nested block.
+  // `buildings` co-populates the state-wide building scalar `rows` AND an editable
+  // keyed-object map of the per-province building objects (ZMT-E16, reusing the
+  // ZMT-E15 keyed-map prop-bag entry). Each province entry is a prop-bag of open
+  // building keys (freeSolo suggestions, free-text numeric values — the building set
+  // is cross-entity, not enumerable here, R-CODE-5), written to
+  // `['buildings', '<provinceId>']`. The rows bind to the sibling field-array; the
+  // province entries keep the block-name binding (namedNestedRowsBinding).
   const buildingsBlock: NamedNestedBlock = {
+    editableKeyedMap: {
+      addLabel: translate('plugin.hoi4:state.form.buildings.add'),
+      entryValue: { kind: 'prop-bag', knownKeys: KNOWN_PROVINCE_BUILDING_KEYS },
+      keyLabel: translate('plugin.hoi4:state.form.buildings.key'),
+    },
     kind: 'namedNested',
     knownKeys: KNOWN_BUILDING_KEYS,
     name: BUILDINGS_BLOCK,
-    namedChildren: [navalBaseChild],
+    namedChildren: provinceBuildings.map((province) => ({
+      knownKeys: KNOWN_PROVINCE_BUILDING_KEYS,
+      name: province.id,
+      rows: province.rows,
+      scope: [BUILDINGS_BLOCK, province.id],
+    })),
     rows: buildings,
     scope: [BUILDINGS_BLOCK],
     sectionLabel: translate('plugin.hoi4:state.form.buildings.title'),
@@ -119,17 +123,20 @@ function project(
   const snapshot: StateSnapshot = {
     bags: [
       { binding: RESOURCES_BLOCK, rows: resources, scope: [RESOURCES_BLOCK] },
-      { binding: BUILDINGS_BLOCK, rows: buildings, scope: [BUILDINGS_BLOCK] },
       {
-        binding: NAVAL_BASE_BLOCK,
-        rows: navalBase,
-        scope: [BUILDINGS_BLOCK, NAVAL_BASE_BLOCK],
+        binding: namedNestedRowsBinding(buildingsBlock),
+        rows: buildings,
+        scope: [BUILDINGS_BLOCK],
       },
       { binding: HISTORY_BLOCK, rows: history, scope: [HISTORY_BLOCK] },
     ],
     lists: [
       { binding: PROVINCES_BLOCK, scope: [PROVINCES_BLOCK], values: provinces },
     ],
+    provinceBuildings: provinceBuildings.map((province) => ({
+      key: province.id,
+      rows: province.rows,
+    })),
     root: rootScalars,
     rootKeys: STATE_ROOT_SPECS.map(fieldName),
   };

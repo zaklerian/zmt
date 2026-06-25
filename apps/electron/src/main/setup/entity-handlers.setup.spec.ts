@@ -973,9 +973,9 @@ describe('registerEntityHandlers — bare-token vs empty-string scalar round-tri
 // Intermediate-block materialization (ADR 019, amended ZMT-15): an added-only
 // delta whose scope has an absent INTERMEDIATE block materializes the missing
 // tail (nesting rendered blocks down the path) before the add. The state fixture
-// has no `buildings` block, so `['buildings', 'naval_base']` is an absent
-// intermediate; a changed/removed delta against the same missing target still
-// conflicts.
+// has no `buildings` block, so `['buildings', '14']` (a per-province building
+// object) is an absent intermediate; a changed/removed delta against the same
+// missing target still conflicts.
 const STATE_FIXTURE = `state = {
 \tid = 1
 \tname = "STATE_1"
@@ -1016,8 +1016,8 @@ describe('registerEntityHandlers — intermediate-block materialization', () => 
     await writeVia({
       deltas: [
         {
-          added: [{ key: '12', value: '1' }],
-          block: ['buildings', 'naval_base'],
+          added: [{ key: 'naval_base', value: '4' }],
+          block: ['buildings', '14'],
           changed: [],
           removed: [],
         },
@@ -1029,15 +1029,11 @@ describe('registerEntityHandlers — intermediate-block materialization', () => 
 
     const written = await readFile(filePath, 'utf8');
     const buildings = blockAtPath(written, ['state', 'buildings']);
-    const navalBase = blockAtPath(written, [
-      'state',
-      'buildings',
-      'naval_base',
-    ]);
+    const province = blockAtPath(written, ['state', 'buildings', '14']);
 
     expect(buildings).toBeDefined();
-    expect(navalBase).toBeDefined();
-    expect(written).toContain('\t\t\t12 = 1\n');
+    expect(province).toBeDefined();
+    expect(written).toContain('\t\t\tnaval_base = 4\n');
     // The rest of the file is byte-identical: only the new block is inserted.
     expect(written).toContain('victory_points = { 100 5 }');
   });
@@ -1052,8 +1048,8 @@ describe('registerEntityHandlers — intermediate-block materialization', () => 
           removed: [],
         },
         {
-          added: [{ key: '12', value: '1' }],
-          block: ['buildings', 'naval_base'],
+          added: [{ key: 'naval_base', value: '4' }],
+          block: ['buildings', '14'],
           changed: [],
           removed: [],
         },
@@ -1072,19 +1068,14 @@ describe('registerEntityHandlers — intermediate-block materialization', () => 
           'buildings',
     );
     // Exactly ONE buildings block, not one per delta — this is the coalescing
-    // guarantee (ADR 019, amended ZMT-15.1).
+    // guarantee (ADR 019, amended ZMT-15.1). The state-wide building scalar and the
+    // per-province object both nest inside the one materialized buildings block.
     expect(buildingsBlocks).toHaveLength(1);
 
-    const navalBase = blockAtPath(written, [
-      'state',
-      'buildings',
-      'naval_base',
-    ]);
-    expect(navalBase).toBeDefined();
-    // The building-row scalar and the naval_base child both nest inside the one
-    // materialized block, at the right depths.
+    const province = blockAtPath(written, ['state', 'buildings', '14']);
+    expect(province).toBeDefined();
     expect(written).toContain('\t\tarms_factory = 2\n');
-    expect(written).toContain('\t\t\t12 = 1\n');
+    expect(written).toContain('\t\t\tnaval_base = 4\n');
     // The rest of the file is untouched.
     expect(written).toContain('victory_points = { 100 5 }');
   });
@@ -1117,8 +1108,8 @@ describe('registerEntityHandlers — intermediate-block materialization', () => 
         deltas: [
           {
             added: [],
-            block: ['buildings', 'naval_base'],
-            changed: [{ key: '12', value: '2' }],
+            block: ['buildings', '14'],
+            changed: [{ key: 'naval_base', value: '4' }],
             removed: [],
           },
         ],
@@ -1137,9 +1128,9 @@ describe('registerEntityHandlers — intermediate-block materialization', () => 
         deltas: [
           {
             added: [],
-            block: ['buildings', 'naval_base'],
+            block: ['buildings', '14'],
             changed: [],
-            removed: ['12'],
+            removed: ['naval_base'],
           },
         ],
         entityName: 'state',
@@ -1232,28 +1223,32 @@ describe('registerEntityHandlers — coalescing a deeper shared absent prefix', 
   });
 });
 
-// Numeric assignment keys (naval_base province id → level) round-trip through the
-// write path now that the grammar admits NumberValue keys (ZMT-15): they resolve
-// as scalars, so change / remove / add all target them surgically.
-const STATE_NAVAL_FIXTURE = `state = {
+// Numeric assignment keys (the per-province `<id> = { … }` building objects)
+// round-trip through the write path now that the grammar admits NumberValue keys
+// (ZMT-15, ZMT-E16): a province id is a numeric BLOCK key descended into for an inner
+// change/add, or dropped by a parent-scoped key removal; building levels inside it
+// are scalars targeted surgically.
+const STATE_PROVINCE_FIXTURE = `state = {
 \tid = 5
 \tbuildings = {
 \t\tinfrastructure = 3
-\t\tnaval_base = {
-\t\t\t1234 = 1
-\t\t\t5678 = 2
+\t\t14 = {
+\t\t\tnaval_base = 4
+\t\t}
+\t\t27 = {
+\t\t\tcoastal_bunker = 2
 \t\t}
 \t}
 }
 `;
 
-describe('registerEntityHandlers — numeric naval_base keys round-trip', () => {
+describe('registerEntityHandlers — numeric province-id keys round-trip', () => {
   beforeEach(async () => {
     vi.mocked(ipcMain.handle).mockReset();
 
-    modRoot = await mkdtemp(path.join(tmpdir(), 'zmt-naval-'));
+    modRoot = await mkdtemp(path.join(tmpdir(), 'zmt-province-'));
     filePath = path.join(modRoot, RELATIVE_PATH);
-    await writeFile(filePath, STATE_NAVAL_FIXTURE);
+    await writeFile(filePath, STATE_PROVINCE_FIXTURE);
 
     state.sources = [{ path: modRoot, permission: 'editable' }];
     state.workspace = {
@@ -1269,13 +1264,13 @@ describe('registerEntityHandlers — numeric naval_base keys round-trip', () => 
     await rm(modRoot, { force: true, recursive: true });
   });
 
-  it('changes the level of an existing province entry', async () => {
+  it('changes a building level within an existing province at the numeric-keyed path', async () => {
     await writeVia({
       deltas: [
         {
           added: [],
-          block: ['buildings', 'naval_base'],
-          changed: [{ key: '1234', value: '3' }],
+          block: ['buildings', '14'],
+          changed: [{ key: 'naval_base', value: '5' }],
           removed: [],
         },
       ],
@@ -1285,18 +1280,18 @@ describe('registerEntityHandlers — numeric naval_base keys round-trip', () => 
     });
 
     expect(await readFile(filePath, 'utf8')).toBe(
-      STATE_NAVAL_FIXTURE.replace('1234 = 1', '1234 = 3'),
+      STATE_PROVINCE_FIXTURE.replace('naval_base = 4', 'naval_base = 5'),
     );
   });
 
-  it('removes one province entry, leaving the sibling byte-identical', async () => {
+  it('removes one province entry with a parent-scoped key removal, leaving the sibling byte-identical', async () => {
     await writeVia({
       deltas: [
         {
           added: [],
-          block: ['buildings', 'naval_base'],
+          block: ['buildings'],
           changed: [],
-          removed: ['1234'],
+          removed: ['14'],
         },
       ],
       entityName: 'state',
@@ -1305,16 +1300,19 @@ describe('registerEntityHandlers — numeric naval_base keys round-trip', () => 
     });
 
     expect(await readFile(filePath, 'utf8')).toBe(
-      STATE_NAVAL_FIXTURE.replace('\t\t\t1234 = 1\n', ''),
+      STATE_PROVINCE_FIXTURE.replace(
+        '\t\t14 = {\n\t\t\tnaval_base = 4\n\t\t}\n',
+        '',
+      ),
     );
   });
 
-  it('adds a province entry into the existing naval_base block', async () => {
+  it('adds a building into an existing province object', async () => {
     await writeVia({
       deltas: [
         {
-          added: [{ key: '9012', value: '4' }],
-          block: ['buildings', 'naval_base'],
+          added: [{ key: 'coastal_bunker', value: '2' }],
+          block: ['buildings', '14'],
           changed: [],
           removed: [],
         },
@@ -1325,9 +1323,9 @@ describe('registerEntityHandlers — numeric naval_base keys round-trip', () => 
     });
 
     expect(await readFile(filePath, 'utf8')).toBe(
-      STATE_NAVAL_FIXTURE.replace(
-        '\t\t\t5678 = 2\n',
-        '\t\t\t5678 = 2\n\t\t\t9012 = 4\n',
+      STATE_PROVINCE_FIXTURE.replace(
+        '\t\t\tnaval_base = 4\n',
+        '\t\t\tnaval_base = 4\n\t\t\tcoastal_bunker = 2\n',
       ),
     );
   });

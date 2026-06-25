@@ -102,7 +102,7 @@ describe('extractStates', () => {
       history: [],
       id: '1',
       name: '',
-      navalBase: [],
+      provinceBuildings: [],
       provinces: [],
       resources: [],
       rootScalars: [{ key: 'id', value: '1' }],
@@ -125,7 +125,7 @@ describe('extractStates', () => {
     ]);
   });
 
-  it('separates buildings rows from the naval_base sub-block', () => {
+  it('separates the state-wide building rows from the per-province building objects', () => {
     const [entity] = extractStates(
       stateScript(
         assign(
@@ -133,18 +133,33 @@ describe('extractStates', () => {
           block([
             assign('infrastructure', num('3')),
             assign('arms_factory', num('2')),
-            assign('naval_base', block([assign('1234', num('1'))])),
+            assign(
+              '14',
+              block([
+                assign('coastal_bunker', num('2')),
+                assign('naval_base', num('4')),
+              ]),
+            ),
           ]),
         ),
       ),
     );
 
-    // The naval_base block does not leak into buildings rows.
+    // The province-id object children do not leak into the state-wide rows; they
+    // surface as keyed provinceBuildings entries.
     expect(entity?.buildings).toEqual([
       { key: 'infrastructure', value: '3' },
       { key: 'arms_factory', value: '2' },
     ]);
-    expect(entity?.navalBase).toEqual([{ key: '1234', value: '1' }]);
+    expect(entity?.provinceBuildings).toEqual([
+      {
+        id: '14',
+        rows: [
+          { key: 'coastal_bunker', value: '2' },
+          { key: 'naval_base', value: '4' },
+        ],
+      },
+    ]);
   });
 
   it('models history thin (owner / controller), ignoring dated blocks and overrides', () => {

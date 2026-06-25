@@ -34,8 +34,9 @@ const STATE_FILE = `state = {
 \t}
 \tbuildings = {
 \t\tinfrastructure = 3
-\t\tnaval_base = {
-\t\t\t1234 = 1
+\t\t14 = {
+\t\t\tcoastal_bunker = 2
+\t\t\tnaval_base = 4
 \t\t}
 \t}
 \thistory = {
@@ -87,7 +88,15 @@ describe('listStates', () => {
     expect(entity?.name).toBe('"STATE_12"');
     expect(entity?.resources).toEqual([{ key: 'oil', value: '5' }]);
     expect(entity?.buildings).toEqual([{ key: 'infrastructure', value: '3' }]);
-    expect(entity?.navalBase).toEqual([{ key: '1234', value: '1' }]);
+    expect(entity?.provinceBuildings).toEqual([
+      {
+        id: '14',
+        rows: [
+          { key: 'coastal_bunker', value: '2' },
+          { key: 'naval_base', value: '4' },
+        ],
+      },
+    ]);
     // victory_points stays out of the thin history projection (R-CODE-5).
     expect(entity?.history).toEqual([
       { key: 'owner', value: 'GER' },

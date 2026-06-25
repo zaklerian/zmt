@@ -1,5 +1,9 @@
 import { Stack, Typography } from '@mui/material';
-import { NamedNestedBlock } from '@r-core';
+import {
+  NamedNestedBlock,
+  namedNestedRendersRows,
+  namedNestedRowsBinding,
+} from '@r-core';
 import { Control, FieldValues } from 'react-hook-form';
 
 import { KeyedObjectMapBlockView } from './keyed-object-map-block.component';
@@ -11,10 +15,13 @@ interface NamedNestedBlockViewProps {
   readonly control: Control<FieldValues>;
 }
 
-// Named nested block (ADR 018, extended ZMT-13). Renders its own key→scalar rows,
-// then any list-of-scalars children (e.g. a role's `traits`), then any named
+// Named nested block (ADR 018, extended ZMT-13, ZMT-E16). Renders its own key→scalar
+// rows, then any list-of-scalars children (e.g. a role's `traits`), then EITHER the
+// editable keyed-object map (when the descriptor opts in) OR the read-only named
 // children whose leaves are scalars — the one bounded second nesting level (e.g.
-// `portraits → army → large`). A key→scalar map reuses the property-bag open
+// `portraits → army → large`). A block may co-populate its rows AND the keyed map
+// (state `buildings`): the rows bind to the sibling field-array (namedNestedRowsBinding)
+// so the two arrays never collide. A key→scalar map reuses the property-bag open
 // rendering. Each child binds flat under its own name; the shell and resolver are
 // otherwise untouched.
 export function NamedNestedBlockView({
@@ -28,11 +35,11 @@ export function NamedNestedBlockView({
           {block.sectionLabel}
         </Typography>
       )}
-      {block.rows.length > 0 || block.knownKeys.length > 0 ? (
+      {namedNestedRendersRows(block) ? (
         <ScalarRows
           control={control}
           keySuggestions={block.knownKeys}
-          name={block.name}
+          name={namedNestedRowsBinding(block)}
         />
       ) : null}
       {block.listChildren?.map((child) => (

@@ -5,6 +5,8 @@ import {
   fieldName,
   KEYED_MAP_ENTRY_KEY,
   KEYED_MAP_ENTRY_ROWS,
+  namedNestedRendersRows,
+  namedNestedRowsBinding,
   NamedScalarChild,
 } from '@r-core';
 import { z } from 'zod';
@@ -40,11 +42,20 @@ export function buildEntityFormDefaults(
     } else if (block.kind === 'namedNested') {
       const map = block.editableKeyedMap;
       if (map !== undefined) {
-        // Editable keyed-map mode: one field-array of keyed entries under the
-        // block name, the read-only flat namedChildren bindings are not seeded.
+        // Editable keyed-map mode: one field-array of keyed entries under the block
+        // name. A block that ALSO renders its own rows (e.g. state `buildings`) seeds
+        // them under the sibling binding so the two field-arrays never collide; a
+        // keyed-map-only block (e.g. ideology `types`) seeds none. The read-only flat
+        // namedChildren bindings are not seeded in this mode.
+        if (namedNestedRendersRows(block)) {
+          values[namedNestedRowsBinding(block)] = block.rows.map(toRow);
+        }
         values[block.name] = (block.namedChildren ?? []).map((child) =>
           toKeyedEntry(child, map),
         );
+        for (const child of block.listChildren ?? []) {
+          values[child.name] = [...child.values];
+        }
         continue;
       }
       values[block.name] = block.rows.map(toRow);
@@ -85,6 +96,12 @@ export function buildEntityFormSchema(
     } else if (block.kind === 'namedNested') {
       if (block.editableKeyedMap !== undefined) {
         shape[block.name] = keyedMapSchema(block.editableKeyedMap, messages);
+        if (namedNestedRendersRows(block)) {
+          shape[namedNestedRowsBinding(block)] = bagSchema(messages);
+        }
+        for (const child of block.listChildren ?? []) {
+          shape[child.name] = z.array(z.string());
+        }
         continue;
       }
       shape[block.name] = bagSchema(messages);
