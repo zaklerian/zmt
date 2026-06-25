@@ -57,6 +57,26 @@ describe('lowerFieldSpec', () => {
     expect(schema.safeParse('').success).toBe(true);
   });
 
+  it('lowers a boolean field to the closed yes/no token set, keeping the string', () => {
+    const schema = lowerFieldSpec(
+      { name: 'doctrine', validation: { type: 'boolean' } },
+      { invalid: 'Invalid' },
+    );
+
+    // The token survives as its string — not coerced to a JS boolean — so it
+    // matches a select option and round-trips through the string-keyed delta.
+    const yes = schema.safeParse('yes');
+    expect(yes.success).toBe(true);
+    expect(yes.data).toBe('yes');
+    const no = schema.safeParse('no');
+    expect(no.success).toBe(true);
+    expect(no.data).toBe('no');
+    // Out-of-set value fails the closed set; absent / empty pass.
+    expect(schema.safeParse('maybe').success).toBe(false);
+    expect(schema.safeParse(undefined).success).toBe(true);
+    expect(schema.safeParse('').success).toBe(true);
+  });
+
   it('coerces and bounds a number-typed field', () => {
     const schema = lowerFieldSpec({
       name: 'weight',

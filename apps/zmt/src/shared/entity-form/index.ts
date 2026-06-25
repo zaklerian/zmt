@@ -1,3 +1,4 @@
+export * from './boolean-options.const';
 export * from './entity-form-registry.service';
 export * from './entity-form-rhf.util';
 export * from './entity-form-shell.component';
