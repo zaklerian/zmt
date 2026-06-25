@@ -20,11 +20,6 @@ const ROOT_KEYS: readonly string[] = [
   'faction_impact_on_world_tension',
 ];
 
-// The one modeled scalar of a subideology entry. The subideology's own unmodeled
-// scalars and blocks (e.g. a `color` triple, a third nesting level) are carried
-// lossless — the two-level cap leaves them in the node (R-CODE-5).
-const TYPE_KEYS: readonly string[] = ['can_be_randomly_selected'];
-
 // Wrapper-aware extraction: ideologies are entries under the top-level
 // `ideologies = { … }` wrapper; the extractor descends it and yields each
 // `<ideology> = { … }` block as an entity (ADR 018, ZMT-18).
@@ -54,6 +49,24 @@ export function extractIdeologies(
   return entities;
 }
 
+// Every scalar leaf of the block, in file order, deduped key-first — the open
+// projection of a subideology's modifier map (a prop-bag entry value, ZMT-E15).
+// Block-valued children (e.g. a `color` triple, a third nesting level) are skipped
+// and ride through lossless — the two-level cap leaves them in the node (R-CODE-5).
+function allScalars(block: BlockNode): readonly EntityField[] {
+  const fields: EntityField[] = [];
+  const seen = new Set<string>();
+  for (const child of block.children) {
+    if (child.kind !== 'Assignment' || child.value.kind === 'Block') continue;
+    const value = rawValueOf(child.value);
+    if (value !== undefined && !seen.has(keyName(child))) {
+      seen.add(keyName(child));
+      fields.push({ key: keyName(child), value });
+    }
+  }
+  return fields;
+}
+
 function findBlock(block: BlockNode, key: string): BlockNode | undefined {
   for (const child of block.children) {
     if (
@@ -74,7 +87,7 @@ function keyName(assignment: AssignmentNode): string {
 }
 
 // The block's scalar leaves restricted to the modeled keys, in modeled order —
-// used for the fixed root fields and the thin subideology projection.
+// used for the fixed root fields (R-CODE-5).
 function modeledScalars(
   block: BlockNode,
   keys: readonly string[],
@@ -115,18 +128,16 @@ function rawValueOf(value: ParadoxValue): string | undefined {
 }
 
 // The `types` keyed-object map: each `<subideology> = { … }` child in file order,
-// projecting only the modeled scalar template. An empty-bodied entry yields an
-// entry with no rows (it still surfaces as a removable/renamable key).
+// projecting its full open scalar map (the modifier prop-bag, ZMT-E15). An
+// empty-bodied entry yields an entry with no rows (it still surfaces as a
+// removable/renamable key).
 function subideologies(block: BlockNode): readonly IdeologyType[] {
   const types = findBlock(block, TYPES_BLOCK);
   if (types === undefined) return [];
   const entries: IdeologyType[] = [];
   for (const child of types.children) {
     if (child.kind !== 'Assignment' || child.value.kind !== 'Block') continue;
-    entries.push({
-      key: keyName(child),
-      scalars: modeledScalars(child.value, TYPE_KEYS),
-    });
+    entries.push({ key: keyName(child), scalars: allScalars(child.value) });
   }
   return entries;
 }

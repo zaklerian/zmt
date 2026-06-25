@@ -4,6 +4,7 @@ import {
   EntityFormRow,
   fieldName,
   KEYED_MAP_ENTRY_KEY,
+  KEYED_MAP_ENTRY_ROWS,
   NamedScalarChild,
 } from '@r-core';
 import { z } from 'zod';
@@ -83,7 +84,7 @@ export function buildEntityFormSchema(
       shape[block.name] = z.array(z.record(z.string(), z.unknown()));
     } else if (block.kind === 'namedNested') {
       if (block.editableKeyedMap !== undefined) {
-        shape[block.name] = keyedMapSchema(messages);
+        shape[block.name] = keyedMapSchema(block.editableKeyedMap, messages);
         continue;
       }
       shape[block.name] = bagSchema(messages);
@@ -111,75 +112,111 @@ function bagSchema(messages: BagMessages): z.ZodTypeAny {
   return z
     .array(z.object({ key: z.string(), value: z.string() }))
     .superRefine((rows, ctx) => {
-      const occurrences = new Map<string, number>();
-      for (const row of rows) {
-        const key = row.key.trim();
-        if (key !== '') occurrences.set(key, (occurrences.get(key) ?? 0) + 1);
-      }
-      rows.forEach((row, index) => {
-        const key = row.key.trim();
-        if (key === '') {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: messages.keyRequired,
-            path: [index, 'key'],
-          });
-          return;
-        }
-        if ((occurrences.get(key) ?? 0) > 1) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: messages.keyDuplicate,
-            path: [index, 'key'],
-          });
-        }
-      });
+      refineKeys(
+        rows.map((row) => row.key),
+        ctx,
+        messages,
+        [],
+      );
     });
 }
 
 // One editable keyed-object map: each entry's map key (`KEYED_MAP_ENTRY_KEY`)
 // non-empty and unique within the map (a rename to a colliding key is rejected,
-// mirroring the bag key-unique rule). Template field values ride each entry's
-// FieldValueControl, so the per-field schema stays permissive (ZMT-18).
-function keyedMapSchema(messages: BagMessages): z.ZodTypeAny {
+// mirroring the bag key-unique rule). For a prop-bag entry value, each entry's
+// open rows are validated key-required / key-unique within that entry, the same
+// rule a top-level bag enforces (ZMT-18, ZMT-E15). Fixed-template field values
+// ride each entry's FieldValueControl, so the per-field schema stays permissive.
+function keyedMapSchema(
+  map: EditableKeyedMap,
+  messages: BagMessages,
+): z.ZodTypeAny {
   return z
     .array(z.record(z.string(), z.unknown()))
     .superRefine((entries, ctx) => {
-      const occurrences = new Map<string, number>();
-      for (const entry of entries) {
-        const key = String(entry[KEYED_MAP_ENTRY_KEY] ?? '').trim();
-        if (key !== '') occurrences.set(key, (occurrences.get(key) ?? 0) + 1);
-      }
+      refineKeys(
+        entries.map((entry) => String(entry[KEYED_MAP_ENTRY_KEY] ?? '')),
+        ctx,
+        messages,
+        [],
+        KEYED_MAP_ENTRY_KEY,
+      );
+      if (map.entryValue.kind !== 'prop-bag') return;
       entries.forEach((entry, index) => {
-        const key = String(entry[KEYED_MAP_ENTRY_KEY] ?? '').trim();
-        if (key === '') {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: messages.keyRequired,
-            path: [index, KEYED_MAP_ENTRY_KEY],
-          });
-          return;
-        }
-        if ((occurrences.get(key) ?? 0) > 1) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: messages.keyDuplicate,
-            path: [index, KEYED_MAP_ENTRY_KEY],
-          });
-        }
+        refineKeys(rowKeysOf(entry[KEYED_MAP_ENTRY_ROWS]), ctx, messages, [
+          index,
+          KEYED_MAP_ENTRY_ROWS,
+        ]);
       });
     });
 }
 
-// One editable keyed-map entry as a flat RHF record: the reserved map key plus
-// each template field seeded from the entry's rows (absent field → empty string,
-// so every control binds). Mirrors the object-list item record shape.
+// Adds a key-required issue for each empty key and a key-duplicate issue for each
+// key occurring more than once. `path` prefixes the issue path; `leaf` is the key
+// field name within each row (the bag's `'key'`, or the map's reserved entry key).
+function refineKeys(
+  keys: readonly string[],
+  ctx: z.RefinementCtx,
+  messages: BagMessages,
+  path: readonly (number | string)[],
+  leaf = 'key',
+): void {
+  const occurrences = new Map<string, number>();
+  for (const key of keys) {
+    const trimmed = key.trim();
+    if (trimmed !== '')
+      occurrences.set(trimmed, (occurrences.get(trimmed) ?? 0) + 1);
+  }
+  keys.forEach((key, index) => {
+    const trimmed = key.trim();
+    if (trimmed === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: messages.keyRequired,
+        path: [...path, index, leaf],
+      });
+      return;
+    }
+    if ((occurrences.get(trimmed) ?? 0) > 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: messages.keyDuplicate,
+        path: [...path, index, leaf],
+      });
+    }
+  });
+}
+
+// The bag-row keys of a prop-bag keyed-map entry's rows value, normalizing each
+// absent / non-string key to the empty string so refineKeys flags it required.
+function rowKeysOf(value: unknown): readonly string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((row) =>
+    typeof row === 'object' &&
+    row !== null &&
+    typeof (row as { key?: unknown }).key === 'string'
+      ? (row as { key: string }).key
+      : '',
+  );
+}
+
+// One editable keyed-map entry as an RHF record: the reserved map key plus the
+// entry value. For a prop-bag entry the child's rows seed an open key→value bag
+// under KEYED_MAP_ENTRY_ROWS. For a fixed-field entry each template field is
+// seeded from the entry's rows (absent field → empty string, so every control
+// binds), mirroring the object-list item record shape.
 function toKeyedEntry(
   child: NamedScalarChild,
   map: EditableKeyedMap,
 ): Record<string, unknown> {
+  if (map.entryValue.kind === 'prop-bag') {
+    return {
+      [KEYED_MAP_ENTRY_KEY]: child.name,
+      [KEYED_MAP_ENTRY_ROWS]: child.rows.map(toRow),
+    };
+  }
   const record: Record<string, unknown> = { [KEYED_MAP_ENTRY_KEY]: child.name };
-  for (const field of map.entryFields) {
+  for (const field of map.entryValue.fields) {
     const key = fieldName(field.spec);
     const row = child.rows.find((entry) => entry.key === key);
     record[key] = row?.value ?? '';

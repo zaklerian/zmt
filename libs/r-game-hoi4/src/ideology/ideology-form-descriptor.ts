@@ -9,17 +9,13 @@ import {
   fieldName,
   ListOfScalarsBlock,
   NamedNestedBlock,
-  ObjectListField,
   PropertyBagBlock,
 } from '@r-core';
 
 import { computeIdeologyDeltas, IdeologySnapshot } from './ideology-delta.util';
 import { IDEOLOGY_ENTITY_ID } from './ideology-entity-id.const';
 import { ideologyErrorMessageKey } from './ideology-error.util';
-import {
-  IDEOLOGY_ROOT_SPECS,
-  IDEOLOGY_TYPE_SPECS,
-} from './known-ideology-keys.const';
+import { IDEOLOGY_ROOT_SPECS } from './known-ideology-keys.const';
 
 const DYNAMIC_FACTION_NAMES_BLOCK = 'dynamic_faction_names';
 const TYPES_BLOCK = 'types';
@@ -51,29 +47,22 @@ function project(
     values: dynamicFactionNames,
   };
 
-  const typeEntryFields: readonly ObjectListField[] = IDEOLOGY_TYPE_SPECS.map(
-    (spec) => ({
-      label: translate(
-        `plugin.hoi4:ideology.form.types.fields.${fieldName(spec)}`,
-      ),
-      spec,
-    }),
-  );
-
-  // The editable keyed-object map: `types` is a variable-key map of subideologies.
-  // The `namedChildren` carry the read-side rows; `editableKeyedMap` switches the
-  // facet into add/remove/rename mode (ZMT-18).
+  // The editable keyed-object map: `types` is a variable-key map of subideologies,
+  // each an open modifier prop-bag (ZMT-E15). The `namedChildren` carry the
+  // read-side rows; `editableKeyedMap` switches the facet into add/remove/rename
+  // mode with a prop-bag entry value (open keys, free-text numeric values — the
+  // modifier set is ecosystem-defined, not enumerable here, R-CODE-5).
   const typesBlock: NamedNestedBlock = {
     editableKeyedMap: {
       addLabel: translate('plugin.hoi4:ideology.form.types.add'),
-      entryFields: typeEntryFields,
+      entryValue: { kind: 'prop-bag', knownKeys: [] },
       keyLabel: translate('plugin.hoi4:ideology.form.types.key'),
     },
     kind: 'namedNested',
     knownKeys: [],
     name: TYPES_BLOCK,
     namedChildren: types.map((type) => ({
-      knownKeys: IDEOLOGY_TYPE_SPECS,
+      knownKeys: [],
       name: type.key,
       rows: type.scalars,
       scope: [TYPES_BLOCK, type.key],
@@ -93,7 +82,6 @@ function project(
     dynamicFactionNames,
     root: rootScalars,
     rootKeys: IDEOLOGY_ROOT_SPECS.map(fieldName),
-    typeFieldKeys: IDEOLOGY_TYPE_SPECS.map(fieldName),
     types: types.map((type) => ({ key: type.key, rows: type.scalars })),
   };
 

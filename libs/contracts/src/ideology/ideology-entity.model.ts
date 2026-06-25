@@ -14,10 +14,11 @@ export interface IdeologyEntity {
   readonly types: readonly IdeologyType[];
 }
 
-// One `types` entry: a subideology named by its variable `key`, carrying only the
-// modeled scalar `can_be_randomly_selected`. Its own unmodeled scalars and blocks
-// (e.g. a subideology `color`, a third nesting level) stay verbatim in the
-// lossless node — the two-level cap leaves them carried, not modeled (R-CODE-5).
+// One `types` entry: a subideology named by its variable `key`, carrying its open
+// map of modifier scalars (`scalars`) — the full set of `key = value` leaves, an
+// editable prop-bag (ZMT-E15). Its own block-valued children (e.g. a subideology
+// `color`, a third nesting level) stay verbatim in the lossless node — the
+// two-level cap leaves them carried, not modeled (R-CODE-5).
 export interface IdeologyType {
   readonly key: string;
   readonly scalars: readonly EntityField[];

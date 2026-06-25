@@ -106,7 +106,7 @@ describe('extractIdeologies', () => {
     ]);
   });
 
-  it('projects the types map, modeling only can_be_randomly_selected per entry', () => {
+  it('projects the types map as each subideology open modifier prop-bag', () => {
     const [entity] = extractIdeologies(
       ideologiesScript(
         assign(
@@ -117,7 +117,12 @@ describe('extractIdeologies', () => {
               block([
                 assign(
                   'liberalism',
-                  block([assign('can_be_randomly_selected', id('yes'))]),
+                  block([
+                    assign('political_power_factor', num('0.075')),
+                    assign('drift_defence_factor', num('0.5')),
+                    // A nested block rides through lossless — not a scalar leaf.
+                    assign('color', block([num('0'), num('100'), num('200')])),
+                  ]),
                 ),
                 assign('conservatism', block([])),
               ]),
@@ -130,7 +135,10 @@ describe('extractIdeologies', () => {
     expect(entity?.types).toEqual([
       {
         key: 'liberalism',
-        scalars: [{ key: 'can_be_randomly_selected', value: 'yes' }],
+        scalars: [
+          { key: 'political_power_factor', value: '0.075' },
+          { key: 'drift_defence_factor', value: '0.5' },
+        ],
       },
       { key: 'conservatism', scalars: [] },
     ]);

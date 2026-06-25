@@ -131,9 +131,6 @@ export const en = {
       },
       types: {
         add: 'Add subideology',
-        fields: {
-          can_be_randomly_selected: 'Can be randomly selected',
-        },
         key: 'Subideology key',
         title: 'Subideologies (types)',
       },

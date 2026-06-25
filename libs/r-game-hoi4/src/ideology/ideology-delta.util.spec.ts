@@ -1,4 +1,4 @@
-import { KEYED_MAP_ENTRY_KEY } from '@r-core';
+import { KEYED_MAP_ENTRY_KEY, KEYED_MAP_ENTRY_ROWS } from '@r-core';
 import { describe, expect, it } from 'vitest';
 
 import { computeIdeologyDeltas, IdeologySnapshot } from './ideology-delta.util';
@@ -7,27 +7,36 @@ const snapshot: IdeologySnapshot = {
   dynamicFactionNames: ['FACTION_ONE'],
   root: [{ key: 'war_impact_on_world_tension', value: '0.5' }],
   rootKeys: ['war_impact_on_world_tension', 'faction_impact_on_world_tension'],
-  typeFieldKeys: ['can_be_randomly_selected'],
   types: [
     {
       key: 'liberalism',
-      rows: [{ key: 'can_be_randomly_selected', value: 'yes' }],
+      rows: [{ key: 'political_power_factor', value: '0.075' }],
     },
     { key: 'conservatism', rows: [] },
   ],
 };
 
 // The unchanged form values: every surface seeded back exactly as the snapshot.
+// A `types` entry is the reserved map key plus its open prop-bag rows.
 function baseValues(): Record<string, unknown> {
   return {
     dynamic_faction_names: ['FACTION_ONE'],
     faction_impact_on_world_tension: '',
     types: [
-      { can_be_randomly_selected: 'yes', [KEYED_MAP_ENTRY_KEY]: 'liberalism' },
-      { can_be_randomly_selected: '', [KEYED_MAP_ENTRY_KEY]: 'conservatism' },
+      {
+        [KEYED_MAP_ENTRY_KEY]: 'liberalism',
+        [KEYED_MAP_ENTRY_ROWS]: [
+          { key: 'political_power_factor', value: '0.075' },
+        ],
+      },
+      { [KEYED_MAP_ENTRY_KEY]: 'conservatism', [KEYED_MAP_ENTRY_ROWS]: [] },
     ],
     war_impact_on_world_tension: '0.5',
   };
+}
+
+function typesOf(values: Record<string, unknown>): Record<string, unknown>[] {
+  return values.types as Record<string, unknown>[];
 }
 
 describe('computeIdeologyDeltas', () => {
@@ -51,31 +60,65 @@ describe('computeIdeologyDeltas', () => {
     ]);
   });
 
-  it('changes an existing subideology scalar at the keyed two-element path', () => {
+  it('changes an existing subideology modifier at the keyed two-element path', () => {
     const values = baseValues();
-    (values.types as Record<string, unknown>[])[0].can_be_randomly_selected =
-      'no';
+    typesOf(values)[0][KEYED_MAP_ENTRY_ROWS] = [
+      { key: 'political_power_factor', value: '0.1' },
+    ];
 
     expect(computeIdeologyDeltas(snapshot, values)).toEqual([
       {
         added: [],
         block: ['types', 'liberalism'],
-        changed: [{ key: 'can_be_randomly_selected', value: 'no' }],
+        changed: [{ key: 'political_power_factor', value: '0.1' }],
         removed: [],
       },
     ]);
   });
 
-  it('adds a new subideology with a scalar by materializing its keyed sub-block', () => {
+  it('adds a modifier row to an existing subideology open map', () => {
     const values = baseValues();
-    (values.types as Record<string, unknown>[]).push({
-      can_be_randomly_selected: 'yes',
+    typesOf(values)[0][KEYED_MAP_ENTRY_ROWS] = [
+      { key: 'political_power_factor', value: '0.075' },
+      { key: 'drift_defence_factor', value: '0.5' },
+    ];
+
+    expect(computeIdeologyDeltas(snapshot, values)).toEqual([
+      {
+        added: [{ key: 'drift_defence_factor', value: '0.5' }],
+        block: ['types', 'liberalism'],
+        changed: [],
+        removed: [],
+      },
+    ]);
+  });
+
+  it('removes a modifier row from an existing subideology open map', () => {
+    const values = baseValues();
+    typesOf(values)[0][KEYED_MAP_ENTRY_ROWS] = [];
+
+    expect(computeIdeologyDeltas(snapshot, values)).toEqual([
+      {
+        added: [],
+        block: ['types', 'liberalism'],
+        changed: [],
+        removed: ['political_power_factor'],
+      },
+    ]);
+  });
+
+  it('adds a new subideology with a modifier by materializing its keyed sub-block', () => {
+    const values = baseValues();
+    typesOf(values).push({
       [KEYED_MAP_ENTRY_KEY]: 'socialism',
+      [KEYED_MAP_ENTRY_ROWS]: [
+        { key: 'political_power_factor', value: '0.05' },
+      ],
     });
 
     expect(computeIdeologyDeltas(snapshot, values)).toEqual([
       {
-        added: [{ key: 'can_be_randomly_selected', value: 'yes' }],
+        added: [{ key: 'political_power_factor', value: '0.05' }],
         block: ['types', 'socialism'],
         changed: [],
         removed: [],
@@ -85,9 +128,9 @@ describe('computeIdeologyDeltas', () => {
 
   it('adds a bodyless subideology as an empty added-only delta', () => {
     const values = baseValues();
-    (values.types as Record<string, unknown>[]).push({
-      can_be_randomly_selected: '',
+    typesOf(values).push({
       [KEYED_MAP_ENTRY_KEY]: 'vanguardism',
+      [KEYED_MAP_ENTRY_ROWS]: [],
     });
 
     expect(computeIdeologyDeltas(snapshot, values)).toEqual([
@@ -102,7 +145,7 @@ describe('computeIdeologyDeltas', () => {
 
   it('removes a subideology with a parent-scoped key removal', () => {
     const values = baseValues();
-    values.types = (values.types as Record<string, unknown>[]).filter(
+    values.types = typesOf(values).filter(
       (entry) => entry[KEYED_MAP_ENTRY_KEY] !== 'conservatism',
     );
 
@@ -118,14 +161,16 @@ describe('computeIdeologyDeltas', () => {
 
   it('renames a subideology as remove-old-key plus add-new-key', () => {
     const values = baseValues();
-    (values.types as Record<string, unknown>[])[0] = {
-      can_be_randomly_selected: 'yes',
+    typesOf(values)[0] = {
       [KEYED_MAP_ENTRY_KEY]: 'progressivism',
+      [KEYED_MAP_ENTRY_ROWS]: [
+        { key: 'political_power_factor', value: '0.075' },
+      ],
     };
 
     expect(computeIdeologyDeltas(snapshot, values)).toEqual([
       {
-        added: [{ key: 'can_be_randomly_selected', value: 'yes' }],
+        added: [{ key: 'political_power_factor', value: '0.075' }],
         block: ['types', 'progressivism'],
         changed: [],
         removed: [],

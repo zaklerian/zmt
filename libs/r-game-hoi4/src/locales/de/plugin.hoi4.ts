@@ -138,9 +138,6 @@ export const de: typeof en = {
       },
       types: {
         add: 'Unterideologie hinzufügen',
-        fields: {
-          can_be_randomly_selected: 'Kann zufällig ausgewählt werden',
-        },
         key: 'Unterideologie-Schlüssel',
         title: 'Unterideologien (types)',
       },
