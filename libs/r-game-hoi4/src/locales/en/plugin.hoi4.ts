@@ -182,6 +182,8 @@ export const en = {
       sections: {
         addAverageStats: 'Average stats (add_average_stats)',
         addStats: 'Added stats (add_stats)',
+        buildCostResources: 'Build cost (build_cost_resources)',
+        dismantleCostResources: 'Dismantle cost (dismantle_cost_resources)',
         multiplyStats: 'Multiplied stats (multiply_stats)',
         scalars: 'Module properties',
       },

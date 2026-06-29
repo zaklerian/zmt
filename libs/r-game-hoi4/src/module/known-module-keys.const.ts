@@ -2,6 +2,17 @@
 // only — every key control is freeSolo, so modder-defined keys stay editable and
 // nothing here narrows the set of keys a module may carry.
 
+// Strategic-resource keys shared by the build_cost_resources /
+// dismantle_cost_resources cost maps.
+export const KNOWN_MODULE_COST_KEYS: readonly string[] = [
+  'aluminium',
+  'chromium',
+  'oil',
+  'rubber',
+  'steel',
+  'tungsten',
+];
+
 // Top-level scalar leaf keys a module commonly carries (category is the
 // read-only classifier and is intentionally excluded).
 export const KNOWN_MODULE_KEYS: readonly string[] = [

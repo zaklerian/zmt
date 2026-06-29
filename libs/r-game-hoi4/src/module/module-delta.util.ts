@@ -2,6 +2,7 @@ import {
   EntityBlockDelta,
   EntityField,
   EntityScalarDelta,
+  ModuleCostMap,
   ModuleStatBlock,
 } from '@contracts';
 
@@ -10,6 +11,8 @@ import { computeScalarDelta, ScalarRow } from '../scalar-bag';
 export interface ModuleBagSnapshot {
   readonly add_average_stats: readonly EntityField[];
   readonly add_stats: readonly EntityField[];
+  readonly build_cost_resources: readonly EntityField[];
+  readonly dismantle_cost_resources: readonly EntityField[];
   readonly multiply_stats: readonly EntityField[];
   readonly scalars: readonly EntityField[];
 }
@@ -17,6 +20,8 @@ export interface ModuleBagSnapshot {
 export interface ModuleBagValues {
   readonly add_average_stats: readonly ScalarRow[];
   readonly add_stats: readonly ScalarRow[];
+  readonly build_cost_resources: readonly ScalarRow[];
+  readonly dismantle_cost_resources: readonly ScalarRow[];
   readonly multiply_stats: readonly ScalarRow[];
   readonly scalars: readonly ScalarRow[];
 }
@@ -28,6 +33,12 @@ export const MODULE_STAT_BLOCKS: readonly ModuleStatBlock[] = [
   'add_stats',
   'multiply_stats',
   'add_average_stats',
+];
+
+// Render and delta order: build then dismantle, the resource lifecycle sequence.
+export const MODULE_COST_MAPS: readonly ModuleCostMap[] = [
+  'build_cost_resources',
+  'dismantle_cost_resources',
 ];
 
 // Diffs every bag against its open-time snapshot and collects the non-empty
@@ -47,7 +58,7 @@ export function computeModuleDeltas(
   );
   if (!isEmptyDelta(topDelta)) deltas.push({ block: null, ...topDelta });
 
-  for (const block of MODULE_STAT_BLOCKS) {
+  for (const block of [...MODULE_STAT_BLOCKS, ...MODULE_COST_MAPS]) {
     const delta = computeScalarDelta(snapshot[block], normalize(values[block]));
     if (!isEmptyDelta(delta)) deltas.push({ block: [block], ...delta });
   }

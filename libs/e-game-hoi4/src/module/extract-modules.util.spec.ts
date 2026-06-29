@@ -158,6 +158,47 @@ describe('extractModules', () => {
     expect(entity?.statBlocks.add_average_stats).toEqual([]);
   });
 
+  it('projects the cost maps as flat resource → number fields', () => {
+    const entry = assign(
+      'engine_small_1',
+      block([
+        assign('category', id('engine')),
+        assign(
+          'build_cost_resources',
+          block([assign('steel', num('2')), assign('chromium', num('1'))]),
+        ),
+        assign('dismantle_cost_resources', block([assign('steel', num('1'))])),
+      ]),
+    );
+
+    const [entity] = extractModules(modules(entry));
+
+    expect(entity?.costMaps.build_cost_resources).toEqual([
+      { key: 'steel', value: '2' },
+      { key: 'chromium', value: '1' },
+    ]);
+    expect(entity?.costMaps.dismantle_cost_resources).toEqual([
+      { key: 'steel', value: '1' },
+    ]);
+  });
+
+  it('yields an empty list for an absent cost map', () => {
+    const entry = assign(
+      'engine_small_1',
+      block([
+        assign('category', id('engine')),
+        assign('build_cost_resources', block([assign('steel', num('2'))])),
+      ]),
+    );
+
+    const [entity] = extractModules(modules(entry));
+
+    expect(entity?.costMaps.build_cost_resources).toEqual([
+      { key: 'steel', value: '2' },
+    ]);
+    expect(entity?.costMaps.dismantle_cost_resources).toEqual([]);
+  });
+
   it('excludes a non-stat nested block from every projection', () => {
     const entry = assign(
       'engine_small_1',

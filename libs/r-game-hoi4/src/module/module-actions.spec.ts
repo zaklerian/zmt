@@ -7,6 +7,7 @@ import { buildModuleActions } from './module-actions';
 function entity(name: string): ModuleEntity {
   return {
     category: 'engine',
+    costMaps: { build_cost_resources: [], dismantle_cost_resources: [] },
     name,
     node: null as unknown as ModuleEntity['node'],
     scalars: [],
