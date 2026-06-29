@@ -55,20 +55,34 @@ describe('mapEquipmentRow', () => {
     ).toBe('muted');
   });
 
-  it('maps an unresolved entity to a warning row showing archetype-not-found', () => {
+  it('maps an unresolved regular entity to a neutral row with "—" domain and type', () => {
     const row = mapEquipmentRow(
       entity({ archetypeRef: 'missing_archetype', status: 'unresolved' }),
       translate,
     );
 
-    expect(row.state).toBe('warning');
-    expect(row.cells.domain).toBe('plugin.hoi4:equipment.status.unresolved');
+    expect(row.state).toBe('muted');
+    expect(row.cells.domain).toBe('—');
     expect(row.cells.type).toBe('—');
   });
 
-  it('maps an invalid entity to an error row', () => {
+  it('maps an invalid regular entity to a neutral row with "—" domain and type', () => {
     const row = mapEquipmentRow(
-      entity({ reason: 'unknown-type', status: 'invalid' }),
+      entity({ reason: 'regular-ref-not-typed', status: 'invalid' }),
+      translate,
+    );
+
+    expect(row.state).toBe('muted');
+    expect(row.cells.domain).toBe('—');
+    expect(row.cells.type).toBe('—');
+  });
+
+  it('maps an invalid archetype entity to an error row', () => {
+    const row = mapEquipmentRow(
+      entity(
+        { reason: 'archetype-missing-type', status: 'invalid' },
+        { kind: 'archetype', name: 'broken_archetype' },
+      ),
       translate,
     );
 
