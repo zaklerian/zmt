@@ -85,6 +85,7 @@ describe('registerCharacterHandlers', () => {
         bags: [],
         id: 'corps_commander',
         scalars: [{ key: 'skill', value: '4' }],
+        scope: [],
         traits: ['trait_one'],
       },
     ]);

@@ -81,6 +81,34 @@ describe('computeCharacterDeltas', () => {
     ]);
   });
 
+  it('carries an instance-prefixed scope through to an indexed block segment', () => {
+    const instanceSnapshot: CharacterSnapshot = {
+      bags: [
+        {
+          binding: 'instance_1__country_leader',
+          rows: [{ key: 'ideology', value: 'fascism' }],
+          scope: [{ index: 1, name: 'instance' }, 'country_leader'],
+        },
+      ],
+      lists: [],
+      root: [],
+      rootKeys: [],
+    };
+
+    const deltas = computeCharacterDeltas(instanceSnapshot, {
+      instance_1__country_leader: [{ key: 'ideology', value: 'despotism' }],
+    });
+
+    expect(deltas).toEqual([
+      {
+        added: [],
+        block: [{ index: 1, name: 'instance' }, 'country_leader'],
+        changed: [{ key: 'ideology', value: 'despotism' }],
+        removed: [],
+      },
+    ]);
+  });
+
   it('omits unchanged surfaces and drops an emptied root scalar', () => {
     const deltas = computeCharacterDeltas(snapshot, {
       army: [

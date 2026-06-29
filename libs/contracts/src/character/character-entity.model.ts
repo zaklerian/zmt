@@ -1,4 +1,4 @@
-import type { EntityField } from '../entity';
+import type { EntityBlockScopeSegment, EntityField } from '../entity';
 
 // The editable surface of a HOI4 character. `token` is the entity identifier (the
 // `token = { ... }` key under `characters`) and the dialog title; `name` is the
@@ -23,10 +23,16 @@ export interface CharacterPortraitGroup {
 // any open key→value sub-bags projected for the role (advisor `modifier` /
 // `research_bonus`, scientist `skills`). Other ecosystem sub-blocks (advisor
 // `on_add`/`visible`/`available`) stay verbatim in the lossless node (R-CODE-5).
+// `scope` is the write-scope prefix of the role block: empty for a top-level role,
+// or a single indexed `instance` segment when the role lives in the Nth `instance`
+// DLC wrapper. The wrapper and its DLC condition are not modeled — only the role
+// surfaces; a save targets the role inside its instance and leaves the wrapper and
+// condition byte-identical (ADR 019 indexed segment, R-CODE-5).
 export interface CharacterRole {
   readonly bags: readonly CharacterRoleBag[];
   readonly id: CharacterRoleId;
   readonly scalars: readonly EntityField[];
+  readonly scope: readonly EntityBlockScopeSegment[];
   readonly traits: readonly string[];
 }
 

@@ -677,6 +677,120 @@ describe('registerEntityHandlers — grandchild path scope and value lists', () 
   });
 });
 
+const CHARACTER_INSTANCE_FIXTURE = `characters = {
+\tDLC_Leader = {
+\t\tname = "DLC_NAME"
+\t\tcorps_commander = {
+\t\t\tskill = 4
+\t\t}
+\t\tinstance = {
+\t\t\tdlc = "First Pack"
+\t\t\tcountry_leader = {
+\t\t\t\tideology = neutrality
+\t\t\t}
+\t\t}
+\t\tinstance = {
+\t\t\tdlc = "Second Pack"
+\t\t\tcountry_leader = {
+\t\t\t\tideology = fascism
+\t\t\t}
+\t\t}
+\t}
+}
+`;
+
+// Instance DLC unwrap (ZMT-E21): an instance-nested role saves back inside its
+// `instance` wrapper via the indexed segment, leaving the wrapper's `dlc` condition
+// and every other instance byte-identical; a top-level role still saves at the root.
+describe('registerEntityHandlers — instance DLC wrapper write-back', () => {
+  beforeEach(async () => {
+    vi.mocked(ipcMain.handle).mockReset();
+
+    modRoot = await mkdtemp(path.join(tmpdir(), 'zmt-instance-'));
+    filePath = path.join(modRoot, RELATIVE_PATH);
+    await writeFile(filePath, CHARACTER_INSTANCE_FIXTURE);
+
+    state.sources = [{ path: modRoot, permission: 'editable' }];
+    state.workspace = {
+      includedMods: [
+        { id: MOD_ID, name: 'mod', path: modRoot, permission: 'editable' },
+      ],
+    };
+
+    registerEntityHandlers();
+  });
+
+  afterEach(async () => {
+    await rm(modRoot, { force: true, recursive: true });
+  });
+
+  it('patches a role inside the second instance via the indexed segment, leaving the dlc condition, the first instance, and the top-level role byte-identical', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [],
+          block: [{ index: 1, name: 'instance' }, 'country_leader'],
+          changed: [{ key: 'ideology', value: 'despotism' }],
+          removed: [],
+        },
+      ],
+      entityName: 'DLC_Leader',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    expect(await readFile(filePath, 'utf8')).toBe(
+      CHARACTER_INSTANCE_FIXTURE.replace(
+        '\t\t\t\tideology = fascism\n',
+        '\t\t\t\tideology = despotism\n',
+      ),
+    );
+  });
+
+  it('patches the role inside the first instance independently of the second', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [],
+          block: [{ index: 0, name: 'instance' }, 'country_leader'],
+          changed: [{ key: 'ideology', value: 'democratic' }],
+          removed: [],
+        },
+      ],
+      entityName: 'DLC_Leader',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    expect(await readFile(filePath, 'utf8')).toBe(
+      CHARACTER_INSTANCE_FIXTURE.replace(
+        '\t\t\t\tideology = neutrality\n',
+        '\t\t\t\tideology = democratic\n',
+      ),
+    );
+  });
+
+  it('saves a top-level role at the character root, leaving both instances byte-identical', async () => {
+    await writeVia({
+      deltas: [
+        {
+          added: [],
+          block: ['corps_commander'],
+          changed: [{ key: 'skill', value: '6' }],
+          removed: [],
+        },
+      ],
+      entityName: 'DLC_Leader',
+      modId: MOD_ID,
+      relativePath: RELATIVE_PATH,
+    });
+
+    expect(await readFile(filePath, 'utf8')).toBe(
+      CHARACTER_INSTANCE_FIXTURE.replace('skill = 4', 'skill = 6'),
+    );
+  });
+});
+
 const TECHNOLOGY_FIXTURE = `technologies = {
 \tinfantry_weapons = {
 \t\tresearch_cost = 2

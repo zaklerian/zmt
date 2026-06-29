@@ -1,20 +1,26 @@
-import { EntityBlockDelta, EntityField, EntityScalarDelta } from '@contracts';
+import {
+  EntityBlockDelta,
+  EntityBlockScopeSegment,
+  EntityField,
+  EntityScalarDelta,
+} from '@contracts';
 
 import { computeScalarDelta, ScalarRow } from '../scalar-bag';
 
 // One key→scalar sub-bag of the character form: its open-time rows, the RHF
-// field-array it binds to, and the entity:write scope path it targets.
+// field-array it binds to, and the entity:write scope path it targets. The scope
+// may carry an indexed `instance` segment when the role lives in a DLC wrapper.
 export interface CharacterBagSnapshot {
   readonly binding: string;
   readonly rows: readonly EntityField[];
-  readonly scope: readonly string[];
+  readonly scope: readonly EntityBlockScopeSegment[];
 }
 
 // One bare-token value list (a role's `traits`): its open-time tokens, RHF
-// binding, and scope path.
+// binding, and scope path (indexed `instance` segment for an instance-nested role).
 export interface CharacterListSnapshot {
   readonly binding: string;
-  readonly scope: readonly string[];
+  readonly scope: readonly EntityBlockScopeSegment[];
   readonly values: readonly string[];
 }
 

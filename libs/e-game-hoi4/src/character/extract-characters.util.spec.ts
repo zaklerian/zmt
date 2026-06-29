@@ -154,6 +154,7 @@ describe('extractCharacters', () => {
         bags: [],
         id: 'corps_commander',
         scalars: [{ key: 'skill', value: '4' }],
+        scope: [],
         traits: ['trait_one', 'trait_two'],
       },
     ]);
@@ -180,6 +181,7 @@ describe('extractCharacters', () => {
         bags: [],
         id: 'advisor',
         scalars: [{ key: 'slot', value: 'political_advisor' }],
+        scope: [],
         traits: [],
       },
     ]);
@@ -220,6 +222,7 @@ describe('extractCharacters', () => {
         ],
         id: 'scientist',
         scalars: [],
+        scope: [],
         traits: ['nuclear_scientist'],
       },
     ]);
@@ -262,6 +265,7 @@ describe('extractCharacters', () => {
         ],
         id: 'advisor',
         scalars: [{ key: 'slot', value: 'political_advisor' }],
+        scope: [],
         traits: [],
       },
     ]);
@@ -290,6 +294,82 @@ describe('extractCharacters', () => {
     expect(entities[0]?.token).toBe('L');
     expect(entities[0]?.roles).toEqual([]);
     expect(entities[0]?.portraits).toEqual([]);
+  });
+
+  it('unwraps an instance DLC wrapper, surfacing its role with an indexed instance scope', () => {
+    const entry = assign(
+      'L',
+      block([
+        assign(
+          'instance',
+          block([
+            assign('dlc', str('Some Pack')),
+            assign(
+              'country_leader',
+              block([assign('ideology', id('neutrality'))]),
+            ),
+          ]),
+        ),
+      ]),
+    );
+
+    const [entity] = extractCharacters(characters(entry));
+
+    expect(entity?.roles).toEqual([
+      {
+        bags: [],
+        id: 'country_leader',
+        scalars: [{ key: 'ideology', value: 'neutrality' }],
+        scope: [{ index: 0, name: 'instance' }],
+        traits: [],
+      },
+    ]);
+  });
+
+  it('surfaces a top-level role and instance-nested roles together, indexing each instance', () => {
+    const entry = assign(
+      'L',
+      block([
+        assign('corps_commander', block([assign('skill', num('4'))])),
+        assign(
+          'instance',
+          block([
+            assign('dlc', str('First')),
+            assign('advisor', block([assign('slot', id('political_advisor'))])),
+          ]),
+        ),
+        assign(
+          'instance',
+          block([assign('dlc', str('Second')), assign('scientist', block([]))]),
+        ),
+      ]),
+    );
+
+    const [entity] = extractCharacters(characters(entry));
+
+    expect(entity?.roles).toEqual([
+      {
+        bags: [],
+        id: 'corps_commander',
+        scalars: [{ key: 'skill', value: '4' }],
+        scope: [],
+        traits: [],
+      },
+      {
+        bags: [],
+        id: 'advisor',
+        scalars: [{ key: 'slot', value: 'political_advisor' }],
+        scope: [{ index: 0, name: 'instance' }],
+        traits: [],
+      },
+      {
+        bags: [],
+        id: 'scientist',
+        scalars: [],
+        scope: [{ index: 1, name: 'instance' }],
+        traits: [],
+      },
+    ]);
   });
 
   it('preserves character order and is deterministic for a given input', () => {
