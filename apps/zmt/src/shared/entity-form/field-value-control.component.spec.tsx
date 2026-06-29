@@ -29,12 +29,12 @@ describe('FieldValueControl select binding (ZMT-E14)', () => {
   it('an enum select shows its stored value on open', () => {
     render(
       <Harness
-        defaults={{ gender: 'female' }}
-        name="gender"
-        validation={{ enum: ['male', 'female'] }}
+        defaults={{ priority: 'high' }}
+        name="priority"
+        validation={{ enum: ['low', 'high'] }}
       />,
     );
-    expect(screen.getByRole('combobox')).toHaveTextContent('female');
+    expect(screen.getByRole('combobox')).toHaveTextContent('high');
   });
 
   it('a boolean select shows its stored yes/no token on open', () => {

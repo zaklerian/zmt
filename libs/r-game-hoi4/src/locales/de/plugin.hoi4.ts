@@ -6,7 +6,6 @@ export const de: typeof en = {
       edit: 'Bearbeiten',
     },
     columns: {
-      gender: 'Geschlecht',
       name: 'Name',
       roles: 'Rollen',
     },
@@ -21,7 +20,6 @@ export const de: typeof en = {
     },
     form: {
       fields: {
-        gender: 'Geschlecht',
         name: 'Name',
       },
       portraits: {
@@ -30,12 +28,18 @@ export const de: typeof en = {
         navy: 'Marineporträts',
         title: 'Porträts',
       },
+      roleBags: {
+        modifier: 'Modifikatoren',
+        research_bonus: 'Forschungsboni',
+        skills: 'Fähigkeiten',
+      },
       roles: {
         advisor: 'Berater',
         corps_commander: 'Korpskommandeur',
         country_leader: 'Staatsführer',
         field_marshal: 'Feldmarschall',
         navy_leader: 'Flottenkommandant',
+        scientist: 'Wissenschaftler',
       },
       traits: 'Eigenschaften',
     },

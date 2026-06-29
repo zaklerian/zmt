@@ -20,14 +20,14 @@ import {
 import { CHARACTER_ENTITY_ID } from './character-entity-id.const';
 import { characterErrorMessageKey } from './character-error.util';
 import {
-  GENDER_VALUES,
   KNOWN_PORTRAIT_KEYS,
+  KNOWN_ROLE_BAG_KEYS,
   KNOWN_ROLE_KEYS,
 } from './known-character-keys.const';
 
 const PORTRAITS_BLOCK = 'portraits';
 const TRAITS_BLOCK = 'traits';
-const ROOT_KEYS: readonly string[] = ['name', 'gender'];
+const ROOT_KEYS: readonly string[] = ['name'];
 
 const traitsBinding = (roleId: string): string => `${roleId}__${TRAITS_BLOCK}`;
 
@@ -35,7 +35,7 @@ function project(
   entity: CharacterEntity,
   { modId, relativePath, translate }: EntityFormProjectContext,
 ): EntityFormModel {
-  const { gender, name, portraits, roles, token } = entity;
+  const { name, portraits, roles, token } = entity;
 
   const root: PropertyBagBlock = {
     kind: 'propertyBag',
@@ -45,11 +45,6 @@ function project(
           label: translate('plugin.hoi4:character.form.fields.name'),
           spec: 'name',
           value: name,
-        },
-        {
-          label: translate('plugin.hoi4:character.form.fields.gender'),
-          spec: { name: 'gender', validation: { enum: GENDER_VALUES } },
-          value: gender,
         },
       ],
       mode: 'fixed',
@@ -102,12 +97,28 @@ function project(
       knownKeys: KNOWN_ROLE_KEYS[role.id],
       listChildren: [traits],
       name: role.id,
+      namedChildren: role.bags.map((bag) => ({
+        knownKeys: KNOWN_ROLE_BAG_KEYS[bag.name] ?? [],
+        name: bag.name,
+        rows: bag.rows,
+        scope: [role.id, bag.name],
+        sectionLabel: translate(
+          `plugin.hoi4:character.form.roleBags.${bag.name}`,
+        ),
+      })),
       rows: role.scalars,
       scope: [role.id],
       sectionLabel: translate(`plugin.hoi4:character.form.roles.${role.id}`),
     };
     blocks.push(roleBlock);
     bags.push({ binding: role.id, rows: role.scalars, scope: [role.id] });
+    for (const bag of role.bags) {
+      bags.push({
+        binding: bag.name,
+        rows: bag.rows,
+        scope: [role.id, bag.name],
+      });
+    }
     lists.push({
       binding: traitsBinding(role.id),
       scope: [role.id, TRAITS_BLOCK],
@@ -115,10 +126,9 @@ function project(
     });
   }
 
-  const rootScalars = ROOT_KEYS.map((key) => ({
-    key,
-    value: key === 'name' ? name : gender,
-  })).filter((row) => row.value !== '');
+  const rootScalars = ROOT_KEYS.map((key) => ({ key, value: name })).filter(
+    (row) => row.value !== '',
+  );
 
   const snapshot: CharacterSnapshot = {
     bags,

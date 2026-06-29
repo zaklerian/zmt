@@ -6,7 +6,6 @@ export const uk: typeof en = {
       edit: 'Редагувати',
     },
     columns: {
-      gender: 'Стать',
       name: 'Імʼя',
       roles: 'Ролі',
     },
@@ -20,7 +19,6 @@ export const uk: typeof en = {
     },
     form: {
       fields: {
-        gender: 'Стать',
         name: 'Імʼя',
       },
       portraits: {
@@ -29,12 +27,18 @@ export const uk: typeof en = {
         navy: 'Портрети флоту',
         title: 'Портрети',
       },
+      roleBags: {
+        modifier: 'Модифікатори',
+        research_bonus: 'Дослідницькі бонуси',
+        skills: 'Навички',
+      },
       roles: {
         advisor: 'Радник',
         corps_commander: 'Командир корпусу',
         country_leader: 'Лідер країни',
         field_marshal: 'Фельдмаршал',
         navy_leader: 'Командувач флоту',
+        scientist: 'Науковець',
       },
       traits: 'Риси',
     },

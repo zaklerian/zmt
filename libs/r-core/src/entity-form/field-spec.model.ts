@@ -12,7 +12,8 @@ export interface FieldValidation {
   // A closed set of allowed string values, lowering to `z.enum([...])` and
   // rendered as a closed select that rejects out-of-set values. Distinct from a
   // property bag's known-key set, which is an open free-text suggestion list.
-  // Applies only to intrinsic closed value sets (e.g. character `gender`).
+  // Applies only to intrinsic closed value sets — a small fixed vocabulary the
+  // file's own schema defines, not a cross-entity reference.
   readonly enum?: readonly string[];
   readonly max?: number;
   readonly min?: number;

@@ -29,7 +29,6 @@ const CHARACTER_DIR = 'common/characters';
 const CHARACTERS_FILE = `characters = {
 \tSome_Leader = {
 \t\tname = "NAME_KEY"
-\t\tgender = male
 \t\tcorps_commander = {
 \t\t\tskill = 4
 \t\t\ttraits = {
@@ -84,9 +83,9 @@ describe('listCharacters', () => {
     const leader = entities.find((entity) => entity.token === 'Some_Leader');
     // String scalars keep their raw token (quotes) so a save round-trips them.
     expect(leader?.name).toBe('"NAME_KEY"');
-    expect(leader?.gender).toBe('male');
     expect(leader?.roles).toEqual([
       {
+        bags: [],
         id: 'corps_commander',
         scalars: [{ key: 'skill', value: '4' }],
         traits: ['trait_one', 'trait_two'],
@@ -102,7 +101,6 @@ describe('listCharacters', () => {
     const nameless = entities.find((entity) => entity.token === 'Nameless');
 
     expect(nameless).toMatchObject({
-      gender: '',
       name: '',
       portraits: [],
       roles: [],

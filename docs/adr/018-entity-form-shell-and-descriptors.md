@@ -21,9 +21,10 @@ correction to the expansion principle:
   allowed values for a single field, lowering to `z.enum([...])` and rendered as a closed
   select that rejects values outside the set. This is distinct from the property bag's
   known-key set, which is an open suggestion list permitting free-text; `enum` is closed.
-  It applies only to intrinsic closed value sets (e.g. character `gender`); cross-entity
-  value sets remain free-text per the intrinsic/relational line. A boolean field uses
-  `type` (rendered as a yes/no select), not `enum`.
+  It applies only to intrinsic closed value sets — a small fixed vocabulary the file's own
+  schema defines (the original `character.gender` example was retired as a phantom in
+  ZMT-E18); cross-entity value sets remain free-text per the intrinsic/relational line. A
+  boolean field uses `type` (rendered as a yes/no select), not `enum`.
 
 - **Expansion principle — corrected.** Point 4 originally gated vocabulary growth on "a
   real third case (R-WORK-7)." That borrowed the post-hoc extraction heuristic — R-WORK-7
