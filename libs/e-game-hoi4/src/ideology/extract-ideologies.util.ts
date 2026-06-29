@@ -10,14 +10,26 @@ import type {
 const IDEOLOGIES_BLOCK = 'ideologies';
 const TYPES_BLOCK = 'types';
 const DYNAMIC_FACTION_NAMES_BLOCK = 'dynamic_faction_names';
+const RULES_BLOCK = 'rules';
+const MODIFIERS_BLOCK = 'modifiers';
+const FACTION_MODIFIERS_BLOCK = 'faction_modifiers';
 
 // Modeled root scalar surfaces, in render order (semantic, not alphabetical —
-// R-CODE-9 carve-out). Keys outside this set — and every block (`color`, `rules`,
-// `modifiers`, `faction_modifiers`, `ai_*`) — stay verbatim in the lossless node
-// and are never projected (R-CODE-5).
+// R-CODE-9 carve-out): the two world-tension impacts, the three intrinsic
+// booleans, then the four `ai_*` behaviour keys (one set to `yes` per file). Mirror
+// of IDEOLOGY_ROOT_SPECS on the renderer side (ZMT-E19). Keys outside this set —
+// and every block other than `rules` / `modifiers` / `faction_modifiers` (e.g.
+// `color`) — stay verbatim in the lossless node and are never projected (R-CODE-5).
 const ROOT_KEYS: readonly string[] = [
   'war_impact_on_world_tension',
   'faction_impact_on_world_tension',
+  'can_host_government_in_exile',
+  'can_be_boosted',
+  'can_collaborate',
+  'ai_democratic',
+  'ai_communist',
+  'ai_fascist',
+  'ai_neutral',
 ];
 
 // Wrapper-aware extraction: ideologies are entries under the top-level
@@ -40,7 +52,10 @@ export function extractIdeologies(
       const block = entry.value;
       entities.push({
         dynamicFactionNames: tokenList(block, DYNAMIC_FACTION_NAMES_BLOCK),
+        factionModifiers: scalarBag(block, FACTION_MODIFIERS_BLOCK),
+        modifiers: scalarBag(block, MODIFIERS_BLOCK),
         rootScalars: modeledScalars(block, ROOT_KEYS),
+        rules: scalarBag(block, RULES_BLOCK),
         token: keyName(entry),
         types: subideologies(block),
       });
@@ -125,6 +140,16 @@ function rawValueOf(value: ParadoxValue): string | undefined {
     default:
       return undefined;
   }
+}
+
+// An open root prop-bag (`rules` boolean block, or `modifiers` /
+// `faction_modifiers` numeric maps): its sub-block's full scalar leaf set in file
+// order, or empty when the block is absent. Boolean leaves lower to `yes`/`no` and
+// numeric leaves keep their raw token, so the bag round-trips byte-identical
+// (ZMT-E19, R-CODE-5).
+function scalarBag(block: BlockNode, key: string): readonly EntityField[] {
+  const sub = findBlock(block, key);
+  return sub === undefined ? [] : allScalars(sub);
 }
 
 // The `types` keyed-object map: each `<subideology> = { … }` child in file order,

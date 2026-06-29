@@ -135,10 +135,26 @@ export const de: typeof en = {
       dynamicFactionNames: {
         label: 'Dynamische Fraktionsnamen',
       },
+      factionModifiers: {
+        title: 'Fraktionsmodifikatoren',
+      },
       fields: {
+        ai_communist: 'KI kommunistisch',
+        ai_democratic: 'KI demokratisch',
+        ai_fascist: 'KI faschistisch',
+        ai_neutral: 'KI neutral',
+        can_be_boosted: 'Kann verstärkt werden',
+        can_collaborate: 'Kann kollaborieren',
+        can_host_government_in_exile: 'Kann Exilregierung beherbergen',
         faction_impact_on_world_tension:
           'Fraktionseinfluss auf die Weltspannung',
         war_impact_on_world_tension: 'Kriegseinfluss auf die Weltspannung',
+      },
+      modifiers: {
+        title: 'Modifikatoren',
+      },
+      rules: {
+        title: 'Regeln',
       },
       types: {
         add: 'Unterideologie hinzufügen',
