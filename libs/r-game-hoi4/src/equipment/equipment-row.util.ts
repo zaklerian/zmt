@@ -28,6 +28,22 @@ export function mapEquipmentRow(
     };
   }
 
+  // Regular equipment carries no intrinsic domain signal; its domain is reachable
+  // only by resolving `archetype = <parent>` (a TL concern, often cross-file).
+  // Absence of a local signal renders as "—" (R-CODE-5), not an error label.
+  if (entity.kind === 'regular') {
+    return {
+      cells: {
+        domain: EMPTY_TYPE,
+        kind: entity.kind,
+        name: entity.name,
+        type: EMPTY_TYPE,
+      },
+      id: entity.name,
+      state: 'muted',
+    };
+  }
+
   const unresolved = classification.status === 'unresolved';
   return {
     cells: {
