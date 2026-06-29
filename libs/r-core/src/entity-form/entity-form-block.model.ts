@@ -39,6 +39,14 @@ export type EntityFormBlock =
   | ObjectListBlock
   | PropertyBagBlock;
 
+// Reserved suffix for the scalar-rows field-array binding of a named-nested block
+// that co-populates BOTH its own `rows` and an editable keyed map (ZMT-E16). The
+// keyed-map entries keep the block-name binding (unchanged from the keyed-map-only
+// case, e.g. ideology `types`), so the rows move to this sibling binding and the two
+// field-arrays never collide on one RHF name. Distinct from KEYED_MAP_ENTRY_ROWS,
+// which is a per-entry record key one level deeper.
+export const NAMED_NESTED_ROWS_SUFFIX = '__rows';
+
 // A fixed, named scalar field rendered by the property-bag block in fixed mode.
 // `label` is resolved by the descriptor (game-specific); the shell renders it
 // verbatim. `readonly` fields render disabled (e.g. an entity's `name`). The
@@ -188,4 +196,24 @@ interface BlockCommon {
   readonly scope: EntityWriteScope;
   // Pre-resolved section heading (game-specific). Absent → no heading.
   readonly sectionLabel?: string;
+}
+
+// Whether a named-nested block renders (and therefore seeds and validates) its own
+// scalar rows: it has rows to show, or a known-key set to drive an otherwise-empty
+// bag. A keyed-map-only block with neither (e.g. ideology `types`) renders no rows —
+// so co-populating a keyed map with rows (e.g. state `buildings`) and a keyed-map-only
+// block share one predicate (ZMT-E16). Single source of truth across the renderer and
+// the RHF seam.
+export function namedNestedRendersRows(block: NamedNestedBlock): boolean {
+  return block.rows.length > 0 || block.knownKeys.length > 0;
+}
+
+// The RHF field-array name a named-nested block's scalar `rows` bind to: the block
+// name as before, or the reserved sibling binding when an editable keyed map shares
+// the block (ZMT-E16). Used wherever the rows are seeded, validated, rendered, or
+// diffed so all sides agree on the one name.
+export function namedNestedRowsBinding(block: NamedNestedBlock): string {
+  return block.editableKeyedMap === undefined
+    ? block.name
+    : `${block.name}${NAMED_NESTED_ROWS_SUFFIX}`;
 }

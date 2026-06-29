@@ -214,6 +214,8 @@ export const uk: typeof en = {
     },
     form: {
       buildings: {
+        add: 'Додати провінцію',
+        key: 'Ідентифікатор провінції',
         title: 'Будівлі',
       },
       fields: {
@@ -226,9 +228,6 @@ export const uk: typeof en = {
       },
       history: {
         title: 'Історія (власник / контролер)',
-      },
-      navalBase: {
-        title: 'Військово-морська база (провінція → рівень)',
       },
       provinces: {
         label: 'Провінції',

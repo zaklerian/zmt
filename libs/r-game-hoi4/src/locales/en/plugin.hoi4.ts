@@ -209,6 +209,8 @@ export const en = {
     },
     form: {
       buildings: {
+        add: 'Add province',
+        key: 'Province id',
         title: 'Buildings',
       },
       fields: {
@@ -221,9 +223,6 @@ export const en = {
       },
       history: {
         title: 'History (owner / controller)',
-      },
-      navalBase: {
-        title: 'Naval base (province → level)',
       },
       provinces: {
         label: 'Provinces',

@@ -225,9 +225,10 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
   // Absent-intermediate materializations are coordinated across the batch, not
   // emitted per-delta (ADR 019, amended ZMT-15.1). Two added-only deltas whose
   // paths share the same absent block (e.g. `['buildings']` and
-  // `['buildings', 'naval_base']` on a state with no `buildings`) resolve to the
-  // same `missingParent` in the one parsed snapshot; keying by that node lets a
-  // single rendered block host every sharing delta instead of one block each.
+  // `['buildings', '14']` — a state-wide building and a per-province building object
+  // — on a state with no `buildings`) resolve to the same `missingParent` in the one
+  // parsed snapshot; keying by that node lets a single rendered block host every
+  // sharing delta instead of one block each.
   const materializations = new Map<BlockNode, AbsentAdd[]>();
 
   for (const delta of request.deltas) {

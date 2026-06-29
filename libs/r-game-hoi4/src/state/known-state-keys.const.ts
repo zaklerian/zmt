@@ -28,8 +28,9 @@ export const KNOWN_RESOURCE_KEYS: readonly string[] = [
   'tungsten',
 ];
 
-// Building keys commonly carried by a state's `buildings` map — freeSolo
-// suggestions; `naval_base` is the nested map, not a row key.
+// State-wide building keys commonly carried by a state's `buildings` map — freeSolo
+// suggestions. Per-province buildings live in the province-id object children, keyed
+// separately (KNOWN_PROVINCE_BUILDING_KEYS).
 export const KNOWN_BUILDING_KEYS: readonly string[] = [
   'air_base',
   'anti_air_building',
@@ -39,6 +40,16 @@ export const KNOWN_BUILDING_KEYS: readonly string[] = [
   'infrastructure',
   'rocket_site',
   'synthetic_refinery',
+];
+
+// Building keys commonly carried by a per-province `<id> = { … }` building object —
+// freeSolo suggestions for the keyed-map prop-bag entries. Cross-entity, so the key
+// set stays open (R-CODE-5).
+export const KNOWN_PROVINCE_BUILDING_KEYS: readonly string[] = [
+  'anti_air',
+  'bunker',
+  'coastal_bunker',
+  'naval_base',
 ];
 
 // The two modeled `history` keys (owner / controller country tags) — freeSolo

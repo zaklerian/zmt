@@ -219,6 +219,8 @@ export const de: typeof en = {
     },
     form: {
       buildings: {
+        add: 'Provinz hinzufügen',
+        key: 'Provinz-ID',
         title: 'Gebäude',
       },
       fields: {
@@ -231,9 +233,6 @@ export const de: typeof en = {
       },
       history: {
         title: 'Geschichte (Besitzer / Kontrolleur)',
-      },
-      navalBase: {
-        title: 'Marinebasis (Provinz → Stufe)',
       },
       provinces: {
         label: 'Provinzen',
