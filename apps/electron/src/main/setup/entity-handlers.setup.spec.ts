@@ -500,7 +500,6 @@ describe('registerEntityHandlers', () => {
 const CHARACTER_FIXTURE = `characters = {
 \tSome_Leader = {
 \t\tname = "NAME_KEY"
-\t\tgender = male
 \t\tportraits = {
 \t\t\tarmy = {
 \t\t\t\tlarge = "gfx/large.dds"

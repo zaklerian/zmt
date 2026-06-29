@@ -4,7 +4,6 @@ export const en = {
       edit: 'Edit',
     },
     columns: {
-      gender: 'Gender',
       name: 'Name',
       roles: 'Roles',
     },
@@ -18,7 +17,6 @@ export const en = {
     },
     form: {
       fields: {
-        gender: 'Gender',
         name: 'Name',
       },
       portraits: {
@@ -27,12 +25,18 @@ export const en = {
         navy: 'Navy portraits',
         title: 'Portraits',
       },
+      roleBags: {
+        modifier: 'Modifiers',
+        research_bonus: 'Research bonuses',
+        skills: 'Skills',
+      },
       roles: {
         advisor: 'Advisor',
         corps_commander: 'Corps commander',
         country_leader: 'Country leader',
         field_marshal: 'Field marshal',
         navy_leader: 'Navy leader',
+        scientist: 'Scientist',
       },
       traits: 'Traits',
     },

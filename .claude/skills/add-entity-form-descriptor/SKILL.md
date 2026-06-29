@@ -82,7 +82,7 @@ the stored descriptor is type-erased. Each block carries a `scope`
   `knownKeys` suggestions + add/remove, bound to one field-array
   `name`; e.g. plane, module scalars); `mode: 'fixed'` is a closed set
   of named scalar fields each bound to a root value key = its field
-  name (e.g. CHARACTER's `name`/`gender`, STATE/TECHNOLOGY root specs).
+  name (e.g. CHARACTER's `name`, STATE/TECHNOLOGY root specs).
   A fixed field may be `readonly` (renders disabled) and its `spec`
   drives the control — `enum` → closed select, `type: boolean` →
   yes/no select, else text. Scope `null`.

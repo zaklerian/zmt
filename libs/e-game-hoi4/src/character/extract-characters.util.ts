@@ -2,6 +2,7 @@ import type {
   CharacterEntity,
   CharacterPortraitGroup,
   CharacterRole,
+  CharacterRoleBag,
   CharacterRoleId,
   EntityField,
   PortraitGroup,
@@ -15,7 +16,6 @@ import type {
 } from '@paradox-parser';
 
 const CHARACTERS_BLOCK = 'characters';
-const KEY_GENDER = 'gender';
 const KEY_NAME = 'name';
 const PORTRAITS_BLOCK = 'portraits';
 const TRAITS_BLOCK = 'traits';
@@ -29,7 +29,18 @@ const ROLE_IDS: readonly CharacterRoleId[] = [
   'country_leader',
   'field_marshal',
   'navy_leader',
+  'scientist',
 ];
+
+// Open key→value sub-blocks projected as prop-bags per role (advisor `modifier` /
+// `research_bonus`, scientist `skills`). A role not listed projects no bags; a
+// listed sub-block surfaces only when present (present-only).
+const ROLE_BAG_KEYS: Readonly<
+  Partial<Record<CharacterRoleId, readonly string[]>>
+> = {
+  advisor: ['modifier', 'research_bonus'],
+  scientist: ['skills'],
+};
 
 export function extractCharacters(
   parsedTarget: Script,
@@ -49,7 +60,6 @@ export function extractCharacters(
       }
       const block = entry.value;
       entities.push({
-        gender: scalarOf(block, KEY_GENDER),
         name: scalarOf(block, KEY_NAME),
         portraits: portraitGroups(block),
         roles: roleBlocks(block),
@@ -132,6 +142,24 @@ function rawValueOf(value: ParadoxValue): string | undefined {
   }
 }
 
+// The role's projected open prop-bag sub-blocks (advisor `modifier` /
+// `research_bonus`, scientist `skills`). Each surfaces only when present; its
+// scalar leaves keep their raw value tokens so an untouched bag round-trips.
+function roleBags(
+  roleBlock: BlockNode,
+  id: CharacterRoleId,
+): readonly CharacterRoleBag[] {
+  const names = ROLE_BAG_KEYS[id];
+  if (names === undefined) return [];
+  const bags: CharacterRoleBag[] = [];
+  for (const name of names) {
+    const sub = findBlock(roleBlock, name);
+    if (sub === undefined) continue;
+    bags.push({ name, rows: scalarLeaves(sub) });
+  }
+  return bags;
+}
+
 function roleBlocks(block: BlockNode): readonly CharacterRole[] {
   const roles: CharacterRole[] = [];
   for (const child of block.children) {
@@ -139,6 +167,7 @@ function roleBlocks(block: BlockNode): readonly CharacterRole[] {
     const name = keyName(child);
     if (!isRoleId(name)) continue;
     roles.push({
+      bags: roleBags(child.value, name),
       id: name,
       scalars: scalarLeaves(child.value),
       traits: traitTokens(child.value),

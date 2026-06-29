@@ -32,7 +32,6 @@ const CHARACTER_DIR = 'common/characters';
 const CHARACTER_FILE = `characters = {
 \tSome_Leader = {
 \t\tname = "NAME_KEY"
-\t\tgender = male
 \t\tcorps_commander = {
 \t\t\tskill = 4
 \t\t\ttraits = {
@@ -75,15 +74,15 @@ describe('registerCharacterHandlers', () => {
     await rm(modRoot, { force: true, recursive: true });
   });
 
-  it('reads characters per file, projecting token, gender, and role traits', async () => {
+  it('reads characters per file, projecting the token and role traits', async () => {
     state.sources = [editableSource(modRoot)];
 
     const entities = await listFor(characterFilePath);
 
     expect(entities.map((entity) => entity.token)).toEqual(['Some_Leader']);
-    expect(entities[0]?.gender).toBe('male');
     expect(entities[0]?.roles).toEqual([
       {
+        bags: [],
         id: 'corps_commander',
         scalars: [{ key: 'skill', value: '4' }],
         traits: ['trait_one'],

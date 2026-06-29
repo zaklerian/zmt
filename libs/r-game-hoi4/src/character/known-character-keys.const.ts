@@ -5,10 +5,6 @@ import { FieldSpec } from '@r-core';
 // file-local intrinsic values carry a closed spec; cross-entity values
 // (`ideology`, `slot`, `idea_token`, trait names) stay free-text (R-CODE-5).
 
-// The closed gender set. Display order is intentional (male, female), so it is
-// kept rather than alphabetized (R-CODE-9 array-literal carve-out).
-export const GENDER_VALUES: readonly string[] = ['male', 'female'];
-
 // `portraits` group leaves — gfx paths, free-text.
 export const KNOWN_PORTRAIT_KEYS: readonly FieldSpec[] = ['large', 'small'];
 
@@ -46,6 +42,21 @@ export const KNOWN_COUNTRY_LEADER_KEYS: readonly FieldSpec[] = [
   'ideology',
 ];
 
+// Scientist carries no intrinsic scalar leaves; its surface is `traits` plus the
+// `skills` prop-bag (see KNOWN_ROLE_BAG_KEYS), so its own known-key set is empty.
+export const KNOWN_SCIENTIST_KEYS: readonly FieldSpec[] = [];
+
+// Scientist `skills` suggestion keys — the specialization levels. Values are
+// free-text ints (the level is intrinsic but unbounded), so only the keys are
+// suggested.
+export const KNOWN_SCIENTIST_SKILL_KEYS: readonly FieldSpec[] = [
+  'specialization_air',
+  'specialization_electronics',
+  'specialization_land',
+  'specialization_naval',
+  'specialization_nuclear',
+];
+
 export const KNOWN_ROLE_KEYS: Readonly<
   Record<CharacterRoleId, readonly FieldSpec[]>
 > = {
@@ -54,4 +65,15 @@ export const KNOWN_ROLE_KEYS: Readonly<
   country_leader: KNOWN_COUNTRY_LEADER_KEYS,
   field_marshal: KNOWN_LAND_COMMANDER_KEYS,
   navy_leader: KNOWN_NAVY_LEADER_KEYS,
+  scientist: KNOWN_SCIENTIST_KEYS,
+};
+
+// Known suggestion keys per role prop-bag sub-block, keyed by sub-block name.
+// Only scientist `skills` carries suggestions; advisor `modifier`/`research_bonus`
+// are fully open — their keys are cross-entity (modifier names, research
+// categories), free-text (R-CODE-5), so they are absent here (empty suggestions).
+export const KNOWN_ROLE_BAG_KEYS: Readonly<
+  Partial<Record<string, readonly FieldSpec[]>>
+> = {
+  skills: KNOWN_SCIENTIST_SKILL_KEYS,
 };

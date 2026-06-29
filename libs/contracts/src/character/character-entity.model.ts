@@ -1,12 +1,11 @@
 import type { EntityField } from '../entity';
 
 // The editable surface of a HOI4 character. `token` is the entity identifier (the
-// `token = { ... }` key under `characters`) and the dialog title; `name` and
-// `gender` are the root scalar fields (empty string when the source omits them).
-// Unmodeled root sub-blocks (e.g. `allowed_civil_war`) are carried verbatim
-// through a save and never surface here.
+// `token = { ... }` key under `characters`) and the dialog title; `name` is the
+// root scalar field (empty string when the source omits it). Unmodeled root
+// sub-blocks (e.g. `allowed_civil_war`) are carried verbatim through a save and
+// never surface here.
 export interface CharacterEntity {
-  readonly gender: string;
   readonly name: string;
   readonly portraits: readonly CharacterPortraitGroup[];
   readonly roles: readonly CharacterRole[];
@@ -20,13 +19,24 @@ export interface CharacterPortraitGroup {
   readonly rows: readonly EntityField[];
 }
 
-// A present role block: its known-key scalars plus its bare-token `traits` list.
-// Ecosystem sub-blocks (advisor `on_add`/`visible`/`available`/`modifier`) are
-// not projected here — they stay verbatim in the lossless node (R-CODE-5).
+// A present role block: its known-key scalars, its bare-token `traits` list, and
+// any open key→value sub-bags projected for the role (advisor `modifier` /
+// `research_bonus`, scientist `skills`). Other ecosystem sub-blocks (advisor
+// `on_add`/`visible`/`available`) stay verbatim in the lossless node (R-CODE-5).
 export interface CharacterRole {
+  readonly bags: readonly CharacterRoleBag[];
   readonly id: CharacterRoleId;
   readonly scalars: readonly EntityField[];
   readonly traits: readonly string[];
+}
+
+// A named open key→value sub-block of a role, projected as a prop-bag: advisor
+// `modifier` (modifier-name → number) / `research_bonus` (category → float), and
+// scientist `skills` (specialization → int). `rows` keep raw value tokens so an
+// untouched bag round-trips byte-identical.
+export interface CharacterRoleBag {
+  readonly name: string;
+  readonly rows: readonly EntityField[];
 }
 
 // The character roles this layer projects. Each is an optional named block,
@@ -37,6 +47,7 @@ export type CharacterRoleId =
   | 'corps_commander'
   | 'country_leader'
   | 'field_marshal'
-  | 'navy_leader';
+  | 'navy_leader'
+  | 'scientist';
 
 export type PortraitGroup = 'army' | 'civilian' | 'navy';

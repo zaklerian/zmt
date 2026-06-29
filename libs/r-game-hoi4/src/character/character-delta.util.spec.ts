@@ -28,11 +28,8 @@ const snapshot: CharacterSnapshot = {
       values: ['trait_one', 'trait_two'],
     },
   ],
-  root: [
-    { key: 'name', value: '"OLD"' },
-    { key: 'gender', value: 'male' },
-  ],
-  rootKeys: ['name', 'gender'],
+  root: [{ key: 'name', value: '"OLD"' }],
+  rootKeys: ['name'],
 };
 
 describe('computeCharacterDeltas', () => {
@@ -44,15 +41,14 @@ describe('computeCharacterDeltas', () => {
       ],
       corps_commander: [{ key: 'skill', value: '4' }],
       corps_commander__traits: ['trait_one', 'trait_two'],
-      gender: 'female',
-      name: '"OLD"',
+      name: '"NEW"',
     });
 
     expect(deltas).toEqual([
       {
         added: [],
         block: null,
-        changed: [{ key: 'gender', value: 'female' }],
+        changed: [{ key: 'name', value: '"NEW"' }],
         removed: [],
       },
       {
@@ -72,7 +68,6 @@ describe('computeCharacterDeltas', () => {
       ],
       corps_commander: [{ key: 'skill', value: '4' }],
       corps_commander__traits: ['trait_two', 'trait_three'],
-      gender: 'male',
       name: '"OLD"',
     });
 
@@ -94,12 +89,11 @@ describe('computeCharacterDeltas', () => {
       ],
       corps_commander: [{ key: 'skill', value: '4' }],
       corps_commander__traits: ['trait_one', 'trait_two'],
-      gender: '',
-      name: '"OLD"',
+      name: '',
     });
 
     expect(deltas).toEqual([
-      { added: [], block: null, changed: [], removed: ['gender'] },
+      { added: [], block: null, changed: [], removed: ['name'] },
     ]);
   });
 });

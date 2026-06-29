@@ -75,7 +75,7 @@ describe('extractCharacters', () => {
   it('surfaces the token and the raw root scalars (quotes preserved)', () => {
     const entry = assign(
       'Some_Leader',
-      block([assign('name', str('NAME_KEY')), assign('gender', id('male'))]),
+      block([assign('name', str('NAME_KEY'))]),
     );
 
     const [entity, ...rest] = extractCharacters(characters(entry));
@@ -83,7 +83,6 @@ describe('extractCharacters', () => {
     expect(rest).toEqual([]);
     // String scalars keep their raw token so a save round-trips them verbatim.
     expect(entity).toMatchObject({
-      gender: 'male',
       name: '"NAME_KEY"',
       token: 'Some_Leader',
     });
@@ -95,7 +94,6 @@ describe('extractCharacters', () => {
     );
 
     expect(entity).toEqual({
-      gender: '',
       name: '',
       portraits: [],
       roles: [],
@@ -153,6 +151,7 @@ describe('extractCharacters', () => {
 
     expect(entity?.roles).toEqual([
       {
+        bags: [],
         id: 'corps_commander',
         scalars: [{ key: 'skill', value: '4' }],
         traits: ['trait_one', 'trait_two'],
@@ -178,6 +177,89 @@ describe('extractCharacters', () => {
 
     expect(entity?.roles).toEqual([
       {
+        bags: [],
+        id: 'advisor',
+        scalars: [{ key: 'slot', value: 'political_advisor' }],
+        traits: [],
+      },
+    ]);
+  });
+
+  it('projects the scientist role with its traits and skills prop-bag', () => {
+    const entry = assign(
+      'S',
+      block([
+        assign(
+          'scientist',
+          block([
+            assign(
+              'skills',
+              block([
+                assign('specialization_air', num('2')),
+                assign('specialization_nuclear', num('1')),
+              ]),
+            ),
+            assign('traits', block([id('nuclear_scientist')])),
+          ]),
+        ),
+      ]),
+    );
+
+    const [entity] = extractCharacters(characters(entry));
+
+    expect(entity?.roles).toEqual([
+      {
+        bags: [
+          {
+            name: 'skills',
+            rows: [
+              { key: 'specialization_air', value: '2' },
+              { key: 'specialization_nuclear', value: '1' },
+            ],
+          },
+        ],
+        id: 'scientist',
+        scalars: [],
+        traits: ['nuclear_scientist'],
+      },
+    ]);
+  });
+
+  it('projects advisor modifier and research_bonus as open prop-bags, keeping raw number tokens', () => {
+    const entry = assign(
+      'A',
+      block([
+        assign(
+          'advisor',
+          block([
+            assign('slot', id('political_advisor')),
+            assign(
+              'modifier',
+              block([assign('political_power_factor', num('0.05'))]),
+            ),
+            assign(
+              'research_bonus',
+              block([assign('electronics', num('0.10'))]),
+            ),
+          ]),
+        ),
+      ]),
+    );
+
+    const [entity] = extractCharacters(characters(entry));
+
+    expect(entity?.roles).toEqual([
+      {
+        bags: [
+          {
+            name: 'modifier',
+            rows: [{ key: 'political_power_factor', value: '0.05' }],
+          },
+          {
+            name: 'research_bonus',
+            rows: [{ key: 'electronics', value: '0.10' }],
+          },
+        ],
         id: 'advisor',
         scalars: [{ key: 'slot', value: 'political_advisor' }],
         traits: [],
