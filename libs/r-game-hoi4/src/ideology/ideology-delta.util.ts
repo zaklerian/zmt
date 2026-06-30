@@ -8,28 +8,38 @@ import {
 } from '../scalar-bag';
 
 const DYNAMIC_FACTION_NAMES_BLOCK = 'dynamic_faction_names';
+const FACTION_MODIFIERS_BLOCK = 'faction_modifiers';
+const MODIFIERS_BLOCK = 'modifiers';
+const RULES_BLOCK = 'rules';
 const TYPES_BLOCK = 'types';
 
 // The open-time snapshot the save diffs against. `root` is the ideology's own
 // modeled root scalars; `rootKeys` the fixed root field names; `dynamicFactionNames`
-// the bare-token faction-name list; `types` the keyed-map entries (one per
+// the bare-token faction-name list; `rules` the boolean rule bag; `modifiers` /
+// `factionModifiers` the open modifier maps; `types` the keyed-map entries (one per
 // subideology, each its open modifier prop-bag rows).
 export interface IdeologySnapshot {
   readonly dynamicFactionNames: readonly string[];
+  readonly factionModifiers: readonly EntityField[];
+  readonly modifiers: readonly EntityField[];
   readonly root: readonly EntityField[];
   readonly rootKeys: readonly string[];
+  readonly rules: readonly EntityField[];
   readonly types: readonly KeyedMapEntry[];
 }
 
 // Diffs every projected surface against its open-time snapshot and collects the
-// non-empty path-scoped deltas (ADR 019, amended ZMT-18). Root scalars target
-// `block: null`; `dynamic_faction_names` tokens lower to bare value-list items at
-// `['dynamic_faction_names']`; the `types` keyed-object map diffs key-aware at
-// `['types']` (a new subideology materializes `<key> = { … }`, an empty one
+// non-empty path-scoped deltas (ADR 019, amended ZMT-18, ZMT-E19). Root scalars
+// (world-tension, intrinsic booleans, the `ai_*` flag) target `block: null`; the
+// `rules` boolean bag and the `modifiers` / `faction_modifiers` open maps diff at
+// their one-element block scopes (the handler creates each block on first add and
+// drops it when emptied); `dynamic_faction_names` tokens lower to bare value-list
+// items at `['dynamic_faction_names']`; the `types` keyed-object map diffs key-aware
+// at `['types']` (a new subideology materializes `<key> = { … }`, an empty one
 // `<key> = { }`; a removed one is dropped by a parent-scoped key removal; a rename
-// is remove-old + add-new). Everything unmodeled — `color`, `rules`, `modifiers`,
-// `ai_*`, and per-subideology unmodeled keys — never enters a delta, so it rides
-// through a save byte-identical (R-CODE-5).
+// is remove-old + add-new). Everything unmodeled — `color` and per-subideology
+// unmodeled keys — never enters a delta, so it rides through a save byte-identical
+// (R-CODE-5).
 export function computeIdeologyDeltas(
   snapshot: IdeologySnapshot,
   values: Readonly<Record<string, unknown>>,
@@ -41,6 +51,15 @@ export function computeIdeologyDeltas(
     .filter((row) => row.value !== '');
   const rootDelta = computeScalarDelta(snapshot.root, rootRows);
   if (!isEmptyDelta(rootDelta)) deltas.push({ block: null, ...rootDelta });
+
+  for (const [block, before] of [
+    [RULES_BLOCK, snapshot.rules],
+    [MODIFIERS_BLOCK, snapshot.modifiers],
+    [FACTION_MODIFIERS_BLOCK, snapshot.factionModifiers],
+  ] as const) {
+    const bagDelta = computeScalarDelta(before, bagRows(values[block]));
+    if (!isEmptyDelta(bagDelta)) deltas.push({ block: [block], ...bagDelta });
+  }
 
   const tokens = normalizeTokens(tokensOf(values[DYNAMIC_FACTION_NAMES_BLOCK]));
   const listDelta = computeScalarDelta(

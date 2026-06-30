@@ -129,9 +129,25 @@ export const en = {
       dynamicFactionNames: {
         label: 'Dynamic faction names',
       },
+      factionModifiers: {
+        title: 'Faction modifiers',
+      },
       fields: {
+        ai_communist: 'AI communist',
+        ai_democratic: 'AI democratic',
+        ai_fascist: 'AI fascist',
+        ai_neutral: 'AI neutral',
+        can_be_boosted: 'Can be boosted',
+        can_collaborate: 'Can collaborate',
+        can_host_government_in_exile: 'Can host government in exile',
         faction_impact_on_world_tension: 'Faction impact on world tension',
         war_impact_on_world_tension: 'War impact on world tension',
+      },
+      modifiers: {
+        title: 'Modifiers',
+      },
+      rules: {
+        title: 'Rules',
       },
       types: {
         add: 'Add subideology',

@@ -133,9 +133,25 @@ export const uk: typeof en = {
       dynamicFactionNames: {
         label: 'Динамічні назви фракцій',
       },
+      factionModifiers: {
+        title: 'Модифікатори фракції',
+      },
       fields: {
+        ai_communist: 'ШІ комуністичний',
+        ai_democratic: 'ШІ демократичний',
+        ai_fascist: 'ШІ фашистський',
+        ai_neutral: 'ШІ нейтральний',
+        can_be_boosted: 'Можна підсилити',
+        can_collaborate: 'Може співпрацювати',
+        can_host_government_in_exile: 'Може мати уряд у вигнанні',
         faction_impact_on_world_tension: 'Вплив фракції на світову напругу',
         war_impact_on_world_tension: 'Вплив війни на світову напругу',
+      },
+      modifiers: {
+        title: 'Модифікатори',
+      },
+      rules: {
+        title: 'Правила',
       },
       types: {
         add: 'Додати підідеологію',

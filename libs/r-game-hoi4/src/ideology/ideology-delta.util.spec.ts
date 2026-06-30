@@ -5,8 +5,24 @@ import { computeIdeologyDeltas, IdeologySnapshot } from './ideology-delta.util';
 
 const snapshot: IdeologySnapshot = {
   dynamicFactionNames: ['FACTION_ONE'],
-  root: [{ key: 'war_impact_on_world_tension', value: '0.5' }],
-  rootKeys: ['war_impact_on_world_tension', 'faction_impact_on_world_tension'],
+  factionModifiers: [],
+  modifiers: [{ key: 'political_power_factor', value: '0.1' }],
+  root: [
+    { key: 'war_impact_on_world_tension', value: '0.5' },
+    { key: 'can_be_boosted', value: 'yes' },
+  ],
+  rootKeys: [
+    'war_impact_on_world_tension',
+    'faction_impact_on_world_tension',
+    'can_host_government_in_exile',
+    'can_be_boosted',
+    'can_collaborate',
+    'ai_democratic',
+    'ai_communist',
+    'ai_fascist',
+    'ai_neutral',
+  ],
+  rules: [{ key: 'can_force_government', value: 'yes' }],
   types: [
     {
       key: 'liberalism',
@@ -17,11 +33,16 @@ const snapshot: IdeologySnapshot = {
 };
 
 // The unchanged form values: every surface seeded back exactly as the snapshot.
-// A `types` entry is the reserved map key plus its open prop-bag rows.
+// A `types` entry is the reserved map key plus its open prop-bag rows; the open
+// bags (`rules`, `modifiers`, `faction_modifiers`) seed as key→value rows.
 function baseValues(): Record<string, unknown> {
   return {
+    can_be_boosted: 'yes',
     dynamic_faction_names: ['FACTION_ONE'],
     faction_impact_on_world_tension: '',
+    faction_modifiers: [],
+    modifiers: [{ key: 'political_power_factor', value: '0.1' }],
+    rules: [{ key: 'can_force_government', value: 'yes' }],
     types: [
       {
         [KEYED_MAP_ENTRY_KEY]: 'liberalism',
@@ -55,6 +76,73 @@ describe('computeIdeologyDeltas', () => {
         added: [],
         block: null,
         changed: [{ key: 'war_impact_on_world_tension', value: '0.9' }],
+        removed: [],
+      },
+    ]);
+  });
+
+  it('emits an intrinsic boolean change as a root scalar delta', () => {
+    const deltas = computeIdeologyDeltas(snapshot, {
+      ...baseValues(),
+      can_collaborate: 'yes',
+    });
+
+    expect(deltas).toEqual([
+      {
+        added: [{ key: 'can_collaborate', value: 'yes' }],
+        block: null,
+        changed: [],
+        removed: [],
+      },
+    ]);
+  });
+
+  it('emits a rules-bag change at the rules block scope', () => {
+    const deltas = computeIdeologyDeltas(snapshot, {
+      ...baseValues(),
+      rules: [
+        { key: 'can_force_government', value: 'no' },
+        { key: 'can_puppet', value: 'yes' },
+      ],
+    });
+
+    expect(deltas).toEqual([
+      {
+        added: [{ key: 'can_puppet', value: 'yes' }],
+        block: ['rules'],
+        changed: [{ key: 'can_force_government', value: 'no' }],
+        removed: [],
+      },
+    ]);
+  });
+
+  it('emits a modifiers-bag change at the modifiers block scope', () => {
+    const deltas = computeIdeologyDeltas(snapshot, {
+      ...baseValues(),
+      modifiers: [{ key: 'political_power_factor', value: '0.2' }],
+    });
+
+    expect(deltas).toEqual([
+      {
+        added: [],
+        block: ['modifiers'],
+        changed: [{ key: 'political_power_factor', value: '0.2' }],
+        removed: [],
+      },
+    ]);
+  });
+
+  it('adds a faction_modifiers row at the faction_modifiers block scope', () => {
+    const deltas = computeIdeologyDeltas(snapshot, {
+      ...baseValues(),
+      faction_modifiers: [{ key: 'army_org_factor', value: '0.05' }],
+    });
+
+    expect(deltas).toEqual([
+      {
+        added: [{ key: 'army_org_factor', value: '0.05' }],
+        block: ['faction_modifiers'],
+        changed: [],
         removed: [],
       },
     ]);

@@ -3,13 +3,18 @@ import type { EntityField } from '../entity';
 // The editable surface of a HOI4 ideology. `token` is the entity identifier (the
 // `<ideology> = { … }` key under the top-level `ideologies` wrapper) and the
 // dialog title; `rootScalars` are the modeled file-local root scalars (the two
-// world-tension fields). `dynamicFactionNames` is the `dynamic_faction_names`
+// world-tension fields, the three intrinsic booleans, and the `ai_*` behaviour
+// flag, ZMT-E19). `dynamicFactionNames` is the `dynamic_faction_names`
 // list-of-scalars; `types` is the editable variable-key map of subideologies.
-// Unmodeled root blocks (`color`, `rules`, `modifiers`, `faction_modifiers`,
-// `ai_*`) are carried verbatim through a save and never surface here (R-CODE-5).
+// `rules` is the known-key boolean block; `modifiers` / `factionModifiers` are the
+// open modifier-name → number maps — each an open prop-bag (ZMT-E19). Remaining
+// unmodeled root blocks (`color`) are carried verbatim and never surface (R-CODE-5).
 export interface IdeologyEntity {
   readonly dynamicFactionNames: readonly string[];
+  readonly factionModifiers: readonly EntityField[];
+  readonly modifiers: readonly EntityField[];
   readonly rootScalars: readonly EntityField[];
+  readonly rules: readonly EntityField[];
   readonly token: string;
   readonly types: readonly IdeologyType[];
 }
