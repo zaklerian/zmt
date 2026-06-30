@@ -4,6 +4,7 @@ import type {
   CharacterRole,
   CharacterRoleBag,
   CharacterRoleId,
+  EntityBlockScopeSegment,
   EntityField,
   PortraitGroup,
 } from '@contracts';
@@ -16,9 +17,12 @@ import type {
 } from '@paradox-parser';
 
 const CHARACTERS_BLOCK = 'characters';
+const INSTANCE_BLOCK = 'instance';
 const KEY_NAME = 'name';
 const PORTRAITS_BLOCK = 'portraits';
 const TRAITS_BLOCK = 'traits';
+
+const ROOT_SCOPE: readonly EntityBlockScopeSegment[] = [];
 
 // Present-only projection: a group or role surfaces only when its block exists in
 // the source; iteration follows file order so the form renders blocks as written.
@@ -160,20 +164,53 @@ function roleBags(
   return bags;
 }
 
+// Surfaces a character's role blocks, walking children in file order. A role-id
+// block at the character root surfaces at root scope; an `instance = { … }` DLC
+// wrapper is unwrapped and the role blocks it nests surface with an indexed
+// `instance` scope segment, so a save writes each back inside that same wrapper
+// (ADR 019 indexed segment). The wrapper and its DLC condition are not modeled —
+// only the nested roles surface; the rest of the `instance` stays verbatim. Every
+// `instance` sibling advances the index, matching how the write path counts
+// same-name siblings, so non-role instances still address the right wrapper.
 function roleBlocks(block: BlockNode): readonly CharacterRole[] {
   const roles: CharacterRole[] = [];
+  let instanceIndex = 0;
   for (const child of block.children) {
     if (child.kind !== 'Assignment' || child.value.kind !== 'Block') continue;
     const name = keyName(child);
+    if (name === INSTANCE_BLOCK) {
+      const scope: readonly EntityBlockScopeSegment[] = [
+        { index: instanceIndex, name: INSTANCE_BLOCK },
+      ];
+      instanceIndex += 1;
+      for (const nested of child.value.children) {
+        if (nested.kind !== 'Assignment' || nested.value.kind !== 'Block') {
+          continue;
+        }
+        const nestedName = keyName(nested);
+        if (!isRoleId(nestedName)) continue;
+        roles.push(roleFrom(nested.value, nestedName, scope));
+      }
+      continue;
+    }
     if (!isRoleId(name)) continue;
-    roles.push({
-      bags: roleBags(child.value, name),
-      id: name,
-      scalars: scalarLeaves(child.value),
-      traits: traitTokens(child.value),
-    });
+    roles.push(roleFrom(child.value, name, ROOT_SCOPE));
   }
   return roles;
+}
+
+function roleFrom(
+  roleBlock: BlockNode,
+  id: CharacterRoleId,
+  scope: readonly EntityBlockScopeSegment[],
+): CharacterRole {
+  return {
+    bags: roleBags(roleBlock, id),
+    id,
+    scalars: scalarLeaves(roleBlock),
+    scope,
+    traits: traitTokens(roleBlock),
+  };
 }
 
 // The role's own scalar leaf fields. Nested sub-blocks (the `traits` list and

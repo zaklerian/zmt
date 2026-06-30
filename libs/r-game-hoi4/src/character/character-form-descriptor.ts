@@ -1,4 +1,9 @@
-import { AppApiModel, CharacterEntity, GAME_IDS } from '@contracts';
+import {
+  AppApiModel,
+  CharacterEntity,
+  EntityBlockScopeSegment,
+  GAME_IDS,
+} from '@contracts';
 import {
   defineEntityFormDescriptor,
   EntityFormBlock,
@@ -30,6 +35,20 @@ const TRAITS_BLOCK = 'traits';
 const ROOT_KEYS: readonly string[] = ['name'];
 
 const traitsBinding = (roleId: string): string => `${roleId}__${TRAITS_BLOCK}`;
+
+// An instance-nested role binds its RHF field-arrays under a per-instance prefix so
+// two roles sharing an `id` across DLC wrappers (e.g. a `country_leader` in each
+// `instance`) never collide in form state. The binding is renderer-only: the write
+// targets `scope`, and display uses the section label. A top-level role's empty
+// scope yields no prefix, leaving its bindings unchanged (ZMT-E21).
+const bindingPrefix = (scope: readonly EntityBlockScopeSegment[]): string =>
+  scope
+    .map((segment) =>
+      typeof segment === 'string'
+        ? `${segment}__`
+        : `${segment.name}_${segment.index}__`,
+    )
+    .join('');
 
 function project(
   entity: CharacterEntity,
@@ -85,43 +104,49 @@ function project(
   }
 
   for (const role of roles) {
+    // An instance-nested role carries an indexed `instance` scope prefix; a
+    // top-level role's prefix is empty, leaving its paths unchanged (ZMT-E21).
+    const roleScope = [...role.scope, role.id];
+    const prefix = bindingPrefix(role.scope);
+    const roleBinding = `${prefix}${role.id}`;
+    const bagBinding = (name: string): string => `${prefix}${name}`;
     const traits: ListOfScalarsBlock = {
       kind: 'listOfScalars',
       label: translate('plugin.hoi4:character.form.traits'),
-      name: traitsBinding(role.id),
-      scope: [role.id, TRAITS_BLOCK],
+      name: traitsBinding(roleBinding),
+      scope: [...roleScope, TRAITS_BLOCK],
       values: role.traits,
     };
     const roleBlock: NamedNestedBlock = {
       kind: 'namedNested',
       knownKeys: KNOWN_ROLE_KEYS[role.id],
       listChildren: [traits],
-      name: role.id,
+      name: roleBinding,
       namedChildren: role.bags.map((bag) => ({
         knownKeys: KNOWN_ROLE_BAG_KEYS[bag.name] ?? [],
-        name: bag.name,
+        name: bagBinding(bag.name),
         rows: bag.rows,
-        scope: [role.id, bag.name],
+        scope: [...roleScope, bag.name],
         sectionLabel: translate(
           `plugin.hoi4:character.form.roleBags.${bag.name}`,
         ),
       })),
       rows: role.scalars,
-      scope: [role.id],
+      scope: roleScope,
       sectionLabel: translate(`plugin.hoi4:character.form.roles.${role.id}`),
     };
     blocks.push(roleBlock);
-    bags.push({ binding: role.id, rows: role.scalars, scope: [role.id] });
+    bags.push({ binding: roleBinding, rows: role.scalars, scope: roleScope });
     for (const bag of role.bags) {
       bags.push({
-        binding: bag.name,
+        binding: bagBinding(bag.name),
         rows: bag.rows,
-        scope: [role.id, bag.name],
+        scope: [...roleScope, bag.name],
       });
     }
     lists.push({
-      binding: traitsBinding(role.id),
-      scope: [role.id, TRAITS_BLOCK],
+      binding: traitsBinding(roleBinding),
+      scope: [...roleScope, TRAITS_BLOCK],
       values: role.traits,
     });
   }
