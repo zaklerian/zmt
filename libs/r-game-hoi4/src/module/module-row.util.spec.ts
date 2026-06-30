@@ -6,6 +6,7 @@ import { mapModuleRow } from './module-row.util';
 function entity(category: string): ModuleEntity {
   return {
     category,
+    costMaps: { build_cost_resources: [], dismantle_cost_resources: [] },
     name: 'test_module',
     node: null as unknown as ModuleEntity['node'],
     scalars: [],

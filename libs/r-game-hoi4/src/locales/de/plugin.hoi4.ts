@@ -207,6 +207,8 @@ export const de: typeof en = {
       sections: {
         addAverageStats: 'Durchschnittswerte (add_average_stats)',
         addStats: 'Additive Werte (add_stats)',
+        buildCostResources: 'Baukosten (build_cost_resources)',
+        dismantleCostResources: 'Abrisskosten (dismantle_cost_resources)',
         multiplyStats: 'Multiplikative Werte (multiply_stats)',
         scalars: 'Moduleigenschaften',
       },

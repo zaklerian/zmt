@@ -1,4 +1,9 @@
-import type { EntityField, ModuleEntity, ModuleStatBlocks } from '@contracts';
+import type {
+  EntityField,
+  ModuleCostMaps,
+  ModuleEntity,
+  ModuleStatBlocks,
+} from '@contracts';
 import type {
   AssignmentNode,
   BlockChild,
@@ -30,6 +35,7 @@ export function extractModules(parsedTarget: Script): readonly ModuleEntity[] {
       const category = moduleCategory(block);
       entities.push({
         category,
+        costMaps: moduleCostMaps(block),
         name: keyName(entry),
         node: entry,
         scalars: moduleScalars(entry, block),
@@ -63,6 +69,16 @@ function moduleCategory(block: BlockNode): string {
   return assignment === undefined ? '' : (tokenOf(assignment.value) ?? '');
 }
 
+function moduleCostMaps(block: BlockNode): ModuleCostMaps {
+  return {
+    build_cost_resources: nestedScalarFields(block, 'build_cost_resources'),
+    dismantle_cost_resources: nestedScalarFields(
+      block,
+      'dismantle_cost_resources',
+    ),
+  };
+}
+
 function moduleScalars(
   entry: AssignmentNode,
   block: BlockNode,
@@ -83,10 +99,34 @@ function moduleScalars(
 
 function moduleStatBlocks(block: BlockNode): ModuleStatBlocks {
   return {
-    add_average_stats: statFields(block, 'add_average_stats'),
-    add_stats: statFields(block, 'add_stats'),
-    multiply_stats: statFields(block, 'multiply_stats'),
+    add_average_stats: nestedScalarFields(block, 'add_average_stats'),
+    add_stats: nestedScalarFields(block, 'add_stats'),
+    multiply_stats: nestedScalarFields(block, 'multiply_stats'),
   };
+}
+
+// Projects a named nested block's scalar children into a flat field list, shared
+// by the stat blocks and the cost maps (both flat key→scalar maps). An absent or
+// non-block key yields an empty list.
+function nestedScalarFields(
+  block: BlockNode,
+  key: string,
+): readonly EntityField[] {
+  const assignment = findAssignment(block, key);
+  if (assignment === undefined || assignment.value.kind !== 'Block') {
+    return [];
+  }
+  const fields: EntityField[] = [];
+  for (const child of assignment.value.children) {
+    if (child.kind !== 'Assignment') {
+      continue;
+    }
+    const value = scalarValueOf(child.value);
+    if (value !== undefined) {
+      fields.push({ key: keyName(child), value });
+    }
+  }
+  return fields;
 }
 
 function scalarValueOf(value: ParadoxValue): string | undefined {
@@ -104,24 +144,6 @@ function scalarValueOf(value: ParadoxValue): string | undefined {
     default:
       return undefined;
   }
-}
-
-function statFields(block: BlockNode, key: string): readonly EntityField[] {
-  const assignment = findAssignment(block, key);
-  if (assignment === undefined || assignment.value.kind !== 'Block') {
-    return [];
-  }
-  const fields: EntityField[] = [];
-  for (const child of assignment.value.children) {
-    if (child.kind !== 'Assignment') {
-      continue;
-    }
-    const value = scalarValueOf(child.value);
-    if (value !== undefined) {
-      fields.push({ key: keyName(child), value });
-    }
-  }
-  return fields;
 }
 
 function tokenOf(node: BlockChild): string | undefined {

@@ -2,11 +2,21 @@ import type { AssignmentNode } from '@paradox-parser';
 
 import type { EntityField } from '../entity';
 
+export type ModuleCostMap = 'build_cost_resources' | 'dismantle_cost_resources';
+
+export type ModuleCostMaps = Readonly<
+  Record<ModuleCostMap, readonly EntityField[]>
+>;
+
 export interface ModuleEntity {
   // The module's `category` value, surfaced read-only for display. A module has
   // no intrinsic domain; its only relation to an archetype is its category
   // matching a slot's allowed categories. Empty string when the source omits it.
   readonly category: string;
+  // The known cost maps projected to flat field lists. Each is a flat
+  // resource-name → number map; a map absent from the source yields an empty
+  // list, never a fabricated default.
+  readonly costMaps: ModuleCostMaps;
   readonly name: string;
   // Lossless: the original parsed `name = { ... }` node, retained so a save can
   // round-trip blocks the tool does not project (gui, can_convert_from,

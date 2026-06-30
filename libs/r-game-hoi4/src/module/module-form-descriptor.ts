@@ -8,11 +8,13 @@ import {
 } from '@r-core';
 
 import {
+  KNOWN_MODULE_COST_KEYS,
   KNOWN_MODULE_KEYS,
   KNOWN_MODULE_STAT_KEYS,
 } from './known-module-keys.const';
 import {
   computeModuleDeltas,
+  MODULE_COST_MAPS,
   MODULE_STAT_BLOCKS,
   ModuleBagSnapshot,
   ModuleBagValues,
@@ -23,6 +25,9 @@ import { moduleErrorMessageKey } from './module-error.util';
 const SECTION_LABEL_KEYS: Readonly<Record<string, string>> = {
   add_average_stats: 'plugin.hoi4:module.form.sections.addAverageStats',
   add_stats: 'plugin.hoi4:module.form.sections.addStats',
+  build_cost_resources: 'plugin.hoi4:module.form.sections.buildCostResources',
+  dismantle_cost_resources:
+    'plugin.hoi4:module.form.sections.dismantleCostResources',
   multiply_stats: 'plugin.hoi4:module.form.sections.multiplyStats',
 };
 
@@ -30,12 +35,14 @@ function project(
   entity: ModuleEntity,
   { modId, relativePath, translate }: EntityFormProjectContext,
 ): EntityFormModel {
-  const { category, name, scalars, statBlocks } = entity;
+  const { category, costMaps, name, scalars, statBlocks } = entity;
 
   // Snapshot each bag at open so save diffs against the original projection.
   const snapshot: ModuleBagSnapshot = {
     add_average_stats: statBlocks.add_average_stats,
     add_stats: statBlocks.add_stats,
+    build_cost_resources: costMaps.build_cost_resources,
+    dismantle_cost_resources: costMaps.dismantle_cost_resources,
     multiply_stats: statBlocks.multiply_stats,
     scalars,
   };
@@ -70,6 +77,16 @@ function project(
         knownKeys: KNOWN_MODULE_STAT_KEYS,
         name: block,
         rows: statBlocks[block],
+        scope: [block],
+        sectionLabel: translate(SECTION_LABEL_KEYS[block] ?? block),
+      })),
+      // Cost maps reuse the same named-nested property-bag rendering; each is a
+      // flat resource-name → number map written to its named child scope.
+      ...MODULE_COST_MAPS.map((block) => ({
+        kind: 'namedNested' as const,
+        knownKeys: KNOWN_MODULE_COST_KEYS,
+        name: block,
+        rows: costMaps[block],
         scope: [block],
         sectionLabel: translate(SECTION_LABEL_KEYS[block] ?? block),
       })),

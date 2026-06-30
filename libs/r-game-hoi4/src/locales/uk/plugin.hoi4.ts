@@ -203,6 +203,8 @@ export const uk: typeof en = {
       sections: {
         addAverageStats: 'Середні характеристики (add_average_stats)',
         addStats: 'Додані характеристики (add_stats)',
+        buildCostResources: 'Вартість будівництва (build_cost_resources)',
+        dismantleCostResources: 'Вартість демонтажу (dismantle_cost_resources)',
         multiplyStats: 'Множені характеристики (multiply_stats)',
         scalars: 'Властивості модуля',
       },
