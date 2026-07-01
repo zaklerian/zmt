@@ -33,6 +33,7 @@ interface ModInfoEditFormProps {
   readonly astRef: React.RefObject<null | Script>;
   readonly defaultValues: Record<string, unknown>;
   descriptorPath: string;
+  onCancel?: () => void;
   readonly originalSourceRef: React.RefObject<string>;
   readonly parseErrors: readonly ParseError[];
   readonly plugin: GamePlugin;
@@ -64,6 +65,7 @@ export function ModInfoEditForm({
   astRef,
   defaultValues,
   descriptorPath,
+  onCancel,
   originalSourceRef,
   parseErrors,
   plugin,
@@ -140,7 +142,11 @@ export function ModInfoEditForm({
 
   return (
     <Stack spacing={2}>
-      <EntityFormShell model={model} onSaved={() => setSavedAt(Date.now())} />
+      <EntityFormShell
+        model={model}
+        onCancel={onCancel}
+        onSaved={() => setSavedAt(Date.now())}
+      />
 
       {parseErrors.length > 0 && (
         <Accordion>

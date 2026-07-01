@@ -11,6 +11,10 @@ import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { EntityTable, PlainEditor } from '../../features/mod-content';
+import {
+  ModInfoEditPanel,
+  modInfoEditService,
+} from '../../features/mod-info-edit';
 import { entityFormRegistry, EntityFormShell } from '../../shared/entity-form';
 import { useModal } from '../../shared/modal';
 import { SelectSomethingPlaceholder } from './select-something-placeholder.component';
@@ -39,6 +43,7 @@ export function ContentPanel() {
     activeModRootPath,
     selectedPath,
     selectedSupport,
+    setViewMode,
     viewMode,
   } = useShell();
   if (selectedPath === null) return <SelectSomethingPlaceholder />;
@@ -58,6 +63,20 @@ export function ContentPanel() {
         recognizer={recognizer}
         relativePath={relativePath}
         writable={writable}
+      />
+    );
+  }
+
+  // A `.mod` descriptor: the mod-descriptor form is its structured view, code
+  // mode shows raw text — mirroring the entity-file toggle above, with plain
+  // mode kept available alongside form mode. Cancel closes back to plain.
+  if (modInfoEditService.isDescriptorPath(selectedPath)) {
+    return viewMode === 'code' ? (
+      <PlainEditor filePath={selectedPath} writable={writable} />
+    ) : (
+      <ModInfoEditPanel
+        descriptorPath={selectedPath}
+        onCancel={() => setViewMode('code')}
       />
     );
   }

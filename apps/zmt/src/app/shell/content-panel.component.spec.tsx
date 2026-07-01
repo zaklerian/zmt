@@ -133,4 +133,32 @@ describe('ContentPanel dispatch', () => {
       expect(readTextFile).toHaveBeenCalledWith('/mods/a/equip.txt'),
     );
   });
+
+  it('routes a .mod file in a subfolder to the descriptor form in structured mode', async () => {
+    // No plugin registered → the form surfaces its own error, which proves the
+    // mod-descriptor panel mounted (recognized by extension, not repo-root).
+    (window.api as { plugins?: unknown }).plugins = {
+      list: vi.fn().mockResolvedValue([]),
+    };
+    readTextFile.mockResolvedValue('name="X"');
+    renderPanel(
+      shell('/mods/a/BICE_modfile/Mod Files/BICE.mod', 'editable', 'table'),
+    );
+
+    expect(
+      await screen.findByText('No game plugin registered.'),
+    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(readTextFile).toHaveBeenCalledWith(
+        '/mods/a/BICE_modfile/Mod Files/BICE.mod',
+      ),
+    );
+  });
+
+  it('routes a .mod file to the plain editor in code mode', async () => {
+    readTextFile.mockResolvedValue('name="X"');
+    renderPanel(shell('/mods/a/descriptor.mod', 'editable', 'code'));
+
+    expect(await screen.findByText('name="X"')).toBeInTheDocument();
+  });
 });

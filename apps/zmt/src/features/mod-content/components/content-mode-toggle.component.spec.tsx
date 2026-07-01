@@ -45,4 +45,38 @@ describe('ContentModeToggle', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Table view' }));
     expect(onChange).toHaveBeenCalledWith('table');
   });
+
+  it('labels the structured slot as the form view for a mod descriptor', () => {
+    render(
+      <ContentModeToggle
+        mode="table"
+        structuredView="form"
+        onChange={vi.fn()}
+      />,
+      { wrapper },
+    );
+
+    expect(screen.getByRole('button', { name: 'Form view' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(
+      screen.queryByRole('button', { name: 'Table view' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('switches back to the form slot when its button is clicked', () => {
+    const onChange = vi.fn();
+    render(
+      <ContentModeToggle
+        mode="code"
+        structuredView="form"
+        onChange={onChange}
+      />,
+      { wrapper },
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Form view' }));
+    expect(onChange).toHaveBeenCalledWith('table');
+  });
 });

@@ -11,6 +11,7 @@ import {
   ModContent,
   NoFolderState,
 } from '../../features/mod-content';
+import { modInfoEditService } from '../../features/mod-info-edit';
 import { AppLayout } from '../layout';
 import { ShellContextProvider, ShellContextValue } from './shell-context';
 import { useContentViewMode } from './use-content-view-mode.hook';
@@ -143,6 +144,8 @@ export function AppShell() {
   const isEntityFile =
     selectedPath !== null &&
     recognizerRegistry.recognize(selectedPath) !== null;
+  const isModFile =
+    selectedPath !== null && modInfoEditService.isDescriptorPath(selectedPath);
 
   const shellValue = useMemo<ShellContextValue>(
     () => ({
@@ -178,8 +181,12 @@ export function AppShell() {
         drawerOpen={drawerOpen}
         hasSource={hasSource}
         panelToolbarRight={
-          isEntityFile ? (
-            <ContentModeToggle mode={viewMode} onChange={setViewMode} />
+          isEntityFile || isModFile ? (
+            <ContentModeToggle
+              mode={viewMode}
+              structuredView={isModFile ? 'form' : 'table'}
+              onChange={setViewMode}
+            />
           ) : null
         }
         selectedPath={selectedPath}

@@ -1,6 +1,7 @@
 export const en = {
   editor: {
     codeView: 'Code view',
+    formView: 'Form view',
     label: 'File contents',
     saved: 'Saved',
     tableView: 'Table view',
