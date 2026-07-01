@@ -5,7 +5,7 @@ import {
   type ParseError,
   type Script,
 } from '@paradox-parser';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { astToFormValues } from '../ast-adapter';
 import { ResolvedModDescriptorSchema } from '../mod-info-edit.model';
@@ -38,23 +38,18 @@ type Status =
   | { readonly kind: 'loading' };
 
 interface UseModDescriptorOptions {
-  readonly modRootPath: string;
+  readonly descriptorPath: string;
 }
 
 const LOADING: Status = { kind: 'loading' };
 
 export function useModDescriptor({
-  modRootPath,
+  descriptorPath,
 }: UseModDescriptorOptions): UseModDescriptorResult {
   const [version, setVersion] = useState(0);
   const [settled, setSettled] = useState<null | SettledResult>(null);
   const astRef = useRef<null | Script>(null);
   const originalSourceRef = useRef<string>('');
-
-  const descriptorPath = useMemo(
-    () => modInfoEditService.descriptorPathForRoot(modRootPath),
-    [modRootPath],
-  );
 
   useEffect(() => {
     let cancelled = false;

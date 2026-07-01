@@ -3,6 +3,7 @@ import type { en } from '../en/feature.mod-content';
 export const uk: typeof en = {
   editor: {
     codeView: 'Перегляд коду',
+    formView: 'Перегляд форми',
     label: 'Вміст файлу',
     saved: 'Збережено',
     tableView: 'Перегляд таблиці',

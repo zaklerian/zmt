@@ -31,6 +31,10 @@ import { PropertyBagBlockView } from './property-bag-block.component';
 
 interface EntityFormShellProps {
   readonly model: EntityFormModel;
+  // Inline-chrome Cancel affordance: present → a Cancel button renders alongside
+  // Save and, on click, discards unsaved edits (after confirmation) then closes
+  // the form. Ignored in modal chrome, where the dialog owns its own Cancel.
+  onCancel?: () => void;
   // Present → modal-dialog chrome (the form is an overlay opened from a list);
   // absent → inline chrome (the form is embedded in a route).
   readonly onClose?: () => void;
@@ -44,6 +48,7 @@ interface EntityFormShellProps {
 // pre-resolved on the model.
 export function EntityFormShell({
   model,
+  onCancel,
   onClose,
   onSaved,
 }: EntityFormShellProps) {
@@ -142,16 +147,21 @@ export function EntityFormShell({
     }
   };
 
+  const confirmDiscardIfDirty = async (): Promise<boolean> => {
+    if (!methods.formState.isDirty) return true;
+    return modal.confirm({
+      confirmLabel: t('app:actions.discard'),
+      message: t('feature.entityForm:unsavedMessage'),
+      title: t('app:modals.unsavedChanges.title'),
+    });
+  };
+
+  const requestCancel = async (): Promise<void> => {
+    if (await confirmDiscardIfDirty()) onCancel?.();
+  };
+
   const requestClose = async (): Promise<void> => {
-    if (methods.formState.isDirty) {
-      const proceed = await modal.confirm({
-        confirmLabel: t('app:actions.discard'),
-        message: t('feature.entityForm:unsavedMessage'),
-        title: t('app:modals.unsavedChanges.title'),
-      });
-      if (!proceed) return;
-    }
-    onClose?.();
+    if (await confirmDiscardIfDirty()) onClose?.();
   };
 
   const blocks = (
@@ -177,7 +187,12 @@ export function EntityFormShell({
     return (
       <Stack spacing={2}>
         {blocks}
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+          {onCancel !== undefined && (
+            <Button disabled={pending} onClick={() => void requestCancel()}>
+              {t('app:actions.cancel')}
+            </Button>
+          )}
           {saveButton}
         </Box>
       </Stack>
