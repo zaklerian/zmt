@@ -6,6 +6,7 @@ Working rules split by audience:
 - **`.claude/PROGRAMMING.md`** — rules covering how code is written. CODE, TS, ELECTRON, REACT, PROJ.
 - **`.claude/PROMPTING.md`** — rules covering how CC-targeted prompts are generated.
 - **`.claude/PREFERENCES.md`** — project-specific overrides by rule ID.
+- **`.claude/PROJECT-MAP.md`** — the project map: complete folder→purpose coverage + a task→location index carrying prescriptive golden references (which exemplar to COPY per task). Read at session start alongside the rule files; obey it to avoid guessing a folder's purpose or mirroring a flawed exemplar.
 
 Order within each file is decision-tree priority: most upstream and load-bearing first, style and conventions last. CC reads top-down; reading order is part of the design.
 
@@ -24,7 +25,7 @@ hold even if that read does not happen.
 
 1. `git checkout main && git pull`
 2. `git checkout -b dev/ZMT-{id}` (or `hotfix/`). The branch-name hook enforces this.
-3. Read the four `.claude/` rule files in full (BASE, PROGRAMMING, PROMPTING, PREFERENCES).
+3. Read the four `.claude/` rule files in full (BASE, PROGRAMMING, PROMPTING, PREFERENCES) and the project map (PROJECT-MAP.md).
 4. Execute the task delta from the prompt.
 5. Commit: first line = ticket ID; body = symbol-prefixed (`+ - * ~ !`) per CONTRIBUTING.
 6. `git push -u origin dev/ZMT-{id}`.

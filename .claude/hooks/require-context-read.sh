@@ -10,6 +10,11 @@ Before writing ANY code or running any tool this session, Read these four files 
 They define non-inferable rules (process, carve-outs, PREFERENCES overrides) that the
 codebase cannot show you by example. Do NOT infer them from neighbouring code.
 
+Also Read the project map in full: .claude/PROJECT-MAP.md — complete folder→purpose
+coverage plus a task→location index of golden references (which exemplar to COPY per
+task). It kills two guesses on every run: what a folder holds, and which exemplar to
+mirror. Read it before touching the tree; do NOT assume a folder's purpose.
+
 PROVE the corpus is loaded: in your first response, state (a) which PREFERENCES
 overrides are active, and (b) the one rule carve-out relevant to this task
 (e.g. R-CODE-9 semantic-order exception). A session that cannot name an applicable
