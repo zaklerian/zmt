@@ -56,7 +56,7 @@ These rules prime how every other rule in every other file is interpreted and wr
 
 **R-WORK-14.** One ticket maps to exactly one PR. Prep work discovered during planning becomes a subtask `ZMT-X.Y` that ships before the parent's implementation; each subtask is its own ticket and its own PR.
 
-**R-WORK-15.** A change that adds, moves, or repurposes a directory, or that changes a golden reference (the exemplar a task index says to copy), updates the project map — the `## Project map` section in `.claude/CLAUDE.md` — in the same PR. Same discipline as ADR hygiene: the map is only load-bearing if it never lags the layout and exemplars it describes. This is the folder/exemplar analogue of R-WORK-2 (trigger text matches content). A golden reference is demoted the moment a cleaner current exemplar exists for its pattern.
+**R-WORK-15.** A change that adds, moves, or repurposes a directory, or that changes a golden reference (the exemplar a task index says to copy), updates the project map — `.claude/PROJECT-MAP.md` — in the same PR. Same discipline as ADR hygiene: the map is only load-bearing if it never lags the layout and exemplars it describes. This is the folder/exemplar analogue of R-WORK-2 (trigger text matches content). A golden reference is demoted the moment a cleaner current exemplar exists for its pattern.
 
 ## Approaches
 
