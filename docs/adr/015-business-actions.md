@@ -3,6 +3,17 @@
 - **Status**: Accepted
 - **Date**: 2026-06-09
 
+## Correction (2026-07-13) — first consumer
+
+The original text named the tree context menu as the first consumer. That surface was
+designed but never built — the file tree has selection, expansion, and a double-click
+expand/collapse toggle only, no context menu. The **realized** first consumer is the
+**entity-table toolbar** (`EntityTableToolbar` in
+`apps/zmt/src/features/mod-content/components/entity-table.component.tsx`), which renders the
+actions available for the selected entity row. This corrects the first-consumer statement in
+_Scope_ below; the decision itself is unchanged — the availability-driven pattern holds
+identically for a toolbar host.
+
 ## Context
 
 User-triggerable interactions recur across the renderer — saving and discarding in settings, switching locale, opening a folder, confirming a dialog, and now removing a mod from the project via a tree context menu. Each was implemented ad hoc: a handler wired directly to a control, with the control's presence and enablement decided by inline conditionals at the call site. Two costs compound as interactions multiply:
@@ -35,7 +46,7 @@ The `Action` abstraction is a shared renderer surface (it is the contract every 
 
 ### Scope
 
-This is the general pattern for any renderer interaction, the first consumer being the tree context menu (its content is the set of actions available for the right-clicked node). Existing ad-hoc interactions are migrated to it incrementally; the pattern is recognized across them, not invented for the menu.
+This is the general pattern for any renderer interaction. The realized first consumer is the entity-table toolbar (its content is the set of actions available for the selected entity row); see the Correction note above — the tree context menu named here originally was designed but never built. Existing ad-hoc interactions are migrated to it incrementally; the pattern is recognized across them, not invented for one surface.
 
 ### Presentation
 
