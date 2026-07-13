@@ -81,40 +81,30 @@ The renderer's view of the system is the `window.api` object, typed by the
 `AppApiModel` interface from `@contracts`. The bridge from `window.api` to main-process
 handlers goes through the preload script.
 
-```ts
-// libs/contracts/src/ipc/ipc-channel.const.ts
-export const IPC_CHANNELS = {
-  fs: {
-    listDirectory: 'fs:listDirectory',
-    openFolderDialog: 'fs:openFolderDialog',
-    readTextFile: 'fs:readTextFile',
-    searchFiles: 'fs:searchFiles',
-    writeBinaryFile: 'fs:writeBinaryFile',
-    writeTextFile: 'fs:writeTextFile',
-  },
-  plugins: {
-    list: 'plugins:list',
-  },
-  preferences: {
-    get: 'preferences:get',
-    getAll: 'preferences:getAll',
-    set: 'preferences:set',
-  },
-  system: {
-    ping: 'system:ping',
-  },
-  workspace: {
-    addMod: 'workspace:addMod',
-    get: 'workspace:get',
-    removeMod: 'workspace:removeMod',
-  },
-} as const;
-```
+Channel names appear as string literals in exactly one place —
+`libs/contracts/src/ipc/ipc-channel.const.ts` — grouped by namespace. Every consumer
+references the constant, so renames are type-safe and typos are impossible. The same
+principle applies to all cross-process identifiers (sentinels, payload limits, version
+codes) per R-ELECTRON-2. See ADR 003.
 
-Channel names appear as string literals in exactly one place. Every consumer references
-the constant, so renames are type-safe and typos are impossible. The same principle
-applies to all cross-process identifiers (sentinels, payload limits, version codes) per
-R-ELECTRON-2. See ADR 003.
+The namespaces divide into infrastructure and entity domains:
+
+| Namespace       | Channels                                                                                                                                       | Role                                                         |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `fs`            | `listDirectory`, `readTextFile`, `writeTextFile`, `writeBinaryFile`, `searchFiles`, `openFolderDialog`                                         | Filesystem primitives.                                       |
+| `workspace`     | `get`, `addMod`, `removeMod`                                                                                                                   | Included-mod workspace (ADR 013).                            |
+| `preferences`   | `get`, `getAll`, `set`                                                                                                                         | Preferences store.                                           |
+| `plugins`       | `list`                                                                                                                                         | Registered game plugins.                                     |
+| `system`        | `ping`                                                                                                                                         | Liveness.                                                    |
+| `entity`        | `write`, `delete`                                                                                                                              | The single typed entity write/delete contract (see below).   |
+| `<entity>:list` | `character:list`, `equipment:list` (+ `equipment:slots`), `ideology:list`, `module:list` (+ `module:catalog`), `state:list`, `technology:list` | Per-entity read side — one list channel per listable entity. |
+
+The **entity read side** is one `*:list` channel per listable entity, each returning that
+entity's typed projection for the game-agnostic table. The **entity write side** is a
+single pair — `entity:write` and `entity:delete` — carrying the typed write contract in
+`libs/contracts/src/entity/entity-write.model.ts` (`EntityWriteRequest`, a batch of
+scoped `EntityBlockDelta`s; `EntityDeleteRequest`). Read fans out per entity; write funnels
+through one channel. See the [Entity editing](#entity-editing) section.
 
 Errors thrown from main are serialized with a sentinel-prefixed JSON shape, then
 deserialized on the renderer side back into a structured `IpcError`. HTTP-style numeric
@@ -212,10 +202,21 @@ apps/zmt/src/
 │   ├── mod-info-edit/                   # descriptor.mod editing
 │   └── app-settings/                    # app settings (per-game feature toggles)
 ├── i18n/                                # locale resources, locale provider
-├── plugins/                             # renderer-side plugin registry
-├── shared/                              # cross-feature primitives
+├── plugins/                             # renderer-side plugin registry (descriptor + recognizer registration)
+├── shared/
+│   ├── entity-form/                     # entity-agnostic form shell + block renderers + form-descriptor registry
+│   ├── modal/                           # modal provider + hook (R-REACT-2)
+│   └── …                                # locale-switcher, hooks, react, types
 └── main.tsx                             # React render entry
 ```
+
+`shared/entity-form/` is the host's form infrastructure (ADR 018): the entity-agnostic
+shell (`entity-form-shell.component.tsx`), one renderer per block kind
+(`property-bag-block`, `named-nested-block`, `list-of-scalars-block`, `object-list-block`,
+`keyed-object-map-block`), and the host-side `entityFormRegistry`
+(`entity-form-registry.service.ts`) keyed by `(gameId, entityId)`. It is app-shared
+infrastructure under `apps/zmt/src/shared/` (A-PROJ-4), not a library — the shell is proven
+across its concrete forms rather than gated on A-PROJ-1's third-library-consumer rule.
 
 ## Plugin architecture
 
@@ -239,6 +240,145 @@ schemas stay in their respective `e-game-{x}` libraries; where the IPC wire need
 carry "an entity in some game" generically, the payload is a discriminated union keyed
 by `gameId` declared in `@contracts`. User-facing feature toggles are per-game-per-feature
 and persisted as isolated keyed entries (`pluginSettings.{gameId}`).
+
+## Entity editing
+
+A Paradox mod is a tree of plain-text script files. ZMT reads recognized entities into
+typed tables and lets the user edit a bounded, safe subset of each entity through generated
+forms while preserving everything it does not model. The capability splits into a read side
+and a write side that evolve independently, joined only by a shared entity-identifier
+constant.
+
+### Read side — recognize, list, extract
+
+Rendering an entity list is a three-step chain, one slice per entity under
+`libs/r-game-{game}/src/<entity>/` and `libs/e-game-{game}/src/<entity>/`:
+
+1. **Recognizer.** A per-(game, entity) `EntityTableRecognizer`
+   (`libs/r-core/src/recognizer/recognizer.model.ts`) answers `matches(filePath)` — does
+   this file hold this entity? — and `load(filePath, translate)` — read it into
+   `EntityTableData` (columns, rows, default sort, toolbar actions). Recognizers register
+   into the host-side `recognizerRegistry`
+   (`libs/r-core/src/recognizer/recognizer-registry.service.ts`), which resolves the first
+   recognizer whose `matches` returns true for the open file. This read-side registry is the
+   write-side registry's sibling; see the retroactive ADR 020.
+2. **List channel.** `load` calls the entity's `*:list` IPC channel (e.g. `module:list`),
+   whose main handler (`apps/electron/src/main/setup/<entity>-handlers.setup.ts`) delegates
+   to a main-side read service (`apps/electron/src/main/<entity>/list-<entity>.service.ts`).
+3. **Extraction.** The read service parses the file and runs the game's extraction utility
+   (`libs/e-game-{game}/src/<entity>/extract-<entity>.util.ts`) to build the typed entity
+   projection declared in `libs/contracts/src/<entity>/`.
+
+Recognizers, descriptors, and locale resources are registered per game through the
+renderer plugin (`libs/r-game-hoi4/src/hoi4-renderer-plugin.const.ts`); the main-side plugin
+(`libs/e-game-hoi4/src/hoi4-plugin.const.ts`) carries schemas and parser dialects.
+
+### Write side — one atomic mutation service
+
+Every edit funnels through a single main-side write path,
+`apps/electron/src/main/fs/entity-mutation.service.ts`, reached only via `entity:write` /
+`entity:delete`. It is the sole writer of entity files (ADR 019). Properties:
+
+- **Scoped-delta batch writes.** One save is a batch of `EntityBlockDelta`s
+  (`added` / `changed` / `removed` fields under a `block` scope), applied atomically — every
+  delta patches and the file is written once, or none patch and the file is untouched.
+- **Name + indexed scope segments.** A delta's scope is an ordered path from the entity
+  root. A bare-string segment names the sole child block; a `{ name, index }` segment
+  selects the index-th same-named sibling — the only form that addresses one of N repeated
+  blocks (an object-list item). A multi-element path reaches a grandchild
+  (`['portraits', 'army']`), bounded by the form layer's two-level nesting cap.
+- **Item-surgical edits.** Only the addressed block's changed bytes are rewritten. Comments,
+  trivia, sibling blocks, and everything the descriptor does not model are left
+  byte-identical — the editor is lossless by construction.
+- **Batch-coordinated intermediate materialization.** An added-only delta whose intermediate
+  block is absent (e.g. `['buildings', 'naval_base']` on a state with no `buildings` block)
+  materializes the missing tail. Deltas in one batch that share an absent prefix coalesce
+  into a single created block rather than one per delta.
+
+### Form shell and the form-descriptor registry
+
+Editing is driven by the entity-agnostic form shell and a per-(game, entity) form-descriptor
+registry, both host-side (ADR 018):
+
+- An **`EntityFormDescriptor`** (`libs/r-core/src/entity-form/entity-form.model.ts`) is a code
+  module — the write-side mirror of a recognizer — that `project`s a typed subject into an
+  **`EntityFormModel`** (blocks + `save` + dialog/error chrome). Descriptors register into the
+  host-side `entityFormRegistry`
+  (`apps/zmt/src/shared/entity-form/entity-form-registry.service.ts`), keyed by
+  `(gameId, entityId)`. `defineEntityFormDescriptor` gives the projection a typed subject while
+  the registry stores it type-erased.
+- The **shell** (`entity-form-shell.component.tsx`) renders the blocks, wires React Hook Form,
+  tracks dirty state, runs the Zod resolver (generated from field specs, or an
+  externally-supplied schema for the mod-descriptor path), guards unsaved changes (R-REACT-2),
+  and dispatches `save`. It carries no entity-specific knowledge.
+- The two registries share only the **entity-identifier constant**
+  (`<entity>-entity-id.const.ts`, e.g. `MODULE_ENTITY_ID = 'hoi4-module'`): a recognizer's
+  `id` equals its descriptor's `entityId`. This keeps read and write keyed identically while
+  letting a type be listable without being editable.
+
+### The block palette
+
+A descriptor composes an `EntityFormModel` from a fixed set of block kinds
+(`libs/r-core/src/entity-form/entity-form-block.model.ts`); each block pairs a render shape
+with a write scope:
+
+| Block                | Shape                                                                                                                                                                                                                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Property bag**     | Flat `key → scalar` rows. `open` mode = free bag with combobox keys drawn from a curated known-key set plus add/remove; `fixed` mode = a closed set of named scalar fields.                                                                                         |
+| **Named nested**     | A named child rendered as a `key → scalar` map, one level deep. May also carry list-of-scalars children, one bounded second level of named-scalar children (`portraits → army → large`), and — opt-in via `editableKeyedMap` — an editable variable-key object map. |
+| **List of scalars**  | Bare value tokens bound to one key (e.g. a character's `traits`).                                                                                                                                                                                                   |
+| **Object list**      | Repeated same-named blocks (e.g. `path`), items positional, rendered as add/remove item cards; each item is scalar fields plus optionally ONE nested named-object (`folder`'s `position`) within the two-level cap.                                                 |
+| **Keyed object map** | An editable variable-key `<key> = { … }` map. Each entry's value is EITHER a fixed-field template OR an open **prop-bag** (chosen per descriptor); add / remove / rename-by-(remove-old + add-new).                                                                 |
+
+A field spec (`field-spec.model.ts`) is a bare name or a name plus a closed validation
+vocabulary (`required`, `type`, `min`/`max`, `pattern`, `enum`) that lowers to Zod. The
+vocabulary is deliberately not a general validation language.
+
+### The field-classification principle
+
+The reconciliation (which corrected several entity shapes against real mod data) settled the
+rule that decides what a descriptor models versus carries: **a flat, open `key → scalar` map
+is editable ML surface — an open prop-bag — while nested maps-of-maps and script trees stay
+lossless.** The boundary is **structural, not semantic**: a descriptor does not decide by an
+entity's meaning whether a region is editable; it decides by the region's shape. Flat scalar
+maps (build costs, modifiers, per-province building levels) become prop-bags; anything nested
+past that line — condition/effect blocks, script trees, deeper maps — is preserved verbatim in
+the lossless parsed node and round-trips untouched (ADR 018 point 5). This keeps the layer
+honest about what a single file can know without cross-entity context.
+
+### Reachable editable entities (hoi4)
+
+Seven entities are ML-editable today, their shapes grounded in real mod data by the
+reconciliation:
+
+| Entity             | Editable surface (post-reconciliation)                                                                                                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **module**         | Root scalars + stat blocks + `build_cost_resources` / `dismantle_cost_resources` as open prop-bags. The clean full slice.                                                                               |
+| **plane**          | Air-equipment scalars. Rides the shared equipment read side (no separate recognizer); editable via `PLANE_FORM_DESCRIPTOR`.                                                                             |
+| **mod-descriptor** | `descriptor.mod` metadata. Host feature (`apps/zmt/src/features/mod-info-edit/`) building an `EntityFormModel` directly and validating via the plugin-supplied Zod schema, not a registered descriptor. |
+| **character**      | Metadata + role blocks with `traits` lists + a two-level `portraits → <group> → <key>` nesting + an `enum` field.                                                                                       |
+| **technology**     | Metadata + `path` / `folder` object-lists + reference lists. Intentionally thin — bonus maps stay lossless (ADR 021).                                                                                   |
+| **state**          | Root scalars + `buildings` (open building → level) + per-province building maps (keyed-object-map, prop-bag entries) + history. Rooted under `history/`, not `common/`.                                 |
+| **ideology**       | Metadata + rule/modifier prop-bags + `types` subideologies as an editable keyed-object-map with open modifier-map (prop-bag) entries.                                                                   |
+
+## Documentation map
+
+Three navigational documents divide the labor; each links to the others and none duplicates
+another's content.
+
+| Document                     | Layer                       | Answers                                                                                                                                                                                                      |
+| ---------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **`.claude/PROJECT-MAP.md`** | Always-loaded index         | _Where do I go, and what do I copy?_ Folder→purpose coverage + a task→location index carrying prescriptive golden references (the exemplar to COPY per task). Loaded every session alongside the rule files. |
+| **`docs/ARCHITECTURE.md`**   | Narrative (this document)   | _How do the layers fit, and why?_ The runtime topology, the boundary, and how read/write/form pieces compose.                                                                                                |
+| **`docs/ZMT-CODE-MAP.md`**   | Point-in-time file topology | _Which file holds this responsibility, right now?_ The per-file depth this narrative defers to.                                                                                                              |
+
+The split: the **project map** is the prescriptive, always-in-context "where / what to copy"
+layer and is the authority on folder purpose and golden references (R-WORK-15 keeps it from
+lagging the tree). **ARCHITECTURE.md** is the narrative — it explains the shape without
+enumerating every file. **ZMT-CODE-MAP.md** is the file-by-file topology snapshot that the
+narrative points to for exact locations. When these disagree, the project map wins on folder
+purpose and exemplars; ARCHITECTURE.md wins on how-and-why; ZMT-CODE-MAP.md wins on
+current-file-location.
 
 ## Stack
 
