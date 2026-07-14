@@ -72,7 +72,14 @@ function allScalars(block: BlockNode): readonly EntityField[] {
   const fields: EntityField[] = [];
   const seen = new Set<string>();
   for (const child of block.children) {
-    if (child.kind !== 'Assignment' || child.value.kind === 'Block') continue;
+    // Skip symbol definitions — declarations, not fields (ADR 022, decision 7).
+    if (
+      child.kind !== 'Assignment' ||
+      child.key.kind === 'SymbolDefinition' ||
+      child.value.kind === 'Block'
+    ) {
+      continue;
+    }
     const key = keyName(child);
     if (seen.has(key)) continue;
     const field = fieldOf(key, child.value);

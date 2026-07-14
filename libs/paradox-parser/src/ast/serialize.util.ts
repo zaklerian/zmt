@@ -95,6 +95,8 @@ function canonicalBody(
       return serializeScript(node, source);
     case 'StringValue':
       return canonicalString(node);
+    case 'SymbolDefinition':
+      return `@${node.name}`;
     case 'SymbolValue':
       return canonicalSymbol(node);
   }

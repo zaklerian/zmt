@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type {
   ParadoxNode,
   Script,
+  SymbolDefinitionNode,
   SymbolValueNode,
 } from './paradox-node.model';
 
@@ -17,8 +18,15 @@ function firstAssignment(script: Script) {
   return child;
 }
 
-function symbolNodes(root: ParadoxNode, out: SymbolValueNode[] = []): SymbolValueNode[] {
-  if (root.kind === 'SymbolValue') out.push(root);
+// Every `@`-bearing node, definitions (SymbolDefinition keys) and references
+// (SymbolValue values) alike.
+function symbolNodes(
+  root: ParadoxNode,
+  out: (SymbolDefinitionNode | SymbolValueNode)[] = [],
+): (SymbolDefinitionNode | SymbolValueNode)[] {
+  if (root.kind === 'SymbolValue' || root.kind === 'SymbolDefinition') {
+    out.push(root);
+  }
   if (root.kind === 'Assignment') {
     symbolNodes(root.key, out);
     symbolNodes(root.value, out);
@@ -51,14 +59,15 @@ describe('substitution constants (ADR 022)', () => {
     expect(source.slice(reference.from, reference.to)).toBe('@1933');
   });
 
-  it('models the definition key as a SymbolValue node carrying the stripped name', () => {
+  it('models the definition key as a distinct SymbolDefinition node (declaration, not a reference)', () => {
     const script = parse('@FTR_START = -5\n');
     const definition = firstAssignment(script);
 
-    expect(definition.key.kind).toBe('SymbolValue');
-    if (definition.key.kind !== 'SymbolValue') return;
+    // A definition key is a SymbolDefinition, structurally distinct from a
+    // SymbolValue reference — the property extractors rely on to skip it.
+    expect(definition.key.kind).toBe('SymbolDefinition');
+    if (definition.key.kind !== 'SymbolDefinition') return;
     expect(definition.key.name).toBe('FTR_START');
-    expect(definition.key.resolved).toBe('-5');
   });
 
   it('resolves a reference that precedes its definition (per-file table, not lazy)', () => {

@@ -12,15 +12,27 @@ verbatim byte-slice. It is additive to ADR 019 and ADR 020 and amends neither._
 
 The `@` sigil is overloaded across three syntaxes that share nothing but the character:
 
-| Syntax                          | Meaning                                            | Current handling                                     |
+| Syntax                          | Meaning                                            | Handling before this ticket (ZMT-E24)                |
 | ------------------------------- | -------------------------------------------------- | ---------------------------------------------------- |
 | `@NAME = 2` / `y = @NAME`       | substitution constant — definition and reference, resolved at load | **not tokenized; the sigil is dropped by error recovery** |
-| `@[ expr ]`                     | bracket arithmetic                                 | tokenized as `BracketExpression`, gated by the `hoi4_bracket_expr` dialect |
-| `variable@token`                | runtime dynamic indexing (e.g. `ai_variant_level@fighter_equipment`) | lexes as a plain `Identifier` — correct              |
+| `@[ expr ]`                     | bracket arithmetic                                 | tokenized as `BracketExpression`, gated by the `hoi4_bracket_expr` dialect — correct |
+| `variable@token`                | runtime dynamic indexing (e.g. `ai_variant_level@fighter_equipment`) | **also broken**: recovers as `variable` (Identifier) + an error token for `@` + a spurious `token = …` assignment — NOT a single Identifier |
 
-Only the first is unhandled, and it is not a technology-specific construct — it appears
-throughout `common/`. In `common/technologies` alone it is **1,827 definitions and 5,351
-use-sites across 46 files**, the most-used symbol carrying 258 use-sites.
+**Correction (ZMT-E24).** An earlier draft of this table asserted `variable@token`
+"lexes as a plain `Identifier` — correct". That was an unverified inference, and it was
+wrong: the `Identifier` rule `$[A-Za-z_] $[A-Za-z0-9_]*` never admitted `@`, so the
+interior `@` recovered as an error token and split the run into a spurious assignment. This
+is the same category of mistake the section below names — a passing test read as "we
+understood the file" — reproduced in this document's own prose. **Two silent parse defects
+are fixed by ZMT-E24, not one:** the dropped substitution sigil AND the split of interior-`@`
+identifiers. The implementation makes the "single Identifier" claim true (interior `@` is
+admitted into the `Identifier` token); it does not preserve a behaviour that already held.
+
+Two of the three syntaxes were mishandled — substitution constants (silently dropped) and
+`variable@token` (split with an error token) — and the construct is not technology-specific:
+it appears throughout `common/`. In `common/technologies` alone the substitution form is
+**1,827 definitions and 5,351 use-sites across 46 files**, the most-used symbol carrying 258
+use-sites.
 
 **What the parser does today (verified against `libs/paradox-parser/src/cst/paradox.grammar`,
 `libs/e-game-hoi4/src/technology/extract-technologies.util.ts`, and
@@ -65,10 +77,15 @@ Model a substitution reference as a first-class value whose resolved literal is 
 sees and whose symbolic origin is preserved for the one consumer that needs it.
 
 1. **Grammar.** A dedicated token for substitution constants, in both definition (`@NAME = …`)
-   and reference (`… = @NAME`) forms. It must not collide with `@[ expr ]` or with
-   `variable@token`, where the sigil is significant **only in leading position** — the new
-   token matches `@` followed immediately by a name/number, and neither `@[` (already the
-   bracket-expression token) nor a `@` interior to an identifier is affected.
+   and reference (`… = @NAME`) forms. It must not collide with `@[ expr ]` — the new token
+   matches `@` followed immediately by a name character, so it never claims `@[` (the next
+   char is `[`), which stays the dialect-gated bracket-expression token. It must also not
+   split `variable@token`: because the pre-ticket `Identifier` rule excluded `@`, that run was
+   NOT a single identifier (it recovered as `variable` + an error token + a spurious
+   assignment — see the Context correction). This ticket admits `@` as an interior identifier
+   character (`$[A-Za-z_] $[A-Za-z0-9_@]*`), so `variable@token` lexes as one `Identifier`; the
+   sigil is significant **only in leading position**, where the new substitution token claims
+   it and `Identifier`, which never starts with `@`, does not.
 
 2. **AST.** The reference node carries the symbol name (sigil stripped) and the verbatim source
    byte range. The AST does **not** lose the `@`. Serialization remains a verbatim byte-slice;
@@ -100,6 +117,19 @@ sees and whose symbolic origin is preserved for the one consumer that needs it.
    inlining a symbol's last value at every call site on delete — is a separate decision, not
    this one.
 
+7. **A symbol definition is a declaration, not an entity field.** A definition (`@x = 1`)
+   parses to a distinct `SymbolDefinition` key node and is **never** projected into an
+   `EntityField`. Two classes of extractor read scalars: those keyed by a **fixed allow-list**
+   (technology's `ROOT_KEYS` / `PATH_KEYS` / `POSITION_KEYS`, …) are immune by construction —
+   a symbol name is never a member of a modeled key set — and those that read an **open key
+   space** (`module`, `state`, `character`, `ideology`, which project every scalar leaf of a
+   prop-bag). The open readers must skip `SymbolDefinition` nodes **explicitly**. This is
+   stated as a rule rather than left to the data because the alternative is a guarantee that
+   holds only as long as no mod author writes a definition inside a modeled block; were an
+   open reader to project `@x = 1` as a field named `x`, an edit would splice a literal over
+   the value byte-range while the sigil — now a real node outside that range — survived by
+   accident, reintroducing exactly the class of latent corruption this ADR removes.
+
 This decision is additive to ADR 019 (the write path it relies on) and ADR 020 (the read-side
 recognizer registry): neither is amended. The optional `symbol` field rides the existing
 `EntityField` through both without changing their contracts.
@@ -117,6 +147,10 @@ recognizer registry): neither is amended. The optional `symbol` field rides the 
 - The per-file symbol table is the natural home for a future symbol editor and for
   inline-on-delete (a multi-site rewrite bounded to one file), so the mechanism this decision
   introduces is the same one those features will extend.
+- A symbol definition can never leak into an editable field (decision 7): the `SymbolDefinition`
+  node kind makes "declaration, not field" a structural property, so the open-key-space
+  extractors reject definitions by construction rather than by hoping a mod never writes one
+  inside a modeled block.
 
 **Negative / accepted**
 
@@ -155,11 +189,23 @@ implementation ships only when:
 
 1. Every existing parser, extractor, delta-util, form-descriptor, and write-service spec is
    green and **unchanged**.
-2. All 46 `common/technologies/*.txt` files round-trip byte-identically through parse →
-   serialize.
-3. An unmodified write through `entity-mutation.service` is byte-identical on all 46.
+2. Round-trip byte-identity through parse → serialize on the real corpus. **Cannot be run in
+   this repo: no `common/technologies/*.txt` corpus is vendored** (the grounding pass ran
+   against external data). The in-repo fixture proves the grammar handles the constructs
+   losslessly — NOT that the fix holds across the real corpus. This gate stays an outstanding
+   verification, to be run against a real mod, and must not be reported as satisfied by a
+   "holds by construction" argument — that is precisely the reasoning that let the original
+   defect survive a full data-grounding sprint (see Context).
+3. An unmodified write through `entity-mutation.service` is byte-identical on the real corpus.
+   Same limitation as gate 2: not runnable in-repo; the in-repo fixture exercises an unmodified
+   write for byte-identity, the real corpus does not exist here. Outstanding.
 4. A technology whose source is `position = { x = @FTR_START y = @1933 }` extracts with `x` =
    the resolved value and `symbol.name = "FTR_START"`, and `y` = the resolved value and
    `symbol.name = "1933"`.
-5. Specs prove `@[ expr ]` and `variable@token` behaviour is unchanged.
+5. Specs prove `variable@token` lexes as a single `Identifier`, and `@[ expr ]` behaviour is
+   unchanged. (The earlier "`variable@token` unchanged" wording was self-contradictory:
+   satisfying it literally would have meant preserving the split-with-error-token bug — see the
+   Context correction.)
 6. A reference with no same-file definition produces a diagnostic.
+7. Open-key-space extractors (`module`, `state`, `character`, `ideology`) project no field for
+   a `SymbolDefinition`, whether the definition sits at file root or inside a modeled block.

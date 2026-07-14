@@ -96,7 +96,14 @@ function moduleScalars(
   const excluded = new Set<string>([KEY_CATEGORY, keyName(entry)]);
   const fields: EntityField[] = [];
   for (const child of block.children) {
-    if (child.kind !== 'Assignment' || excluded.has(keyName(child))) {
+    // A symbol DEFINITION is a declaration, never a field: an open key-space
+    // reader must skip it explicitly or it would surface `@x = 1` as an editable
+    // field named `x` (ADR 022, decision 7).
+    if (
+      child.kind !== 'Assignment' ||
+      child.key.kind === 'SymbolDefinition' ||
+      excluded.has(keyName(child))
+    ) {
       continue;
     }
     const field = fieldOf(keyName(child), child.value);
@@ -128,7 +135,8 @@ function nestedScalarFields(
   }
   const fields: EntityField[] = [];
   for (const child of assignment.value.children) {
-    if (child.kind !== 'Assignment') {
+    // Skip symbol definitions — declarations, not fields (ADR 022, decision 7).
+    if (child.kind !== 'Assignment' || child.key.kind === 'SymbolDefinition') {
       continue;
     }
     const field = fieldOf(keyName(child), child.value);

@@ -1,5 +1,5 @@
 export interface AssignmentNode extends NodeBase {
-  key: IdentifierNode | StringValueNode | SymbolValueNode;
+  key: IdentifierNode | StringValueNode | SymbolDefinitionNode;
   kind: 'Assignment';
   operator: OperatorNode;
   value: ParadoxValue;
@@ -61,6 +61,7 @@ export type ParadoxNode =
   | OrphanComment
   | ScriptNode
   | StringValueNode
+  | SymbolDefinitionNode
   | SymbolValueNode;
 
 export type ParadoxValue =
@@ -94,6 +95,20 @@ export interface StringValueNode extends NodeBase {
   value: string;
 }
 
+// A substitution-constant DEFINITION in key position (`@1936 = 4`). Distinct
+// from SymbolValueNode (a reference, in value position) so "a definition is a
+// declaration, not a field" is a structural property, not a positional
+// convention — extractors that read an open key space skip this kind explicitly
+// (ADR 022, decision 7). It never appears as a value, only as an AssignmentNode
+// key; its RHS populates the file's symbol table.
+export interface SymbolDefinitionNode extends NodeBase {
+  kind: 'SymbolDefinition';
+  // The constant's name with the leading `@` stripped (`@1936` → "1936"). The
+  // verbatim `@1936` is `source.slice(from, to)`; serialization stays a
+  // byte-slice, so the sigil is never lost.
+  name: string;
+}
+
 export interface SymbolValueNode extends NodeBase {
   kind: 'SymbolValue';
   // The substitution-constant name with the leading `@` stripped (`@1933` →
@@ -101,11 +116,10 @@ export interface SymbolValueNode extends NodeBase {
   // `source.slice(from, to)`; serialization stays a byte-slice, so the `@` is
   // never lost from the file even though the AST name drops it.
   name: string;
-  // The constant's literal value from the file's per-file symbol table: for a
-  // reference (value position) the resolved definition RHS; for a definition
-  // node (key position) its own RHS. `null` when no same-file definition exists
-  // — the resolver records a parse diagnostic rather than inventing a fallback
-  // (ADR 022, decisions 3 and 5).
+  // The referenced constant's resolved literal, looked up in the file's per-file
+  // symbol table (the matching definition's RHS). `null` when no same-file
+  // definition exists — the resolver records a parse diagnostic rather than
+  // inventing a fallback (ADR 022, decisions 3 and 5).
   resolved: null | string;
 }
 

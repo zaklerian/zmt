@@ -165,7 +165,14 @@ function rawValueOf(value: ParadoxValue): string | undefined {
 function scalarLeaves(block: BlockNode): readonly EntityField[] {
   const fields: EntityField[] = [];
   for (const child of block.children) {
-    if (child.kind !== 'Assignment' || child.value.kind === 'Block') continue;
+    // Skip symbol definitions — declarations, not fields (ADR 022, decision 7).
+    if (
+      child.kind !== 'Assignment' ||
+      child.key.kind === 'SymbolDefinition' ||
+      child.value.kind === 'Block'
+    ) {
+      continue;
+    }
     const field = fieldOf(keyName(child), child.value);
     if (field !== undefined) fields.push(field);
   }

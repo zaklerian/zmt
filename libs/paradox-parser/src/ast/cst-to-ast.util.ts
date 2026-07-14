@@ -15,6 +15,7 @@ import type {
   Script,
   ScriptChild,
   StringValueNode,
+  SymbolDefinitionNode,
   SymbolValueNode,
   Trivia,
 } from './paradox-node.model';
@@ -236,16 +237,17 @@ function adaptIdentifier(node: SyntaxNode, source: string): IdentifierNode {
 function adaptKey(
   node: SyntaxNode,
   source: string,
-): IdentifierNode | StringValueNode | SymbolValueNode {
+): IdentifierNode | StringValueNode | SymbolDefinitionNode {
   const inner = node.firstChild ?? node;
   if (inner.name === 'StringValue') {
     return adaptString(inner, source);
   }
-  // A substitution-constant definition (`@1936 = 4`) keeps its `@NAME` key as a
-  // SymbolValue node so the resolver can populate the file's symbol table from
-  // it (ADR 022, decision 2).
+  // A substitution-constant definition (`@1936 = 4`) adapts its `@NAME` key to a
+  // SymbolDefinition node — a declaration, distinct from a reference — so the
+  // resolver populates the file's symbol table from it and open-key-space
+  // extractors can skip it by kind (ADR 022, decisions 2 and 7).
   if (inner.name === 'SymbolValue') {
-    return adaptSymbol(inner, source);
+    return adaptSymbolDefinition(inner, source);
   }
   // A numeric key (e.g. a `naval_base` province id, `1234 = 1`) adapts to an
   // Identifier node carrying the raw digits as its name — adaptIdentifier slices
@@ -331,6 +333,22 @@ function adaptSymbol(node: SyntaxNode, source: string): SymbolValueNode {
     leadingTrivia: [],
     name: raw.slice(1),
     resolved: null,
+    to: node.to,
+    trailingTrivia: [],
+  };
+}
+
+function adaptSymbolDefinition(
+  node: SyntaxNode,
+  source: string,
+): SymbolDefinitionNode {
+  const raw = source.slice(node.from, node.to);
+  return {
+    dirty: false,
+    from: node.from,
+    kind: 'SymbolDefinition',
+    leadingTrivia: [],
+    name: raw.slice(1),
     to: node.to,
     trailingTrivia: [],
   };
@@ -609,8 +627,9 @@ function resolveSymbols(
     for (const child of children) {
       if (child.kind === 'OrphanComment') continue;
       if (child.kind === 'Assignment') {
-        if (child.key.kind === 'SymbolValue') {
-          symbols.push(child.key);
+        // A definition key populates the table; it is a declaration, never a
+        // reference, so it is not itself resolved or diagnosed.
+        if (child.key.kind === 'SymbolDefinition') {
           definitions.set(
             child.key.name,
             source.slice(child.value.from, child.value.to),
