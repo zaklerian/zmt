@@ -42,6 +42,7 @@ Each ADR follows a consistent structure:
 | 019 | [Atomic batched scoped deltas for entity writes](019-atomic-batched-entity-writes.md)                     | Accepted |
 | 020 | [Read-side recognizer registry](020-read-side-recognizer-registry.md)                                     | Accepted |
 | 021 | [Technology's intentionally thin editable surface](021-technology-thin-editable-surface.md)               | Accepted |
+| 022 | [Paradox `@` substitution-symbol model](022-paradox-symbol-model.md)                                       | Accepted |
 
 ## Amendments
 
