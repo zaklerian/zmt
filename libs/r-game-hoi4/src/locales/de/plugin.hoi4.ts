@@ -317,5 +317,12 @@ export const de: typeof en = {
         xor: 'Gegenseitig ausschließend (xor)',
       },
     },
+    symbolWarning: {
+      cancel: 'Abbrechen',
+      confirm: 'Trotzdem speichern',
+      message:
+        'Beim Speichern werden diese Substitutionskonstanten durch einfache Literale ersetzt, wodurch die Bindung an dieser Stelle verloren geht:',
+      title: 'Substitutionskonstanten ersetzen?',
+    },
   },
 };

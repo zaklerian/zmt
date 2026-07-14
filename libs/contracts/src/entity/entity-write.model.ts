@@ -27,6 +27,11 @@ export interface EntityDeleteRequest {
 
 export interface EntityField {
   readonly key: string;
+  // Present iff the source wrote a `@NAME` substitution reference for this field
+  // (ADR 022, decision 4). Additive and optional: `value` still carries the
+  // RESOLVED literal, so every existing reader is unaffected; only the save-time
+  // warning reads `symbol`, to name the constant a literal edit would replace.
+  readonly symbol?: { readonly name: string };
   // Intentional asymmetry (ZMT-13.1): an absent value (`null`) marks a bare
   // value-list token (e.g. a `traits` entry), serialized as the token alone; ANY
   // value, including the empty string `""`, serializes as `key = value`. `""` is a

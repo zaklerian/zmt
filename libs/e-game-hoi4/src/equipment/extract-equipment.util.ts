@@ -161,11 +161,15 @@ function isAffirmative(value: ParadoxValue): boolean {
 }
 
 function keyName(assignment: AssignmentNode): string {
-  return assignment.key.kind === 'Identifier'
-    ? assignment.key.name
-    : assignment.key.value;
+  return assignment.key.kind === 'StringValue'
+    ? assignment.key.value
+    : assignment.key.name;
 }
 
+// `EquipmentScalar` (unlike `EntityField`) carries no `symbol` slot and its
+// contract is out of scope here (ADR 022 touches only `EntityField`), so a
+// `@NAME` reference resolves to its literal value with no symbolic origin
+// recorded — the resolved value is still correct, never the sigil-stripped name.
 function scalarValueOf(value: ParadoxValue): string | undefined {
   switch (value.kind) {
     case 'BooleanValue':
@@ -178,6 +182,8 @@ function scalarValueOf(value: ParadoxValue): string | undefined {
       return value.raw;
     case 'StringValue':
       return value.value;
+    case 'SymbolValue':
+      return value.resolved ?? `@${value.name}`;
     default:
       return undefined;
   }
@@ -189,6 +195,9 @@ function tokenOf(node: BlockChild): string | undefined {
   }
   if (node.kind === 'StringValue') {
     return node.value;
+  }
+  if (node.kind === 'SymbolValue') {
+    return node.resolved ?? `@${node.name}`;
   }
   return undefined;
 }

@@ -14,6 +14,7 @@ import {
   fieldName,
   FieldSpec,
   ListOfScalarsBlock,
+  ModalConfirmOptions,
   OBJECT_LIST_ITEM_INDEX_KEY,
   ObjectListBlock,
   ObjectListField,
@@ -29,6 +30,7 @@ import {
   TECHNOLOGY_ROOT_SPECS,
 } from './known-technology-keys.const';
 import {
+  collectSymbolReplacements,
   computeTechnologyDeltas,
   TechnologyListSnapshot,
   TechnologyObjectListSnapshot,
@@ -187,8 +189,28 @@ function project(
     await api.entity.write({ deltas, entityName: token, modId, relativePath });
   };
 
+  // Changing a field bound to a `@NAME` substitution constant writes a literal
+  // and breaks the binding at this call site — intended, but never silent (ADR
+  // 022, decision 6). Names each replaced constant and its replacing literal.
+  const confirmBeforeSave = (
+    values: EntityFormValues,
+  ): ModalConfirmOptions | null => {
+    const replacements = collectSymbolReplacements(snapshot, values);
+    if (replacements.length === 0) return null;
+    const list = replacements
+      .map((replacement) => `@${replacement.name} → ${replacement.literal}`)
+      .join(', ');
+    return {
+      cancelLabel: translate('plugin.hoi4:technology.symbolWarning.cancel'),
+      confirmLabel: translate('plugin.hoi4:technology.symbolWarning.confirm'),
+      message: `${translate('plugin.hoi4:technology.symbolWarning.message')} ${list}`,
+      title: translate('plugin.hoi4:technology.symbolWarning.title'),
+    };
+  };
+
   return {
     blocks,
+    confirmBeforeSave,
     dialogTitle: token,
     errorMessage: (code) => translate(technologyErrorMessageKey(code)),
     errorTitle: translate('plugin.hoi4:technology.errors.title'),

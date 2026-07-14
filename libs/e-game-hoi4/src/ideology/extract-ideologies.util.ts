@@ -73,13 +73,25 @@ function allScalars(block: BlockNode): readonly EntityField[] {
   const seen = new Set<string>();
   for (const child of block.children) {
     if (child.kind !== 'Assignment' || child.value.kind === 'Block') continue;
-    const value = rawValueOf(child.value);
-    if (value !== undefined && !seen.has(keyName(child))) {
-      seen.add(keyName(child));
-      fields.push({ key: keyName(child), value });
+    const key = keyName(child);
+    if (seen.has(key)) continue;
+    const field = fieldOf(key, child.value);
+    if (field !== undefined) {
+      seen.add(key);
+      fields.push(field);
     }
   }
   return fields;
+}
+
+// A `@NAME` reference lowers to its resolved literal while carrying its symbolic
+// origin on the field (ADR 022); other values map to a plain field.
+function fieldOf(key: string, value: ParadoxValue): EntityField | undefined {
+  const raw = rawValueOf(value);
+  if (raw === undefined) return undefined;
+  return value.kind === 'SymbolValue'
+    ? { key, symbol: { name: value.name }, value: raw }
+    : { key, value: raw };
 }
 
 function findBlock(block: BlockNode, key: string): BlockNode | undefined {
@@ -96,9 +108,9 @@ function findBlock(block: BlockNode, key: string): BlockNode | undefined {
 }
 
 function keyName(assignment: AssignmentNode): string {
-  return assignment.key.kind === 'Identifier'
-    ? assignment.key.name
-    : assignment.key.value;
+  return assignment.key.kind === 'StringValue'
+    ? assignment.key.value
+    : assignment.key.name;
 }
 
 // The block's scalar leaves restricted to the modeled keys, in modeled order —
@@ -107,18 +119,18 @@ function modeledScalars(
   block: BlockNode,
   keys: readonly string[],
 ): readonly EntityField[] {
-  const byKey = new Map<string, string>();
+  const byKey = new Map<string, EntityField>();
   for (const child of block.children) {
     if (child.kind !== 'Assignment' || child.value.kind === 'Block') continue;
-    const value = rawValueOf(child.value);
-    if (value !== undefined && !byKey.has(keyName(child))) {
-      byKey.set(keyName(child), value);
-    }
+    const key = keyName(child);
+    if (byKey.has(key)) continue;
+    const field = fieldOf(key, child.value);
+    if (field !== undefined) byKey.set(key, field);
   }
   const fields: EntityField[] = [];
   for (const key of keys) {
-    const value = byKey.get(key);
-    if (value !== undefined) fields.push({ key, value });
+    const field = byKey.get(key);
+    if (field !== undefined) fields.push(field);
   }
   return fields;
 }
@@ -137,6 +149,8 @@ function rawValueOf(value: ParadoxValue): string | undefined {
       return value.raw;
     case 'StringValue':
       return value.raw;
+    case 'SymbolValue':
+      return value.resolved ?? `@${value.name}`;
     default:
       return undefined;
   }
@@ -190,6 +204,8 @@ function tokenOf(node: BlockChild): string | undefined {
       return node.raw;
     case 'StringValue':
       return node.value;
+    case 'SymbolValue':
+      return node.resolved ?? `@${node.name}`;
     default:
       return undefined;
   }

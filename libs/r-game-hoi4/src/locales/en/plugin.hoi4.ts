@@ -306,5 +306,12 @@ export const en = {
         xor: 'Mutually exclusive (xor)',
       },
     },
+    symbolWarning: {
+      cancel: 'Cancel',
+      confirm: 'Save anyway',
+      message:
+        'Saving overwrites these substitution constants with plain literals, breaking the binding at this location:',
+      title: 'Replace substitution constants?',
+    },
   },
 };

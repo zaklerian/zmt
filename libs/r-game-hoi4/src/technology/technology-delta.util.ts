@@ -44,6 +44,38 @@ export interface TechnologySnapshot {
   readonly rootKeys: readonly string[];
 }
 
+// One `@NAME` binding a save would overwrite with a literal: the constant's name
+// (sigil stripped) and the literal replacing it at that call site (ADR 022).
+export interface TechnologySymbolReplacement {
+  readonly literal: string;
+  readonly name: string;
+}
+
+// The symbolic bindings this save would overwrite (ADR 022, decision 6): for
+// every field the write will CHANGE whose open-time value came from a `@NAME`
+// substitution constant, the symbol name and the literal replacing it. Reuses
+// computeTechnologyDeltas so it inspects exactly the fields the write touches,
+// matched back to the snapshot's symbolic origins by scope + key. Added and
+// removed fields are irrelevant — only an in-place literal edit breaks a binding.
+export function collectSymbolReplacements(
+  snapshot: TechnologySnapshot,
+  values: Readonly<Record<string, unknown>>,
+): readonly TechnologySymbolReplacement[] {
+  const index = symbolIndex(snapshot);
+  const replacements: TechnologySymbolReplacement[] = [];
+  for (const delta of computeTechnologyDeltas(snapshot, values)) {
+    const scoped = index.get(scopeKey(delta.block));
+    if (scoped === undefined) continue;
+    for (const field of delta.changed) {
+      const symbol = scoped.get(field.key);
+      if (symbol !== undefined) {
+        replacements.push({ literal: field.value ?? '', name: symbol.name });
+      }
+    }
+  }
+  return replacements;
+}
+
 // Diffs every projected surface against its open-time snapshot and collects the
 // non-empty path-scoped deltas. Root scalars target `block: null`; ref-list tokens
 // lower to bare value-list items at a one-element path; object-list items address
@@ -227,6 +259,17 @@ function objectListDeltas(
   return deltas;
 }
 
+// A scope path flattened to a stable string key. Mirrors exactly how
+// computeTechnologyDeltas emits `block`: root → `''`; an object-list item →
+// `name#index`; its nested object → `name#index/nested`. Both the snapshot index
+// and the delta lookup key through this, so they align by construction.
+function scopeKey(block: EntityBlockDelta['block']): string {
+  if (block === null) return '';
+  return block
+    .map((seg) => (typeof seg === 'string' ? seg : `${seg.name}#${seg.index}`))
+    .join('/');
+}
+
 function segment(
   name: string,
   index: number,
@@ -236,6 +279,42 @@ function segment(
 
 function stringValue(value: unknown): string {
   return typeof value === 'string' ? value : '';
+}
+
+// Every symbolic field in the snapshot, indexed by scope key then field key, so
+// a changed delta can be matched back to the `@NAME` its open-time value came
+// from. Ref-lists carry bare tokens (no symbols) and are not indexed.
+function symbolIndex(
+  snapshot: TechnologySnapshot,
+): Map<string, Map<string, { readonly name: string }>> {
+  const index = new Map<string, Map<string, { readonly name: string }>>();
+  const add = (
+    block: EntityBlockDelta['block'],
+    fields: readonly EntityField[],
+  ): void => {
+    const key = scopeKey(block);
+    let scoped = index.get(key);
+    if (scoped === undefined) {
+      scoped = new Map();
+      index.set(key, scoped);
+    }
+    for (const field of fields) {
+      if (field.symbol !== undefined) scoped.set(field.key, field.symbol);
+    }
+  };
+  add(null, snapshot.root);
+  for (const objectList of snapshot.objectLists) {
+    objectList.items.forEach((item, itemIndex) => {
+      add([{ index: itemIndex, name: objectList.name }], item.scalars);
+      if (objectList.nested !== undefined && item.nested !== undefined) {
+        add(
+          [{ index: itemIndex, name: objectList.name }, objectList.nested.name],
+          item.nested,
+        );
+      }
+    });
+  }
+  return index;
 }
 
 function tokensOf(value: unknown): readonly string[] {

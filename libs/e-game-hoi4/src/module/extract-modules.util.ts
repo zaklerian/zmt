@@ -46,6 +46,16 @@ export function extractModules(parsedTarget: Script): readonly ModuleEntity[] {
   return entities;
 }
 
+// A `@NAME` reference lowers to its resolved literal while carrying its symbolic
+// origin on the field (ADR 022); other values map to a plain field.
+function fieldOf(key: string, value: ParadoxValue): EntityField | undefined {
+  const raw = scalarValueOf(value);
+  if (raw === undefined) return undefined;
+  return value.kind === 'SymbolValue'
+    ? { key, symbol: { name: value.name }, value: raw }
+    : { key, value: raw };
+}
+
 function findAssignment(
   block: BlockNode,
   key: string,
@@ -59,9 +69,9 @@ function findAssignment(
 }
 
 function keyName(assignment: AssignmentNode): string {
-  return assignment.key.kind === 'Identifier'
-    ? assignment.key.name
-    : assignment.key.value;
+  return assignment.key.kind === 'StringValue'
+    ? assignment.key.value
+    : assignment.key.name;
 }
 
 function moduleCategory(block: BlockNode): string {
@@ -89,9 +99,9 @@ function moduleScalars(
     if (child.kind !== 'Assignment' || excluded.has(keyName(child))) {
       continue;
     }
-    const value = scalarValueOf(child.value);
-    if (value !== undefined) {
-      fields.push({ key: keyName(child), value });
+    const field = fieldOf(keyName(child), child.value);
+    if (field !== undefined) {
+      fields.push(field);
     }
   }
   return fields;
@@ -121,9 +131,9 @@ function nestedScalarFields(
     if (child.kind !== 'Assignment') {
       continue;
     }
-    const value = scalarValueOf(child.value);
-    if (value !== undefined) {
-      fields.push({ key: keyName(child), value });
+    const field = fieldOf(keyName(child), child.value);
+    if (field !== undefined) {
+      fields.push(field);
     }
   }
   return fields;
@@ -141,6 +151,8 @@ function scalarValueOf(value: ParadoxValue): string | undefined {
       return value.raw;
     case 'StringValue':
       return value.value;
+    case 'SymbolValue':
+      return value.resolved ?? `@${value.name}`;
     default:
       return undefined;
   }
@@ -152,6 +164,9 @@ function tokenOf(node: BlockChild): string | undefined {
   }
   if (node.kind === 'StringValue') {
     return node.value;
+  }
+  if (node.kind === 'SymbolValue') {
+    return node.resolved ?? `@${node.name}`;
   }
   return undefined;
 }

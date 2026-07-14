@@ -74,6 +74,16 @@ export function extractCharacters(
   return entities;
 }
 
+// A `@NAME` reference lowers to its resolved literal while carrying its symbolic
+// origin on the field (ADR 022); other values map to a plain field.
+function fieldOf(key: string, value: ParadoxValue): EntityField | undefined {
+  const raw = rawValueOf(value);
+  if (raw === undefined) return undefined;
+  return value.kind === 'SymbolValue'
+    ? { key, symbol: { name: value.name }, value: raw }
+    : { key, value: raw };
+}
+
 function findAssignment(
   block: BlockNode,
   key: string,
@@ -108,9 +118,9 @@ function isRoleId(name: string): name is CharacterRoleId {
 }
 
 function keyName(assignment: AssignmentNode): string {
-  return assignment.key.kind === 'Identifier'
-    ? assignment.key.name
-    : assignment.key.value;
+  return assignment.key.kind === 'StringValue'
+    ? assignment.key.value
+    : assignment.key.name;
 }
 
 function portraitGroups(block: BlockNode): readonly CharacterPortraitGroup[] {
@@ -141,6 +151,8 @@ function rawValueOf(value: ParadoxValue): string | undefined {
       return value.raw;
     case 'StringValue':
       return value.raw;
+    case 'SymbolValue':
+      return value.resolved ?? `@${value.name}`;
     default:
       return undefined;
   }
@@ -220,8 +232,8 @@ function scalarLeaves(block: BlockNode): readonly EntityField[] {
   const fields: EntityField[] = [];
   for (const child of block.children) {
     if (child.kind !== 'Assignment' || child.value.kind === 'Block') continue;
-    const value = rawValueOf(child.value);
-    if (value !== undefined) fields.push({ key: keyName(child), value });
+    const field = fieldOf(keyName(child), child.value);
+    if (field !== undefined) fields.push(field);
   }
   return fields;
 }
@@ -244,6 +256,8 @@ function tokenOf(node: BlockChild): string | undefined {
       return node.raw;
     case 'StringValue':
       return node.value;
+    case 'SymbolValue':
+      return node.resolved ?? `@${node.name}`;
     default:
       return undefined;
   }

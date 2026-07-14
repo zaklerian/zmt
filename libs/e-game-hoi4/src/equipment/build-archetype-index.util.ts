@@ -74,9 +74,9 @@ function findAssignment(
 }
 
 function keyName(assignment: AssignmentNode): string {
-  return assignment.key.kind === 'Identifier'
-    ? assignment.key.name
-    : assignment.key.value;
+  return assignment.key.kind === 'StringValue'
+    ? assignment.key.value
+    : assignment.key.name;
 }
 
 function tokenOf(node: BlockChild): string | undefined {
@@ -85,6 +85,9 @@ function tokenOf(node: BlockChild): string | undefined {
   }
   if (node.kind === 'StringValue') {
     return node.value;
+  }
+  if (node.kind === 'SymbolValue') {
+    return node.resolved ?? `@${node.name}`;
   }
   return undefined;
 }

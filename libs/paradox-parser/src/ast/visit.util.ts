@@ -42,6 +42,9 @@ function dispatch(node: ParadoxNode, visitors: Visitors): void {
     case 'StringValue':
       visitors.StringValue?.(node);
       return;
+    case 'SymbolValue':
+      visitors.SymbolValue?.(node);
+      return;
   }
 }
 
@@ -63,6 +66,7 @@ function walk(node: ParadoxNode, visitors: Visitors): void {
     case 'Operator':
     case 'OrphanComment':
     case 'StringValue':
+    case 'SymbolValue':
       return;
     case 'Script':
       for (const child of node.children) walk(child, visitors);

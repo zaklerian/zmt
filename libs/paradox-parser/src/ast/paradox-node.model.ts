@@ -1,5 +1,5 @@
 export interface AssignmentNode extends NodeBase {
-  key: IdentifierNode | StringValueNode;
+  key: IdentifierNode | StringValueNode | SymbolValueNode;
   kind: 'Assignment';
   operator: OperatorNode;
   value: ParadoxValue;
@@ -60,7 +60,8 @@ export type ParadoxNode =
   | OperatorNode
   | OrphanComment
   | ScriptNode
-  | StringValueNode;
+  | StringValueNode
+  | SymbolValueNode;
 
 export type ParadoxValue =
   | BlockNode
@@ -68,7 +69,8 @@ export type ParadoxValue =
   | DateValueNode
   | IdentifierNode
   | NumberValueNode
-  | StringValueNode;
+  | StringValueNode
+  | SymbolValueNode;
 
 export interface ParseError {
   from: number;
@@ -90,6 +92,21 @@ export interface StringValueNode extends NodeBase {
   kind: 'StringValue';
   raw: string;
   value: string;
+}
+
+export interface SymbolValueNode extends NodeBase {
+  kind: 'SymbolValue';
+  // The substitution-constant name with the leading `@` stripped (`@1933` →
+  // "1933", `@FTR_START` → "FTR_START"). The verbatim source, sigil included, is
+  // `source.slice(from, to)`; serialization stays a byte-slice, so the `@` is
+  // never lost from the file even though the AST name drops it.
+  name: string;
+  // The constant's literal value from the file's per-file symbol table: for a
+  // reference (value position) the resolved definition RHS; for a definition
+  // node (key position) its own RHS. `null` when no same-file definition exists
+  // — the resolver records a parse diagnostic rather than inventing a fallback
+  // (ADR 022, decisions 3 and 5).
+  resolved: null | string;
 }
 
 export interface Trivia {

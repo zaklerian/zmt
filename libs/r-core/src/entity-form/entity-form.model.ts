@@ -1,3 +1,4 @@
+import { ModalConfirmOptions } from '../modal';
 import { TranslateFn } from '../recognizer';
 import { EntityFormBlock } from './entity-form-block.model';
 
@@ -24,6 +25,14 @@ export interface EntityFormDescriptor {
 // knowledge of its own.
 export interface EntityFormModel {
   readonly blocks: readonly EntityFormBlock[];
+  // Optional save-time gate. Returns the confirm-dialog options to show BEFORE
+  // persisting — e.g. a field bound to a `@NAME` substitution constant that a
+  // literal edit would replace, breaking the binding (ADR 022, decision 6) — or
+  // `null` to save without prompting. The shell shows the confirm and aborts the
+  // save when the user cancels. Descriptor-owned: it names what is being replaced.
+  readonly confirmBeforeSave?: (
+    values: EntityFormValues,
+  ) => ModalConfirmOptions | null;
   // Resolved title for the modal-dialog form chrome (entity name).
   readonly dialogTitle?: string;
   // Resolved error chrome. `errorMessage` maps an IpcError numeric code to a
