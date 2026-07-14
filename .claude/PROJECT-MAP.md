@@ -100,3 +100,4 @@ Electron 3-context app + paired per-game libraries (ADR 010). Renderer (`apps/zm
 | `.claude/skills/` | On-demand task skills: `add-entity-form-descriptor`, `add-ipc-channel`, `add-plugin-contribution`, `retro-format`. |
 | `docs/` | Project docs — ARCHITECTURE, CONTRIBUTING, PROJECT, DEVELOPMENT, ROADMAP, FAQ. |
 | `docs/adr/` | Architectural decision records + `ledger.md` (open/deferred decisions) + `ADR-INDEX.md`. |
+| `docs/retro/` | Per-sprint retrospectives (`S-N-retro.md`), authored via the `retro-format` skill. |
