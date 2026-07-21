@@ -1,0 +1,27 @@
+characters = {
+	my_character = {
+		name = "My Name"
+		portraits = {
+			army = {
+				large = gfx_large
+				small = gfx_small
+			}
+		}
+		advisor = {
+			slot = political_advisor
+			traits = {
+				trait_a
+				trait_b
+			}
+			modifier = {
+				political_power_factor = 0.1
+			}
+			on_add = {
+				log = "advisor added"
+			}
+		}
+		allowed_civil_war = {
+			always = yes
+		}
+	}
+}

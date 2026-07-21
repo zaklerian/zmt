@@ -5,4 +5,5 @@ export default [
   'libs/paradox-parser/vitest.config.mts',
   'libs/e-game-hoi4/vitest.config.mts',
   'libs/r-game-hoi4/vitest.config.mts',
+  'tools/data-grounding/vitest.config.mts',
 ];

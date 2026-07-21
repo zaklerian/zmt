@@ -1,0 +1,28 @@
+state = {
+	id = 1
+	name = "STATE_1"
+	manpower = 1000
+	state_category = rural
+	resources = {
+		oil = 5
+	}
+	buildings = {
+		infrastructure = 3
+		100 = {
+			naval_base = 2
+		}
+	}
+	history = {
+		owner = GER
+		controller = GER
+		add_core_of = GER
+		victory_points = {
+			100
+			5
+		}
+	}
+	provinces = {
+		100
+		101
+	}
+}

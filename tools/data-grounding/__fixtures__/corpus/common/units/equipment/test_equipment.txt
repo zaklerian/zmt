@@ -1,0 +1,13 @@
+equipments = {
+	infantry_equipment_0 = {
+		is_archetype = yes
+		interface_category = interface_category_land
+		type = {
+			infantry
+		}
+		max_organisation = 60
+		resources = {
+			steel = 1
+		}
+	}
+}

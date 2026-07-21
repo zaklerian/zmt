@@ -1,0 +1,19 @@
+ideologies = {
+	my_ideology = {
+		war_impact_on_world_tension = 0.5
+		can_be_boosted = yes
+		types = {
+			my_subtype = {
+				some_modifier = 1
+			}
+		}
+		modifiers = {
+			political_power_factor = 0.2
+		}
+		color = {
+			1
+			2
+			3
+		}
+	}
+}

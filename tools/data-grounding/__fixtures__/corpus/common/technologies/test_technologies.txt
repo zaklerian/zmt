@@ -1,0 +1,35 @@
+technologies = {
+	infantry_weapons = {
+		research_cost = 2.0
+		start_year = 1936
+		folder = {
+			name = infantry_folder
+			position = {
+				x = 0
+				y = 0
+			}
+		}
+		path = {
+			leads_to_tech = infantry_weapons2
+			research_cost_coeff = 1
+		}
+		categories = {
+			infantry_tech
+		}
+		xor = {
+			shotgun_branch
+		}
+		XOR = {
+			smg_branch
+		}
+		sub_technologies = {
+			infantry_at
+		}
+		dependencies = {
+			artillery = 1
+		}
+		ai_will_do = {
+			factor = 1
+		}
+	}
+}

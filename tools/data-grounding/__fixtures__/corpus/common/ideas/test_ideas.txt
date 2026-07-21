@@ -1,0 +1,9 @@
+ideas = {
+	country = {
+		my_idea = {
+			modifier = {
+				stability_factor = 0.1
+			}
+		}
+	}
+}
