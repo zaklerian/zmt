@@ -43,6 +43,7 @@ Each ADR follows a consistent structure:
 | 020 | [Read-side recognizer registry](020-read-side-recognizer-registry.md)                                     | Accepted |
 | 021 | [Technology's intentionally thin editable surface](021-technology-thin-editable-surface.md)               | Accepted |
 | 022 | [Paradox `@` substitution-symbol model](022-paradox-symbol-model.md)                                       | Accepted |
+| 023 | [Data-grounding harness and coverage baseline](023-data-grounding-harness.md)                              | Accepted |
 
 ## Amendments
 
