@@ -1,0 +1,46 @@
+{
+  "name": "data-grounding",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tools/data-grounding/src",
+  "projectType": "application",
+  "tags": ["scope:main", "type:tool"],
+  "targets": {
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "dependsOn": ["paradox-parser:codegen"],
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "bundle": true,
+        "external": ["electron", "electron-store"],
+        "format": ["cjs"],
+        "main": "tools/data-grounding/src/main.ts",
+        "outputPath": "dist/tools/data-grounding",
+        "platform": "node",
+        "tsConfig": "tools/data-grounding/tsconfig.app.json"
+      }
+    },
+    "grounding": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "node dist/tools/data-grounding/main.cjs"
+      }
+    },
+    "update-baseline": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "node dist/tools/data-grounding/main.cjs --update-baseline"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": ["paradox-parser:codegen"],
+      "inputs": ["default", "^default", "{workspaceRoot}/tsconfig.base.json"],
+      "options": {
+        "command": "tsc --noEmit -p tools/data-grounding/tsconfig.app.json"
+      }
+    }
+  }
+}

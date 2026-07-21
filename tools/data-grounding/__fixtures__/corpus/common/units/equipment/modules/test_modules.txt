@@ -1,0 +1,19 @@
+equipment_modules = {
+	my_module = {
+		@local = 5
+		category = special_type
+		gfx = my_gfx
+		add_stats = {
+			reliability = 0.1
+		}
+		build_cost_resources = {
+			steel = @local
+		}
+		gui = {
+			some_gui_key = 1
+		}
+		can_convert_from = {
+			other_module
+		}
+	}
+}

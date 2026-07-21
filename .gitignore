@@ -25,6 +25,10 @@ node_modules
 !.vscode/launch.json
 !.vscode/extensions.json
 
+# data-grounding harness: local corpus pointer + generated report (ADR 023)
+tools/data-grounding/corpus.local.json
+tools/data-grounding/last-report.md
+
 # misc
 /.sass-cache
 /connect.lock
