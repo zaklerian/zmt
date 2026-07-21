@@ -42,7 +42,7 @@ export async function readEquipmentSlots(
     if (current === undefined || current.kind !== 'Assignment') continue;
     if (current.value.kind !== 'Block') continue;
     const name =
-      current.key.kind === 'Identifier' ? current.key.name : current.key.value;
+      current.key.kind === 'StringValue' ? current.key.value : current.key.name;
     if (name === request.entityName) {
       return extractSlots(current.value);
     }

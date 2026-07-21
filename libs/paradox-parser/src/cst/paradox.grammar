@@ -2,7 +2,7 @@
 
 Assignment { Key Operator Value }
 
-Key { Identifier | StringValue | NumberValue }
+Key { Identifier | StringValue | NumberValue | SymbolValue }
 
 Operator {
   Equals | LessEq | LessThan | GreaterEq | GreaterThan | NotEqual
@@ -16,6 +16,7 @@ Value {
   | Identifier
   | Block
   | BracketExpression
+  | SymbolValue
 }
 
 Block { LBrace BlockItem* RBrace }
@@ -31,7 +32,18 @@ BracketExpression { BracketExprToken }
 @skip { whitespace | Comment }
 
 @tokens {
-  Identifier { $[A-Za-z_] $[A-Za-z0-9_]* }
+  // The `@` is a legal interior identifier character: `variable@token` (runtime
+  // dynamic indexing, e.g. `ai_variant_level@fighter_equipment`) is ONE token.
+  // The sigil is only significant in leading position, where SymbolValue claims
+  // it — Identifier never starts with `@`, so the two never collide.
+  Identifier { $[A-Za-z_] $[A-Za-z0-9_@]* }
+
+  // A substitution constant, in definition (`@NAME = …`, key position) and
+  // reference (`… = @NAME`, value position) forms. NAME is one-or-more
+  // name characters after a leading `@`; it may be numeric (`@1933`) or
+  // alphanumeric with underscores (`@FTR_START`). `@[` cannot match (the next
+  // char is `[`, not a name char), so BracketExprToken keeps `@[ expr ]`.
+  SymbolValue { "@" $[A-Za-z0-9_]+ }
 
   StringValue { '"' ( !["\\] | "\\" _ )* '"' }
 

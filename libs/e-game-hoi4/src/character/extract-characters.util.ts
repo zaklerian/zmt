@@ -16,6 +16,8 @@ import type {
   Script,
 } from '@paradox-parser';
 
+import { isSymbolDefinition } from '@paradox-parser';
+
 const CHARACTERS_BLOCK = 'characters';
 const INSTANCE_BLOCK = 'instance';
 const KEY_NAME = 'name';
@@ -74,12 +76,33 @@ export function extractCharacters(
   return entities;
 }
 
+// The single scalar-leaf projection point: a definition is never a field (ADR
+// 022, decision 7 — the skip lives here so every reader inherits it), a `@NAME`
+// reference lowers to its resolved literal carrying its symbolic origin, and any
+// other scalar maps to a plain field.
+function fieldOf(child: AssignmentNode): EntityField | undefined {
+  if (isSymbolDefinition(child)) return undefined;
+  const value = child.value;
+  const raw = rawValueOf(value);
+  if (raw === undefined) return undefined;
+  const key = keyName(child);
+  return value.kind === 'SymbolValue'
+    ? { key, symbol: { name: value.name }, value: raw }
+    : { key, value: raw };
+}
+
 function findAssignment(
   block: BlockNode,
   key: string,
 ): AssignmentNode | undefined {
   for (const child of block.children) {
-    if (child.kind === 'Assignment' && keyName(child) === key) {
+    // A definition (`@name = …`) must not satisfy a modeled-key lookup (ADR 022,
+    // decision 7).
+    if (
+      child.kind === 'Assignment' &&
+      !isSymbolDefinition(child) &&
+      keyName(child) === key
+    ) {
       return child;
     }
   }
@@ -108,9 +131,9 @@ function isRoleId(name: string): name is CharacterRoleId {
 }
 
 function keyName(assignment: AssignmentNode): string {
-  return assignment.key.kind === 'Identifier'
-    ? assignment.key.name
-    : assignment.key.value;
+  return assignment.key.kind === 'StringValue'
+    ? assignment.key.value
+    : assignment.key.name;
 }
 
 function portraitGroups(block: BlockNode): readonly CharacterPortraitGroup[] {
@@ -141,6 +164,8 @@ function rawValueOf(value: ParadoxValue): string | undefined {
       return value.raw;
     case 'StringValue':
       return value.raw;
+    case 'SymbolValue':
+      return value.resolved ?? `@${value.name}`;
     default:
       return undefined;
   }
@@ -220,8 +245,8 @@ function scalarLeaves(block: BlockNode): readonly EntityField[] {
   const fields: EntityField[] = [];
   for (const child of block.children) {
     if (child.kind !== 'Assignment' || child.value.kind === 'Block') continue;
-    const value = rawValueOf(child.value);
-    if (value !== undefined) fields.push({ key: keyName(child), value });
+    const field = fieldOf(child);
+    if (field !== undefined) fields.push(field);
   }
   return fields;
 }
@@ -244,6 +269,8 @@ function tokenOf(node: BlockChild): string | undefined {
       return node.raw;
     case 'StringValue':
       return node.value;
+    case 'SymbolValue':
+      return node.resolved ?? `@${node.name}`;
     default:
       return undefined;
   }

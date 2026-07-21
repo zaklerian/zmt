@@ -12,6 +12,8 @@ import type {
   Script,
 } from '@paradox-parser';
 
+import { isSymbolDefinition } from '@paradox-parser';
+
 // Surfaced read-only on the entity and excluded from the scalar projection. A
 // module's only relation to an archetype is its category matching a slot's
 // allowed categories, checked by the slot designer — modules carry no domain.
@@ -46,12 +48,33 @@ export function extractModules(parsedTarget: Script): readonly ModuleEntity[] {
   return entities;
 }
 
+// The single scalar-leaf projection point: a definition is never a field (ADR
+// 022, decision 7 — the skip lives here so every reader inherits it), a `@NAME`
+// reference lowers to its resolved literal carrying its symbolic origin, and any
+// other scalar maps to a plain field.
+function fieldOf(child: AssignmentNode): EntityField | undefined {
+  if (isSymbolDefinition(child)) return undefined;
+  const value = child.value;
+  const raw = scalarValueOf(value);
+  if (raw === undefined) return undefined;
+  const key = keyName(child);
+  return value.kind === 'SymbolValue'
+    ? { key, symbol: { name: value.name }, value: raw }
+    : { key, value: raw };
+}
+
 function findAssignment(
   block: BlockNode,
   key: string,
 ): AssignmentNode | undefined {
   for (const child of block.children) {
-    if (child.kind === 'Assignment' && keyName(child) === key) {
+    // A definition (`@category = …`) must not satisfy a modeled-key lookup
+    // (ADR 022, decision 7).
+    if (
+      child.kind === 'Assignment' &&
+      !isSymbolDefinition(child) &&
+      keyName(child) === key
+    ) {
       return child;
     }
   }
@@ -59,9 +82,9 @@ function findAssignment(
 }
 
 function keyName(assignment: AssignmentNode): string {
-  return assignment.key.kind === 'Identifier'
-    ? assignment.key.name
-    : assignment.key.value;
+  return assignment.key.kind === 'StringValue'
+    ? assignment.key.value
+    : assignment.key.name;
 }
 
 function moduleCategory(block: BlockNode): string {
@@ -89,9 +112,9 @@ function moduleScalars(
     if (child.kind !== 'Assignment' || excluded.has(keyName(child))) {
       continue;
     }
-    const value = scalarValueOf(child.value);
-    if (value !== undefined) {
-      fields.push({ key: keyName(child), value });
+    const field = fieldOf(child);
+    if (field !== undefined) {
+      fields.push(field);
     }
   }
   return fields;
@@ -121,9 +144,9 @@ function nestedScalarFields(
     if (child.kind !== 'Assignment') {
       continue;
     }
-    const value = scalarValueOf(child.value);
-    if (value !== undefined) {
-      fields.push({ key: keyName(child), value });
+    const field = fieldOf(child);
+    if (field !== undefined) {
+      fields.push(field);
     }
   }
   return fields;
@@ -141,6 +164,8 @@ function scalarValueOf(value: ParadoxValue): string | undefined {
       return value.raw;
     case 'StringValue':
       return value.value;
+    case 'SymbolValue':
+      return value.resolved ?? `@${value.name}`;
     default:
       return undefined;
   }
@@ -152,6 +177,9 @@ function tokenOf(node: BlockChild): string | undefined {
   }
   if (node.kind === 'StringValue') {
     return node.value;
+  }
+  if (node.kind === 'SymbolValue') {
+    return node.resolved ?? `@${node.name}`;
   }
   return undefined;
 }

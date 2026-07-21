@@ -124,7 +124,7 @@ async function loadAndLocate(
     const value = current.value;
     if (value.kind !== 'Block') continue;
     const name =
-      current.key.kind === 'Identifier' ? current.key.name : current.key.value;
+      current.key.kind === 'StringValue' ? current.key.value : current.key.name;
     if (name === entityName) {
       return { absolutePath, block: value, node: current, source };
     }
@@ -261,7 +261,7 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
           continue;
         }
         const name =
-          child.key.kind === 'Identifier' ? child.key.name : child.key.value;
+          child.key.kind === 'StringValue' ? child.key.value : child.key.name;
         if (name !== segmentName) continue;
         if (matches === segmentIndex) {
           childAssignment = child;
@@ -330,7 +330,7 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
     for (const child of target.children) {
       if (child.kind === 'Assignment') {
         const name =
-          child.key.kind === 'Identifier' ? child.key.name : child.key.value;
+          child.key.kind === 'StringValue' ? child.key.value : child.key.name;
         allKeys.add(name);
         if (child.value.kind === 'Block') {
           if (!blockByKey.has(name)) blockByKey.set(name, child);
@@ -419,7 +419,7 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
         let name: null | string = null;
         if (child.kind === 'Assignment') {
           name =
-            child.key.kind === 'Identifier' ? child.key.name : child.key.value;
+            child.key.kind === 'StringValue' ? child.key.value : child.key.name;
         } else if (child.kind === 'Identifier') name = child.name;
         else if (child.kind === 'StringValue') name = child.value;
         else if (child.kind === 'NumberValue' || child.kind === 'DateValue') {

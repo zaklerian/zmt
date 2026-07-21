@@ -13,6 +13,8 @@ import type {
   Script,
 } from '@paradox-parser';
 
+import { isSymbolDefinition } from '@paradox-parser';
+
 import { INTERFACE_CATEGORY_DOMAIN } from './interface-category-domain.const';
 
 // Identity- and classification-bearing keys the extractor already reads. Hoisted
@@ -128,7 +130,13 @@ function entityScalars(
   ]);
   const scalars: EquipmentScalar[] = [];
   for (const child of block.children) {
-    if (child.kind !== 'Assignment' || excluded.has(keyName(child))) {
+    // A definition is a declaration, never a scalar row (ADR 022, decision 7);
+    // `EquipmentScalar` has no `symbol` slot, so it resolves the value only.
+    if (
+      child.kind !== 'Assignment' ||
+      isSymbolDefinition(child) ||
+      excluded.has(keyName(child))
+    ) {
       continue;
     }
     const value = scalarValueOf(child.value);
@@ -144,7 +152,12 @@ function findAssignment(
   key: string,
 ): AssignmentNode | undefined {
   for (const child of block.children) {
-    if (child.kind === 'Assignment' && keyName(child) === key) {
+    // A definition must not satisfy a modeled-key lookup (ADR 022, decision 7).
+    if (
+      child.kind === 'Assignment' &&
+      !isSymbolDefinition(child) &&
+      keyName(child) === key
+    ) {
       return child;
     }
   }
@@ -161,11 +174,15 @@ function isAffirmative(value: ParadoxValue): boolean {
 }
 
 function keyName(assignment: AssignmentNode): string {
-  return assignment.key.kind === 'Identifier'
-    ? assignment.key.name
-    : assignment.key.value;
+  return assignment.key.kind === 'StringValue'
+    ? assignment.key.value
+    : assignment.key.name;
 }
 
+// `EquipmentScalar` (unlike `EntityField`) carries no `symbol` slot and its
+// contract is out of scope here (ADR 022 touches only `EntityField`), so a
+// `@NAME` reference resolves to its literal value with no symbolic origin
+// recorded — the resolved value is still correct, never the sigil-stripped name.
 function scalarValueOf(value: ParadoxValue): string | undefined {
   switch (value.kind) {
     case 'BooleanValue':
@@ -178,6 +195,8 @@ function scalarValueOf(value: ParadoxValue): string | undefined {
       return value.raw;
     case 'StringValue':
       return value.value;
+    case 'SymbolValue':
+      return value.resolved ?? `@${value.name}`;
     default:
       return undefined;
   }
@@ -189,6 +208,9 @@ function tokenOf(node: BlockChild): string | undefined {
   }
   if (node.kind === 'StringValue') {
     return node.value;
+  }
+  if (node.kind === 'SymbolValue') {
+    return node.resolved ?? `@${node.name}`;
   }
   return undefined;
 }

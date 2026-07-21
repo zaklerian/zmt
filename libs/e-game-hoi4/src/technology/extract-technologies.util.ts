@@ -12,6 +12,8 @@ import type {
   Script,
 } from '@paradox-parser';
 
+import { isSymbolDefinition } from '@paradox-parser';
+
 const TECHNOLOGIES_BLOCK = 'technologies';
 const PATH_BLOCK = 'path';
 const FOLDER_BLOCK = 'folder';
@@ -78,6 +80,21 @@ export function extractTechnologies(
   return entities;
 }
 
+// The single scalar-leaf projection point: a definition is never a field (ADR
+// 022, decision 7 — enforced here so every reader, fixed or open, inherits the
+// skip), a `@NAME` reference lowers to its resolved literal carrying its symbolic
+// origin, and any other scalar maps to a plain field.
+function fieldOf(child: AssignmentNode): EntityField | undefined {
+  if (isSymbolDefinition(child)) return undefined;
+  const value = child.value;
+  const raw = rawValueOf(value);
+  if (raw === undefined) return undefined;
+  const key = keyName(child);
+  return value.kind === 'SymbolValue'
+    ? { key, symbol: { name: value.name }, value: raw }
+    : { key, value: raw };
+}
+
 function findBlock(block: BlockNode, key: string): BlockNode | undefined {
   for (const child of block.children) {
     if (
@@ -107,9 +124,9 @@ function folderBlocks(block: BlockNode): readonly TechnologyFolder[] {
 }
 
 function keyName(assignment: AssignmentNode): string {
-  return assignment.key.kind === 'Identifier'
-    ? assignment.key.name
-    : assignment.key.value;
+  return assignment.key.kind === 'StringValue'
+    ? assignment.key.value
+    : assignment.key.name;
 }
 
 function pathBlocks(block: BlockNode): readonly TechnologyPath[] {
@@ -123,7 +140,11 @@ function pathBlocks(block: BlockNode): readonly TechnologyPath[] {
 }
 
 // Scalar values keep their raw source token (quotes included) so a save writes
-// them back byte-identically through the verbatim `key = value` path.
+// them back byte-identically through the verbatim `key = value` path. A `@NAME`
+// reference lowers to its RESOLVED literal (the symbolic origin is carried
+// separately on the field by `fieldOf`); an unresolved reference keeps its
+// verbatim `@NAME` text — the parse diagnostic, not a fabricated value, is the
+// signal (ADR 022, decision 5).
 function rawValueOf(value: ParadoxValue): string | undefined {
   switch (value.kind) {
     case 'BooleanValue':
@@ -136,6 +157,8 @@ function rawValueOf(value: ParadoxValue): string | undefined {
       return value.raw;
     case 'StringValue':
       return value.raw;
+    case 'SymbolValue':
+      return value.resolved ?? `@${value.name}`;
     default:
       return undefined;
   }
@@ -146,18 +169,17 @@ function scalarLeaves(
   block: BlockNode,
   keys: readonly string[],
 ): readonly EntityField[] {
-  const byKey = new Map<string, string>();
+  const byKey = new Map<string, EntityField>();
   for (const child of block.children) {
     if (child.kind !== 'Assignment' || child.value.kind === 'Block') continue;
-    const value = rawValueOf(child.value);
-    if (value !== undefined && !byKey.has(keyName(child))) {
-      byKey.set(keyName(child), value);
-    }
+    const field = fieldOf(child);
+    if (field === undefined || byKey.has(field.key)) continue;
+    byKey.set(field.key, field);
   }
   const fields: EntityField[] = [];
   for (const key of keys) {
-    const value = byKey.get(key);
-    if (value !== undefined) fields.push({ key, value });
+    const field = byKey.get(key);
+    if (field !== undefined) fields.push(field);
   }
   return fields;
 }
@@ -185,6 +207,8 @@ function tokenOf(node: BlockChild): string | undefined {
       return node.raw;
     case 'StringValue':
       return node.value;
+    case 'SymbolValue':
+      return node.resolved ?? `@${node.name}`;
     default:
       return undefined;
   }

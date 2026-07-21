@@ -11,6 +11,8 @@ import type {
   Script,
 } from '@paradox-parser';
 
+import { isSymbolDefinition } from '@paradox-parser';
+
 const STATE_BLOCK = 'state';
 const BUILDINGS_BLOCK = 'buildings';
 const HISTORY_BLOCK = 'history';
@@ -70,6 +72,21 @@ export function extractStates(parsedTarget: Script): readonly StateEntity[] {
   return entities;
 }
 
+// The single scalar-leaf projection point: a definition is never a field (ADR
+// 022, decision 7 — the skip lives here so every reader inherits it), a `@NAME`
+// reference lowers to its resolved literal carrying its symbolic origin, and any
+// other scalar maps to a plain field.
+function fieldOf(child: AssignmentNode): EntityField | undefined {
+  if (isSymbolDefinition(child)) return undefined;
+  const value = child.value;
+  const raw = rawValueOf(value);
+  if (raw === undefined) return undefined;
+  const key = keyName(child);
+  return value.kind === 'SymbolValue'
+    ? { key, symbol: { name: value.name }, value: raw }
+    : { key, value: raw };
+}
+
 function findBlock(block: BlockNode, key: string): BlockNode | undefined {
   for (const child of block.children) {
     if (
@@ -84,9 +101,9 @@ function findBlock(block: BlockNode, key: string): BlockNode | undefined {
 }
 
 function keyName(assignment: AssignmentNode): string {
-  return assignment.key.kind === 'Identifier'
-    ? assignment.key.name
-    : assignment.key.value;
+  return assignment.key.kind === 'StringValue'
+    ? assignment.key.value
+    : assignment.key.name;
 }
 
 // The block's scalar leaves restricted to the modeled keys, in modeled order —
@@ -95,18 +112,17 @@ function modeledScalars(
   block: BlockNode,
   keys: readonly string[],
 ): readonly EntityField[] {
-  const byKey = new Map<string, string>();
+  const byKey = new Map<string, EntityField>();
   for (const child of block.children) {
     if (child.kind !== 'Assignment' || child.value.kind === 'Block') continue;
-    const value = rawValueOf(child.value);
-    if (value !== undefined && !byKey.has(keyName(child))) {
-      byKey.set(keyName(child), value);
-    }
+    const field = fieldOf(child);
+    if (field === undefined || byKey.has(field.key)) continue;
+    byKey.set(field.key, field);
   }
   const fields: EntityField[] = [];
   for (const key of keys) {
-    const value = byKey.get(key);
-    if (value !== undefined) fields.push({ key, value });
+    const field = byKey.get(key);
+    if (field !== undefined) fields.push(field);
   }
   return fields;
 }
@@ -141,6 +157,8 @@ function rawValueOf(value: ParadoxValue): string | undefined {
       return value.raw;
     case 'StringValue':
       return value.raw;
+    case 'SymbolValue':
+      return value.resolved ?? `@${value.name}`;
     default:
       return undefined;
   }
@@ -154,15 +172,23 @@ function scalarLeaves(block: BlockNode): readonly EntityField[] {
   const fields: EntityField[] = [];
   for (const child of block.children) {
     if (child.kind !== 'Assignment' || child.value.kind === 'Block') continue;
-    const value = rawValueOf(child.value);
-    if (value !== undefined) fields.push({ key: keyName(child), value });
+    const field = fieldOf(child);
+    if (field !== undefined) fields.push(field);
   }
   return fields;
 }
 
 function scalarOf(block: BlockNode, key: string): string {
   for (const child of block.children) {
-    if (child.kind !== 'Assignment' || child.value.kind === 'Block') continue;
+    // A definition (`@id = …`) must not satisfy a modeled-key lookup (ADR 022,
+    // decision 7).
+    if (
+      child.kind !== 'Assignment' ||
+      isSymbolDefinition(child) ||
+      child.value.kind === 'Block'
+    ) {
+      continue;
+    }
     if (keyName(child) === key) return rawValueOf(child.value) ?? '';
   }
   return '';
@@ -191,6 +217,8 @@ function tokenOf(node: BlockChild): string | undefined {
       return node.raw;
     case 'StringValue':
       return node.value;
+    case 'SymbolValue':
+      return node.resolved ?? `@${node.name}`;
     default:
       return undefined;
   }

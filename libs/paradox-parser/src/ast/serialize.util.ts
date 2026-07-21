@@ -11,6 +11,7 @@ import type {
   ParadoxNode,
   Script,
   StringValueNode,
+  SymbolValueNode,
   Trivia,
 } from './paradox-node.model';
 
@@ -94,6 +95,10 @@ function canonicalBody(
       return serializeScript(node, source);
     case 'StringValue':
       return canonicalString(node);
+    case 'SymbolDefinition':
+      return `@${node.name}`;
+    case 'SymbolValue':
+      return canonicalSymbol(node);
   }
 }
 
@@ -119,6 +124,12 @@ function canonicalOperator(node: OperatorNode): string {
 
 function canonicalString(node: StringValueNode): string {
   return `"${encodeString(node.value)}"`;
+}
+
+// A substitution reference re-emits its sigil + name (`@FTR_START`). Only reached
+// for a dirtied node; an untouched one round-trips via the verbatim byte-slice.
+function canonicalSymbol(node: SymbolValueNode): string {
+  return `@${node.name}`;
 }
 
 function emitTrivia(trivia: readonly Trivia[]): string {

@@ -15,6 +15,8 @@ import type {
   Script,
   ScriptChild,
   StringValueNode,
+  SymbolDefinitionNode,
+  SymbolValueNode,
   Trivia,
 } from './paradox-node.model';
 
@@ -65,7 +67,7 @@ export function cstToAst(tree: Tree, source: string): Script {
     scriptLeading = leading;
   }
 
-  return {
+  const script: Script = {
     children,
     dirty: false,
     errors,
@@ -75,6 +77,9 @@ export function cstToAst(tree: Tree, source: string): Script {
     to: root.to,
     trailingTrivia: trailing,
   };
+
+  resolveSymbols(script, source, errors);
+  return script;
 }
 
 function adaptAssignment(
@@ -232,10 +237,17 @@ function adaptIdentifier(node: SyntaxNode, source: string): IdentifierNode {
 function adaptKey(
   node: SyntaxNode,
   source: string,
-): IdentifierNode | StringValueNode {
+): IdentifierNode | StringValueNode | SymbolDefinitionNode {
   const inner = node.firstChild ?? node;
   if (inner.name === 'StringValue') {
     return adaptString(inner, source);
+  }
+  // A substitution-constant definition (`@1936 = 4`) adapts its `@NAME` key to a
+  // SymbolDefinition node — a declaration, distinct from a reference — so the
+  // resolver populates the file's symbol table from it and open-key-space
+  // extractors can skip it by kind (ADR 022, decisions 2 and 7).
+  if (inner.name === 'SymbolValue') {
+    return adaptSymbolDefinition(inner, source);
   }
   // A numeric key (e.g. a `naval_base` province id, `1234 = 1`) adapts to an
   // Identifier node carrying the raw digits as its name — adaptIdentifier slices
@@ -312,6 +324,36 @@ function adaptString(node: SyntaxNode, source: string): StringValueNode {
   };
 }
 
+function adaptSymbol(node: SyntaxNode, source: string): SymbolValueNode {
+  const raw = source.slice(node.from, node.to);
+  return {
+    dirty: false,
+    from: node.from,
+    kind: 'SymbolValue',
+    leadingTrivia: [],
+    name: raw.slice(1),
+    resolved: null,
+    to: node.to,
+    trailingTrivia: [],
+  };
+}
+
+function adaptSymbolDefinition(
+  node: SyntaxNode,
+  source: string,
+): SymbolDefinitionNode {
+  const raw = source.slice(node.from, node.to);
+  return {
+    dirty: false,
+    from: node.from,
+    kind: 'SymbolDefinition',
+    leadingTrivia: [],
+    name: raw.slice(1),
+    to: node.to,
+    trailingTrivia: [],
+  };
+}
+
 function adaptValue(
   node: SyntaxNode,
   source: string,
@@ -334,6 +376,8 @@ function adaptValue(
       return adaptNumber(inner, source);
     case 'StringValue':
       return adaptString(inner, source);
+    case 'SymbolValue':
+      return adaptSymbol(inner, source);
     default:
       return adaptIdentifier(inner, source);
   }
@@ -557,6 +601,62 @@ function pushWhitespace(
       to: chunkEnd,
     });
     cursor = chunkEnd;
+  }
+}
+
+// Builds the file's substitution-symbol table and resolves every `@NAME` node
+// against it, in ONE tree walk plus a resolve pass (ADR 022, decision 3). The
+// table is per-file and complete before any reference resolves, so a reference
+// that textually precedes its definition still resolves. A definition's key node
+// resolves to its own RHS; a value-position reference with no same-file
+// definition resolves to `null` and records a parse diagnostic — no invented
+// fallback (decision 5). Nodes are mutated in place (the AST is mutable).
+function resolveSymbols(
+  script: Script,
+  source: string,
+  errors: ParseError[],
+): void {
+  const definitions = new Map<string, string>();
+  const symbols: SymbolValueNode[] = [];
+
+  const visitValue = (value: ParadoxValue): void => {
+    if (value.kind === 'SymbolValue') symbols.push(value);
+    else if (value.kind === 'Block') visitChildren(value.children);
+  };
+  const visitChildren = (children: readonly BlockChild[]): void => {
+    for (const child of children) {
+      if (child.kind === 'OrphanComment') continue;
+      if (child.kind === 'Assignment') {
+        // A definition key populates the table; it is a declaration, never a
+        // reference, so it is not itself resolved or diagnosed.
+        if (child.key.kind === 'SymbolDefinition') {
+          definitions.set(
+            child.key.name,
+            source.slice(child.value.from, child.value.to),
+          );
+        }
+        visitValue(child.value);
+        continue;
+      }
+      // A bare value-list item (a block child that is itself a value) may be a
+      // `@NAME` reference.
+      visitValue(child);
+    }
+  };
+  visitChildren(script.children);
+
+  for (const symbol of symbols) {
+    const resolved = definitions.get(symbol.name);
+    if (resolved === undefined) {
+      symbol.resolved = null;
+      errors.push({
+        from: symbol.from,
+        message: `unresolved substitution reference: @${symbol.name}`,
+        to: symbol.to,
+      });
+      continue;
+    }
+    symbol.resolved = resolved;
   }
 }
 

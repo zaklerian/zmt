@@ -235,6 +235,8 @@ function extractString(value: ParadoxValue): string {
       return value.raw;
     case 'StringValue':
       return value.value;
+    case 'SymbolValue':
+      return value.resolved ?? `@${value.name}`;
   }
 }
 
@@ -261,7 +263,7 @@ function indexAssignments(script: Script): ReadonlyMap<string, AssignmentNode> {
 }
 
 function keyName(key: AssignmentNode['key']): string {
-  return key.kind === 'Identifier' ? key.name : key.value;
+  return key.kind === 'StringValue' ? key.value : key.name;
 }
 
 function makeAssignment(key: string, value: ParadoxValue): AssignmentNode {

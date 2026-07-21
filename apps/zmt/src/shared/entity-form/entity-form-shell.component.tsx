@@ -136,6 +136,12 @@ export function EntityFormShell({
   const submit = async (values: FieldValues): Promise<void> => {
     setPending(true);
     try {
+      // Save-time gate (ADR 022): a descriptor may require confirmation before
+      // an edit overwrites a symbolic binding with a literal. Cancel aborts.
+      const confirmation = model.confirmBeforeSave?.(values as EntityFormValues);
+      if (confirmation != null && !(await modal.confirm(confirmation))) {
+        return;
+      }
       const next = await model.save(values as EntityFormValues);
       methods.reset(next ?? values);
       onSaved?.();

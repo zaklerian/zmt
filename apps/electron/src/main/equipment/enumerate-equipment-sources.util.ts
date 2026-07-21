@@ -55,7 +55,7 @@ async function readReplacePaths(
       continue;
     }
     const key =
-      child.key.kind === 'Identifier' ? child.key.name : child.key.value;
+      child.key.kind === 'StringValue' ? child.key.value : child.key.name;
     if (key !== 'replace_path') {
       continue;
     }
