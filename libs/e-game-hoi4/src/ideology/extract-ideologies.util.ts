@@ -7,6 +7,8 @@ import type {
   Script,
 } from '@paradox-parser';
 
+import { isSymbolDefinition } from '@paradox-parser';
+
 const IDEOLOGIES_BLOCK = 'ideologies';
 const TYPES_BLOCK = 'types';
 const DYNAMIC_FACTION_NAMES_BLOCK = 'dynamic_faction_names';
@@ -72,30 +74,25 @@ function allScalars(block: BlockNode): readonly EntityField[] {
   const fields: EntityField[] = [];
   const seen = new Set<string>();
   for (const child of block.children) {
-    // Skip symbol definitions — declarations, not fields (ADR 022, decision 7).
-    if (
-      child.kind !== 'Assignment' ||
-      child.key.kind === 'SymbolDefinition' ||
-      child.value.kind === 'Block'
-    ) {
-      continue;
-    }
-    const key = keyName(child);
-    if (seen.has(key)) continue;
-    const field = fieldOf(key, child.value);
-    if (field !== undefined) {
-      seen.add(key);
-      fields.push(field);
-    }
+    if (child.kind !== 'Assignment' || child.value.kind === 'Block') continue;
+    const field = fieldOf(child);
+    if (field === undefined || seen.has(field.key)) continue;
+    seen.add(field.key);
+    fields.push(field);
   }
   return fields;
 }
 
-// A `@NAME` reference lowers to its resolved literal while carrying its symbolic
-// origin on the field (ADR 022); other values map to a plain field.
-function fieldOf(key: string, value: ParadoxValue): EntityField | undefined {
+// The single scalar-leaf projection point: a definition is never a field (ADR
+// 022, decision 7 — the skip lives here so every reader inherits it), a `@NAME`
+// reference lowers to its resolved literal carrying its symbolic origin, and any
+// other scalar maps to a plain field.
+function fieldOf(child: AssignmentNode): EntityField | undefined {
+  if (isSymbolDefinition(child)) return undefined;
+  const value = child.value;
   const raw = rawValueOf(value);
   if (raw === undefined) return undefined;
+  const key = keyName(child);
   return value.kind === 'SymbolValue'
     ? { key, symbol: { name: value.name }, value: raw }
     : { key, value: raw };
@@ -129,10 +126,9 @@ function modeledScalars(
   const byKey = new Map<string, EntityField>();
   for (const child of block.children) {
     if (child.kind !== 'Assignment' || child.value.kind === 'Block') continue;
-    const key = keyName(child);
-    if (byKey.has(key)) continue;
-    const field = fieldOf(key, child.value);
-    if (field !== undefined) byKey.set(key, field);
+    const field = fieldOf(child);
+    if (field === undefined || byKey.has(field.key)) continue;
+    byKey.set(field.key, field);
   }
   const fields: EntityField[] = [];
   for (const key of keys) {

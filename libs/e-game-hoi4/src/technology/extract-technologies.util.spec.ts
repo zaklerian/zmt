@@ -43,6 +43,30 @@ describe('extractTechnologies — @ substitution constants (ADR 022 gate 4)', ()
     });
   });
 
+  it('never projects a definition as a field from a FIXED-allow-list reader, even on a key collision (gate 7)', () => {
+    // `@x = 99` is a definition whose name collides with the modeled position key
+    // `x`. A fixed-allow-list reader that skipped definitions only "by
+    // construction" (symbol names never matching a modeled key) would project the
+    // definition's 99 over the real coordinate; the node-kind skip prevents it.
+    const source = [
+      'technologies = {',
+      '\tinfantry = {',
+      '\t\tfolder = {',
+      '\t\t\tposition = { @x = 99 x = 3 y = 7 }',
+      '\t\t}',
+      '\t}',
+      '}',
+      '',
+    ].join('\n');
+    const [technology] = extractTechnologies(parse(source));
+    const position = technology.folders[0].position;
+    const x = position.find((field) => field.key === 'x');
+
+    // The real coordinate, not the definition's 99.
+    expect(x).toEqual({ key: 'x', value: '3' });
+    expect(x?.symbol).toBeUndefined();
+  });
+
   it('leaves a plain literal coordinate free of any symbol', () => {
     const source = [
       'technologies = {',

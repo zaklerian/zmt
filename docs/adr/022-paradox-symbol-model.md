@@ -118,17 +118,20 @@ sees and whose symbolic origin is preserved for the one consumer that needs it.
    this one.
 
 7. **A symbol definition is a declaration, not an entity field.** A definition (`@x = 1`)
-   parses to a distinct `SymbolDefinition` key node and is **never** projected into an
-   `EntityField`. Two classes of extractor read scalars: those keyed by a **fixed allow-list**
-   (technology's `ROOT_KEYS` / `PATH_KEYS` / `POSITION_KEYS`, …) are immune by construction —
-   a symbol name is never a member of a modeled key set — and those that read an **open key
-   space** (`module`, `state`, `character`, `ideology`, which project every scalar leaf of a
-   prop-bag). The open readers must skip `SymbolDefinition` nodes **explicitly**. This is
-   stated as a rule rather than left to the data because the alternative is a guarantee that
-   holds only as long as no mod author writes a definition inside a modeled block; were an
-   open reader to project `@x = 1` as a field named `x`, an edit would splice a literal over
-   the value byte-range while the sigil — now a real node outside that range — survived by
-   accident, reintroducing exactly the class of latent corruption this ADR removes.
+   parses to a distinct `SymbolDefinition` key node and is **never** projected into a field —
+   by **any** reader. The guarantee is enforced by the node kind: a single shared skip
+   (`isSymbolDefinition`) sits at the point where each reader consumes a scalar leaf (its
+   `fieldOf` projection and its modeled-key lookups), so a definition cannot become a field
+   regardless of where it is written or what it is named. The fixed-allow-list vs. open-key-space
+   distinction (technology's `ROOT_KEYS` / `POSITION_KEYS` vs. the `module` / `state` /
+   `character` / `ideology` prop-bags) explains only *why the open readers were the visible
+   risk* — it is **not** the basis of correctness. "Immune by construction" for a fixed reader
+   was true only observationally: the reader was safe because a symbol name happened not to
+   collide with a modeled key, not because it refused definitions. That is immunity by
+   coincidence, and it fails on a real collision path — `@`-var names are frequently numeric
+   (`@1933`) and position keys are numeric, so `@10 = 5` written at a scope a fixed reader scans
+   would project as a field with no test able to see it. The invariant must not depend on names
+   never colliding: no reader projects a `SymbolDefinition`, full stop.
 
 This decision is additive to ADR 019 (the write path it relies on) and ADR 020 (the read-side
 recognizer registry): neither is amended. The optional `symbol` field rides the existing
@@ -148,9 +151,10 @@ recognizer registry): neither is amended. The optional `symbol` field rides the 
   inline-on-delete (a multi-site rewrite bounded to one file), so the mechanism this decision
   introduces is the same one those features will extend.
 - A symbol definition can never leak into an editable field (decision 7): the `SymbolDefinition`
-  node kind makes "declaration, not field" a structural property, so the open-key-space
-  extractors reject definitions by construction rather than by hoping a mod never writes one
-  inside a modeled block.
+  node kind makes "declaration, not field" a structural property enforced by one shared skip at
+  every reader's scalar-consumption point, so EVERY extractor — fixed-allow-list and
+  open-key-space alike — rejects definitions by construction rather than by relying on symbol
+  names never colliding with a modeled key.
 
 **Negative / accepted**
 
@@ -207,5 +211,7 @@ implementation ships only when:
    satisfying it literally would have meant preserving the split-with-error-token bug — see the
    Context correction.)
 6. A reference with no same-file definition produces a diagnostic.
-7. Open-key-space extractors (`module`, `state`, `character`, `ideology`) project no field for
-   a `SymbolDefinition`, whether the definition sits at file root or inside a modeled block.
+7. NO extractor projects a field for a `SymbolDefinition`, whether the definition sits at file
+   root or inside a block. Covered for the open-key-space readers (`module`, `state`,
+   `character`, `ideology`) and — critically, since "immune by construction" is rejected — for a
+   fixed-allow-list reader: `@10 = 5` inside a `position` block projects no `x`/`y` field.

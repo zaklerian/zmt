@@ -12,6 +12,8 @@ import type {
   Script,
 } from '@paradox-parser';
 
+import { isSymbolDefinition } from '@paradox-parser';
+
 // Surfaced read-only on the entity and excluded from the scalar projection. A
 // module's only relation to an archetype is its category matching a slot's
 // allowed categories, checked by the slot designer — modules carry no domain.
@@ -46,11 +48,16 @@ export function extractModules(parsedTarget: Script): readonly ModuleEntity[] {
   return entities;
 }
 
-// A `@NAME` reference lowers to its resolved literal while carrying its symbolic
-// origin on the field (ADR 022); other values map to a plain field.
-function fieldOf(key: string, value: ParadoxValue): EntityField | undefined {
+// The single scalar-leaf projection point: a definition is never a field (ADR
+// 022, decision 7 — the skip lives here so every reader inherits it), a `@NAME`
+// reference lowers to its resolved literal carrying its symbolic origin, and any
+// other scalar maps to a plain field.
+function fieldOf(child: AssignmentNode): EntityField | undefined {
+  if (isSymbolDefinition(child)) return undefined;
+  const value = child.value;
   const raw = scalarValueOf(value);
   if (raw === undefined) return undefined;
+  const key = keyName(child);
   return value.kind === 'SymbolValue'
     ? { key, symbol: { name: value.name }, value: raw }
     : { key, value: raw };
@@ -61,7 +68,13 @@ function findAssignment(
   key: string,
 ): AssignmentNode | undefined {
   for (const child of block.children) {
-    if (child.kind === 'Assignment' && keyName(child) === key) {
+    // A definition (`@category = …`) must not satisfy a modeled-key lookup
+    // (ADR 022, decision 7).
+    if (
+      child.kind === 'Assignment' &&
+      !isSymbolDefinition(child) &&
+      keyName(child) === key
+    ) {
       return child;
     }
   }
@@ -96,17 +109,10 @@ function moduleScalars(
   const excluded = new Set<string>([KEY_CATEGORY, keyName(entry)]);
   const fields: EntityField[] = [];
   for (const child of block.children) {
-    // A symbol DEFINITION is a declaration, never a field: an open key-space
-    // reader must skip it explicitly or it would surface `@x = 1` as an editable
-    // field named `x` (ADR 022, decision 7).
-    if (
-      child.kind !== 'Assignment' ||
-      child.key.kind === 'SymbolDefinition' ||
-      excluded.has(keyName(child))
-    ) {
+    if (child.kind !== 'Assignment' || excluded.has(keyName(child))) {
       continue;
     }
-    const field = fieldOf(keyName(child), child.value);
+    const field = fieldOf(child);
     if (field !== undefined) {
       fields.push(field);
     }
@@ -135,11 +141,10 @@ function nestedScalarFields(
   }
   const fields: EntityField[] = [];
   for (const child of assignment.value.children) {
-    // Skip symbol definitions — declarations, not fields (ADR 022, decision 7).
-    if (child.kind !== 'Assignment' || child.key.kind === 'SymbolDefinition') {
+    if (child.kind !== 'Assignment') {
       continue;
     }
-    const field = fieldOf(keyName(child), child.value);
+    const field = fieldOf(child);
     if (field !== undefined) {
       fields.push(field);
     }

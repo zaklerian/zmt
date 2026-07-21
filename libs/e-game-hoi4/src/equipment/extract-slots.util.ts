@@ -6,6 +6,8 @@ import type {
   ParadoxValue,
 } from '@paradox-parser';
 
+import { isSymbolDefinition } from '@paradox-parser';
+
 const KEY_ALLOWED_CATEGORIES = 'allowed_module_categories';
 const KEY_DEFAULT_MODULES = 'default_modules';
 const KEY_MODULE_SLOTS = 'module_slots';
@@ -43,7 +45,7 @@ function defaultModules(archetype: BlockNode): readonly EntityField[] {
     if (child.kind !== 'Assignment') {
       continue;
     }
-    const field = fieldOf(keyName(child), child.value);
+    const field = fieldOf(child);
     if (field !== undefined) {
       fields.push(field);
     }
@@ -51,11 +53,16 @@ function defaultModules(archetype: BlockNode): readonly EntityField[] {
   return fields;
 }
 
-// A `@NAME` reference lowers to its resolved literal while carrying its symbolic
-// origin on the field (ADR 022); other values map to a plain field.
-function fieldOf(key: string, value: ParadoxValue): EntityField | undefined {
+// The single scalar-leaf projection point: a definition is never a field (ADR
+// 022, decision 7 — the skip lives here so every reader inherits it), a `@NAME`
+// reference lowers to its resolved literal carrying its symbolic origin, and any
+// other scalar maps to a plain field.
+function fieldOf(child: AssignmentNode): EntityField | undefined {
+  if (isSymbolDefinition(child)) return undefined;
+  const value = child.value;
   const raw = scalarValueOf(value);
   if (raw === undefined) return undefined;
+  const key = keyName(child);
   return value.kind === 'SymbolValue'
     ? { key, symbol: { name: value.name }, value: raw }
     : { key, value: raw };
@@ -66,7 +73,12 @@ function findAssignment(
   key: string,
 ): AssignmentNode | undefined {
   for (const child of block.children) {
-    if (child.kind === 'Assignment' && keyName(child) === key) {
+    // A definition must not satisfy a modeled-key lookup (ADR 022, decision 7).
+    if (
+      child.kind === 'Assignment' &&
+      !isSymbolDefinition(child) &&
+      keyName(child) === key
+    ) {
       return child;
     }
   }

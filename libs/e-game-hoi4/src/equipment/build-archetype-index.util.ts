@@ -5,6 +5,8 @@ import type {
   Script,
 } from '@paradox-parser';
 
+import { isSymbolDefinition } from '@paradox-parser';
+
 export function buildArchetypeIndex(
   parsedFiles: readonly Script[],
 ): ReadonlyMap<string, readonly string[]> {
@@ -66,7 +68,12 @@ function findAssignment(
   key: string,
 ): AssignmentNode | undefined {
   for (const child of block.children) {
-    if (child.kind === 'Assignment' && keyName(child) === key) {
+    // A definition must not satisfy a modeled-key lookup (ADR 022, decision 7).
+    if (
+      child.kind === 'Assignment' &&
+      !isSymbolDefinition(child) &&
+      keyName(child) === key
+    ) {
       return child;
     }
   }

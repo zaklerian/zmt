@@ -13,6 +13,8 @@ import type {
   Script,
 } from '@paradox-parser';
 
+import { isSymbolDefinition } from '@paradox-parser';
+
 import { INTERFACE_CATEGORY_DOMAIN } from './interface-category-domain.const';
 
 // Identity- and classification-bearing keys the extractor already reads. Hoisted
@@ -128,7 +130,13 @@ function entityScalars(
   ]);
   const scalars: EquipmentScalar[] = [];
   for (const child of block.children) {
-    if (child.kind !== 'Assignment' || excluded.has(keyName(child))) {
+    // A definition is a declaration, never a scalar row (ADR 022, decision 7);
+    // `EquipmentScalar` has no `symbol` slot, so it resolves the value only.
+    if (
+      child.kind !== 'Assignment' ||
+      isSymbolDefinition(child) ||
+      excluded.has(keyName(child))
+    ) {
       continue;
     }
     const value = scalarValueOf(child.value);
@@ -144,7 +152,12 @@ function findAssignment(
   key: string,
 ): AssignmentNode | undefined {
   for (const child of block.children) {
-    if (child.kind === 'Assignment' && keyName(child) === key) {
+    // A definition must not satisfy a modeled-key lookup (ADR 022, decision 7).
+    if (
+      child.kind === 'Assignment' &&
+      !isSymbolDefinition(child) &&
+      keyName(child) === key
+    ) {
       return child;
     }
   }

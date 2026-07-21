@@ -11,6 +11,8 @@ import type {
   Script,
 } from '@paradox-parser';
 
+import { isSymbolDefinition } from '@paradox-parser';
+
 const STATE_BLOCK = 'state';
 const BUILDINGS_BLOCK = 'buildings';
 const HISTORY_BLOCK = 'history';
@@ -70,11 +72,16 @@ export function extractStates(parsedTarget: Script): readonly StateEntity[] {
   return entities;
 }
 
-// A `@NAME` reference lowers to its resolved literal while carrying its symbolic
-// origin on the field (ADR 022); other values map to a plain field.
-function fieldOf(key: string, value: ParadoxValue): EntityField | undefined {
+// The single scalar-leaf projection point: a definition is never a field (ADR
+// 022, decision 7 — the skip lives here so every reader inherits it), a `@NAME`
+// reference lowers to its resolved literal carrying its symbolic origin, and any
+// other scalar maps to a plain field.
+function fieldOf(child: AssignmentNode): EntityField | undefined {
+  if (isSymbolDefinition(child)) return undefined;
+  const value = child.value;
   const raw = rawValueOf(value);
   if (raw === undefined) return undefined;
+  const key = keyName(child);
   return value.kind === 'SymbolValue'
     ? { key, symbol: { name: value.name }, value: raw }
     : { key, value: raw };
@@ -108,10 +115,9 @@ function modeledScalars(
   const byKey = new Map<string, EntityField>();
   for (const child of block.children) {
     if (child.kind !== 'Assignment' || child.value.kind === 'Block') continue;
-    const key = keyName(child);
-    if (byKey.has(key)) continue;
-    const field = fieldOf(key, child.value);
-    if (field !== undefined) byKey.set(key, field);
+    const field = fieldOf(child);
+    if (field === undefined || byKey.has(field.key)) continue;
+    byKey.set(field.key, field);
   }
   const fields: EntityField[] = [];
   for (const key of keys) {
@@ -165,15 +171,8 @@ function rawValueOf(value: ParadoxValue): string | undefined {
 function scalarLeaves(block: BlockNode): readonly EntityField[] {
   const fields: EntityField[] = [];
   for (const child of block.children) {
-    // Skip symbol definitions — declarations, not fields (ADR 022, decision 7).
-    if (
-      child.kind !== 'Assignment' ||
-      child.key.kind === 'SymbolDefinition' ||
-      child.value.kind === 'Block'
-    ) {
-      continue;
-    }
-    const field = fieldOf(keyName(child), child.value);
+    if (child.kind !== 'Assignment' || child.value.kind === 'Block') continue;
+    const field = fieldOf(child);
     if (field !== undefined) fields.push(field);
   }
   return fields;
@@ -181,7 +180,15 @@ function scalarLeaves(block: BlockNode): readonly EntityField[] {
 
 function scalarOf(block: BlockNode, key: string): string {
   for (const child of block.children) {
-    if (child.kind !== 'Assignment' || child.value.kind === 'Block') continue;
+    // A definition (`@id = …`) must not satisfy a modeled-key lookup (ADR 022,
+    // decision 7).
+    if (
+      child.kind !== 'Assignment' ||
+      isSymbolDefinition(child) ||
+      child.value.kind === 'Block'
+    ) {
+      continue;
+    }
     if (keyName(child) === key) return rawValueOf(child.value) ?? '';
   }
   return '';
