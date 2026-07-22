@@ -1,0 +1,2249 @@
+{
+  "entities": {
+    "character": {
+      "advisor.allowed": {
+        "count": 1564,
+        "example": "common/characters/AFG.txt:58"
+      },
+      "advisor.available": {
+        "count": 1177,
+        "example": "common/characters/AFG.txt:61"
+      },
+      "advisor.on_add": {
+        "count": 2677,
+        "example": "common/characters/AFG.txt:46"
+      },
+      "advisor.on_remove": {
+        "count": 2677,
+        "example": "common/characters/AFG.txt:52"
+      },
+      "advisor.visible": {
+        "count": 101,
+        "example": "common/characters/BEL.txt:27"
+      },
+      "allowed_civil_war": {
+        "count": 105,
+        "example": "common/characters/CRO.txt:19"
+      },
+      "corps_commander.visible": {
+        "count": 4,
+        "example": "common/characters/MAN.txt:118"
+      },
+      "field_marshal.visible": {
+        "count": 1,
+        "example": "common/characters/USA.txt:1851"
+      },
+      "gender": {
+        "count": 7,
+        "example": "common/characters/BHU.txt:201"
+      },
+      "instance.advisor.allowed": {
+        "count": 22,
+        "example": "common/characters/EST.txt:138"
+      },
+      "instance.advisor.available": {
+        "count": 16,
+        "example": "common/characters/EST.txt:141"
+      },
+      "instance.advisor.on_add": {
+        "count": 24,
+        "example": "common/characters/EST.txt:126"
+      },
+      "instance.advisor.on_remove": {
+        "count": 24,
+        "example": "common/characters/EST.txt:132"
+      },
+      "instance.advisor.visible": {
+        "count": 7,
+        "example": "common/characters/SWI.txt:206"
+      },
+      "instance.allowed": {
+        "count": 32,
+        "example": "common/characters/EST.txt:58"
+      },
+      "instance.name": {
+        "count": 32,
+        "example": "common/characters/EST.txt:61"
+      },
+      "instance.portraits": {
+        "count": 32,
+        "example": "common/characters/EST.txt:62"
+      },
+      "navy_leader.visible": {
+        "count": 2,
+        "example": "common/characters/SOV.txt:1165"
+      },
+      "scientist.visible": {
+        "count": 3,
+        "example": "common/characters/BEL.txt:1090"
+      }
+    },
+    "equipment": {
+      "allow_mission_type": {
+        "count": 34,
+        "example": "common/units/equipment/_airframe_cas.txt:36"
+      },
+      "can_be_lend_leased": {
+        "count": 1,
+        "example": "common/units/equipment/floating_harbor.txt:21"
+      },
+      "can_be_produced": {
+        "count": 1,
+        "example": "common/units/equipment/floating_harbor.txt:25"
+      },
+      "can_convert_from": {
+        "count": 330,
+        "example": "common/units/equipment/_airframe_cas.txt:637"
+      },
+      "default_modules": {
+        "count": 119,
+        "example": "common/units/equipment/nrm_ship_hull_capital.txt:372"
+      },
+      "modifier_stat": {
+        "count": 4,
+        "example": "common/units/equipment/repair_ships.txt:58"
+      },
+      "module_count_limit": {
+        "count": 263,
+        "example": "common/units/equipment/nrm_ship_hull_capital.txt:367"
+      },
+      "module_slots": {
+        "count": 337,
+        "example": "common/units/equipment/nrm_ship_hull_capital.txt:13"
+      },
+      "resources": {
+        "count": 1447,
+        "example": "common/units/equipment/_airframe_cas.txt:60"
+      },
+      "upgrades": {
+        "count": 61,
+        "example": "common/units/equipment/_airframe_cas.txt:21"
+      }
+    },
+    "ideology": {
+      "color": {
+        "count": 8,
+        "example": "common/ideologies/00_ideologies.txt:41"
+      }
+    },
+    "module": {
+      "allow_equipment_type": {
+        "count": 47,
+        "example": "common/units/equipment/modules/00_tank_modules.txt:3993"
+      },
+      "allowed_module_categories": {
+        "count": 461,
+        "example": "common/units/equipment/modules/00_ship_modules.txt:63385"
+      },
+      "can_convert_from": {
+        "count": 826,
+        "example": "common/units/equipment/modules/00_ship_modules.txt:25"
+      },
+      "critical_parts": {
+        "count": 1095,
+        "example": "common/units/equipment/modules/00_ship_modules.txt:30"
+      },
+      "forbid_equipment_type": {
+        "count": 24,
+        "example": "common/units/equipment/modules/00_tank_modules.txt:29994"
+      },
+      "forbid_equipment_type_exact_match_for_category": {
+        "count": 3,
+        "example": "common/units/equipment/modules/00_tank_modules.txt:269"
+      },
+      "multiply_stats.naval_speed": {
+        "count": 1,
+        "example": "common/units/equipment/modules/00_ship_modules.txt:2097"
+      }
+    },
+    "state": {
+      "buildings_max_level_factor": {
+        "count": 451,
+        "example": "history/states/104-Bosnia.txt:43"
+      },
+      "history.add_claim_by": {
+        "count": 33,
+        "example": "history/states/118-Gibralter.txt:26"
+      },
+      "history.add_core_of": {
+        "count": 1078,
+        "example": "history/states/1-France.txt:27"
+      },
+      "history.add_dynamic_modifier": {
+        "count": 1,
+        "example": "history/states/28-Alcase.txt:19"
+      },
+      "history.add_extra_state_shared_building_slots": {
+        "count": 8,
+        "example": "history/states/141-Sodermanland.txt:40"
+      },
+      "history.add_state_modifier": {
+        "count": 5,
+        "example": "history/states/219-Moscow Area.txt:30"
+      },
+      "history.buildings": {
+        "count": 947,
+        "example": "history/states/1-France.txt:14"
+      },
+      "history.force_enable_resistance": {
+        "count": 5,
+        "example": "history/states/714-Heilungkiang.txt:25"
+      },
+      "history.set_demilitarized_zone": {
+        "count": 11,
+        "example": "history/states/145-Aland.txt:26"
+      },
+      "history.set_state_flag": {
+        "count": 16,
+        "example": "history/states/526-Okinawa.txt:27"
+      },
+      "history.set_variable": {
+        "count": 1920,
+        "example": "history/states/1-France.txt:23"
+      },
+      "history.start_resistance": {
+        "count": 5,
+        "example": "history/states/714-Heilungkiang.txt:26"
+      },
+      "history.victory_points": {
+        "count": 1545,
+        "example": "history/states/1-France.txt:26"
+      }
+    },
+    "technology": {
+      "acclimatization_cold_climate_gain_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:7181"
+      },
+      "ai_will_do": {
+        "count": 2493,
+        "example": "common/technologies/air_doctrine.txt:52"
+      },
+      "air_accidents_factor": {
+        "count": 4,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:1133"
+      },
+      "air_ace_generation_chance_factor": {
+        "count": 6,
+        "example": "common/technologies/_hidden.txt:1230"
+      },
+      "air_cas_efficiency": {
+        "count": 9,
+        "example": "common/technologies/_hidden.txt:1238"
+      },
+      "air_cas_present_factor": {
+        "count": 10,
+        "example": "common/technologies/_hidden.txt:1239"
+      },
+      "air_detection": {
+        "count": 2,
+        "example": "common/technologies/_hidden.txt:1235"
+      },
+      "air_escort_efficiency": {
+        "count": 4,
+        "example": "common/technologies/_hidden.txt:2207"
+      },
+      "air_fuel_consumption_factor": {
+        "count": 1,
+        "example": "common/technologies/industry.txt:4762"
+      },
+      "air_home_defence_factor": {
+        "count": 2,
+        "example": "common/technologies/ww1_land_doctrine.txt:2973"
+      },
+      "air_intercept_efficiency": {
+        "count": 9,
+        "example": "common/technologies/_hidden.txt:2202"
+      },
+      "air_interception_detect_factor": {
+        "count": 4,
+        "example": "common/technologies/air_doctrine.txt:122"
+      },
+      "air_mission_efficiency": {
+        "count": 2,
+        "example": "common/technologies/_hidden.txt:1231"
+      },
+      "air_nav_efficiency": {
+        "count": 5,
+        "example": "common/technologies/_hidden.txt:2210"
+      },
+      "air_night_penalty": {
+        "count": 1,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:1260"
+      },
+      "air_production_capacity": {
+        "count": 8,
+        "example": "common/technologies/_hidden.txt:1218"
+      },
+      "air_strategic_bomber_bombing_factor": {
+        "count": 12,
+        "example": "common/technologies/_hidden.txt:1236"
+      },
+      "air_strategic_bomber_defence_factor": {
+        "count": 2,
+        "example": "common/technologies/air_doctrine.txt:655"
+      },
+      "air_strategic_bomber_night_penalty": {
+        "count": 3,
+        "example": "common/technologies/_hidden.txt:2206"
+      },
+      "air_superiority_detect_factor": {
+        "count": 5,
+        "example": "common/technologies/_hidden.txt:1234"
+      },
+      "air_superiority_efficiency": {
+        "count": 8,
+        "example": "common/technologies/_hidden.txt:2203"
+      },
+      "air_weather_penalty": {
+        "count": 1,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:1244"
+      },
+      "air_wing_xp_loss_when_killed_factor": {
+        "count": 2,
+        "example": "common/technologies/air_doctrine.txt:1019"
+      },
+      "airborne_artillery_brigade": {
+        "count": 1,
+        "example": "common/technologies/artillery.txt:1240"
+      },
+      "airforce_intel_factor": {
+        "count": 3,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:1699"
+      },
+      "allow": {
+        "count": 398,
+        "example": "common/technologies/_hidden.txt:3"
+      },
+      "allow_branch": {
+        "count": 338,
+        "example": "common/technologies/armor_techs_ENG.txt:58"
+      },
+      "alloy_steel_input": {
+        "count": 1,
+        "example": "common/technologies/civillian.txt:2880"
+      },
+      "alloy_steel_output": {
+        "count": 4,
+        "example": "common/technologies/civillian.txt:2833"
+      },
+      "aluminium_conversion_output": {
+        "count": 4,
+        "example": "common/technologies/_hidden.txt:1224"
+      },
+      "aluminium_energy_cost": {
+        "count": 5,
+        "example": "common/technologies/_hidden.txt:1225"
+      },
+      "american_amph_lv": {
+        "count": 10,
+        "example": "common/technologies/_hidden.txt:95"
+      },
+      "american_amph_lv_assault": {
+        "count": 9,
+        "example": "common/technologies/_hidden.txt:100"
+      },
+      "amph_support": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:7291"
+      },
+      "amphibious_invasion_defence": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:3750"
+      },
+      "amphibious_mechanized": {
+        "count": 10,
+        "example": "common/technologies/_hidden.txt:85"
+      },
+      "amphibious_mechanized_assault": {
+        "count": 9,
+        "example": "common/technologies/_hidden.txt:90"
+      },
+      "anti_air_heavy": {
+        "count": 2,
+        "example": "common/technologies/artillery.txt:883"
+      },
+      "anti_air_heavy_mot": {
+        "count": 2,
+        "example": "common/technologies/artillery.txt:890"
+      },
+      "anti_tank": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:2247"
+      },
+      "anti_tank_brigade": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:2235"
+      },
+      "anti_tank_brigade_med": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:2241"
+      },
+      "anti_tank_brigade_mot": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:2238"
+      },
+      "anti_tank_brigade_mot_med": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:2244"
+      },
+      "anti_tank_mot": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:2250"
+      },
+      "armored_car": {
+        "count": 4,
+        "example": "common/technologies/land_doctrine.txt:498"
+      },
+      "armored_carrier": {
+        "count": 4,
+        "example": "common/technologies/MTG_naval_techs.txt:5486"
+      },
+      "army_artillery_defence_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:3847"
+      },
+      "army_bonus_air_superiority_factor": {
+        "count": 11,
+        "example": "common/technologies/_hidden.txt:2204"
+      },
+      "army_core_attack_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:3566"
+      },
+      "army_core_defence_factor": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:3567"
+      },
+      "army_fuel_capacity_factor": {
+        "count": 4,
+        "example": "common/technologies/civillian.txt:3778"
+      },
+      "army_intel_factor": {
+        "count": 3,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:1697"
+      },
+      "army_morale": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:1969"
+      },
+      "army_morale_factor": {
+        "count": 2,
+        "example": "common/technologies/civillian.txt:249"
+      },
+      "army_retreat_speed_factor": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:4193"
+      },
+      "army_speed_factor": {
+        "count": 8,
+        "example": "common/technologies/_hidden.txt:1241"
+      },
+      "army_strength_factor": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:4551"
+      },
+      "artillery_production_capacity": {
+        "count": 8,
+        "example": "common/technologies/_hidden.txt:1220"
+      },
+      "attrition": {
+        "count": 12,
+        "example": "common/technologies/industry.txt:2996"
+      },
+      "ballistic_missile": {
+        "count": 1,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:3333"
+      },
+      "battle_cruiser": {
+        "count": 13,
+        "example": "common/technologies/MTG_naval_techs.txt:1187"
+      },
+      "battleship": {
+        "count": 13,
+        "example": "common/technologies/MTG_naval_techs.txt:1184"
+      },
+      "camelry": {
+        "count": 12,
+        "example": "common/technologies/_hidden.txt:45"
+      },
+      "cas_damage_reduction": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:3848"
+      },
+      "category_all_air": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:2174"
+      },
+      "category_all_armor": {
+        "count": 25,
+        "example": "common/technologies/_hidden.txt:1515"
+      },
+      "category_all_battleship": {
+        "count": 21,
+        "example": "common/technologies/naval_doctrine.txt:71"
+      },
+      "category_all_carrier": {
+        "count": 22,
+        "example": "common/technologies/naval_doctrine.txt:83"
+      },
+      "category_all_cruiser": {
+        "count": 31,
+        "example": "common/technologies/naval_doctrine.txt:75"
+      },
+      "category_all_destroyer": {
+        "count": 28,
+        "example": "common/technologies/naval_doctrine.txt:79"
+      },
+      "category_all_DIV_HQ": {
+        "count": 23,
+        "example": "common/technologies/civillian.txt:330"
+      },
+      "category_all_engineer": {
+        "count": 5,
+        "example": "common/technologies/support.txt:227"
+      },
+      "category_all_escort": {
+        "count": 12,
+        "example": "common/technologies/naval_doctrine.txt:1021"
+      },
+      "category_all_heavy_anti_air": {
+        "count": 10,
+        "example": "common/technologies/artillery.txt:407"
+      },
+      "category_all_heavy_anti_tank": {
+        "count": 2,
+        "example": "common/technologies/artillery.txt:3009"
+      },
+      "category_all_heavy_artillery": {
+        "count": 2,
+        "example": "common/technologies/artillery.txt:1997"
+      },
+      "category_all_infantry": {
+        "count": 45,
+        "example": "common/technologies/_hidden.txt:2430"
+      },
+      "category_all_light_anti_air": {
+        "count": 3,
+        "example": "common/technologies/artillery.txt:404"
+      },
+      "category_all_light_anti_tank": {
+        "count": 3,
+        "example": "common/technologies/artillery.txt:2597"
+      },
+      "category_all_light_artillery": {
+        "count": 3,
+        "example": "common/technologies/_hidden.txt:1262"
+      },
+      "category_all_logistics": {
+        "count": 4,
+        "example": "common/technologies/_hidden.txt:2157"
+      },
+      "category_all_maintenance": {
+        "count": 3,
+        "example": "common/technologies/support.txt:1567"
+      },
+      "category_all_medium_artillery": {
+        "count": 3,
+        "example": "common/technologies/_hidden.txt:1304"
+      },
+      "category_all_rocket": {
+        "count": 3,
+        "example": "common/technologies/_hidden.txt:1472"
+      },
+      "category_all_signal": {
+        "count": 3,
+        "example": "common/technologies/support.txt:2245"
+      },
+      "category_all_sp_artillery": {
+        "count": 9,
+        "example": "common/technologies/artillery.txt:1131"
+      },
+      "category_all_subs": {
+        "count": 18,
+        "example": "common/technologies/naval_doctrine.txt:87"
+      },
+      "category_all_support_armor": {
+        "count": 22,
+        "example": "common/technologies/_hidden.txt:1524"
+      },
+      "category_all_surface_ship": {
+        "count": 7,
+        "example": "common/technologies/naval_doctrine.txt:3455"
+      },
+      "category_all_tank_anti_air": {
+        "count": 3,
+        "example": "common/technologies/artillery.txt:410"
+      },
+      "category_all_tank_destroyer": {
+        "count": 5,
+        "example": "common/technologies/artillery.txt:2601"
+      },
+      "category_amphibious_mechanized": {
+        "count": 5,
+        "example": "common/technologies/infantry.txt:1398"
+      },
+      "category_army": {
+        "count": 19,
+        "example": "common/technologies/_hidden.txt:1243"
+      },
+      "category_artillery": {
+        "count": 24,
+        "example": "common/technologies/_hidden.txt:1258"
+      },
+      "category_assault_infantry": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:1569"
+      },
+      "category_cas": {
+        "count": 2,
+        "example": "common/technologies/_hidden.txt:2171"
+      },
+      "category_fighter": {
+        "count": 5,
+        "example": "common/technologies/_hidden.txt:2165"
+      },
+      "category_front_line": {
+        "count": 5,
+        "example": "common/technologies/land_doctrine.txt:731"
+      },
+      "category_heavy_armor": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:1676"
+      },
+      "category_heavy_fighter": {
+        "count": 5,
+        "example": "common/technologies/_hidden.txt:2168"
+      },
+      "category_heavy_logistics": {
+        "count": 3,
+        "example": "common/technologies/support.txt:2010"
+      },
+      "category_heavy_tank_artillery": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:1430"
+      },
+      "category_jet": {
+        "count": 2,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:3667"
+      },
+      "category_light_armor": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:1538"
+      },
+      "category_light_infantry": {
+        "count": 17,
+        "example": "common/technologies/_hidden.txt:1246"
+      },
+      "category_light_tank_artillery": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:1346"
+      },
+      "category_line_artillery": {
+        "count": 3,
+        "example": "common/technologies/land_doctrine.txt:2222"
+      },
+      "category_medium_armor": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:1607"
+      },
+      "category_medium_tank_artillery": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:1388"
+      },
+      "category_mobile": {
+        "count": 7,
+        "example": "common/technologies/_hidden.txt:1253"
+      },
+      "category_mobile_recon": {
+        "count": 3,
+        "example": "common/technologies/support.txt:1010"
+      },
+      "category_motmech": {
+        "count": 9,
+        "example": "common/technologies/land_doctrine.txt:32"
+      },
+      "category_nav_bomber": {
+        "count": 2,
+        "example": "common/technologies/MTG_naval_techs.txt:6999"
+      },
+      "category_semimot": {
+        "count": 3,
+        "example": "common/technologies/land_doctrine.txt:369"
+      },
+      "category_special_forces": {
+        "count": 6,
+        "example": "common/technologies/land_doctrine.txt:3015"
+      },
+      "category_strat_bomber": {
+        "count": 2,
+        "example": "common/technologies/air_doctrine.txt:657"
+      },
+      "category_superheavy_armor": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:1745"
+      },
+      "category_support_battalions": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:784"
+      },
+      "category_tac_bomber": {
+        "count": 2,
+        "example": "common/technologies/MTG_naval_techs.txt:7002"
+      },
+      "category_tank_recon": {
+        "count": 7,
+        "example": "common/technologies/_hidden.txt:1128"
+      },
+      "category_tanks": {
+        "count": 29,
+        "example": "common/technologies/_hidden.txt:1532"
+      },
+      "cavalry": {
+        "count": 13,
+        "example": "common/technologies/_hidden.txt:40"
+      },
+      "civilian_fuel_use_factor": {
+        "count": 6,
+        "example": "common/technologies/civillian.txt:3579"
+      },
+      "coastal_bunker_effectiveness_factor": {
+        "count": 10,
+        "example": "common/technologies/industry.txt:2555"
+      },
+      "coastal_submarine": {
+        "count": 4,
+        "example": "common/technologies/MTG_naval_techs.txt:1081"
+      },
+      "combat_engineer": {
+        "count": 3,
+        "example": "common/technologies/_hidden.txt:2253"
+      },
+      "combat_engineer_arm": {
+        "count": 1,
+        "example": "common/technologies/support.txt:569"
+      },
+      "combat_engineer_mech": {
+        "count": 1,
+        "example": "common/technologies/support.txt:554"
+      },
+      "combat_engineer_mot": {
+        "count": 1,
+        "example": "common/technologies/support.txt:539"
+      },
+      "command_power_gain": {
+        "count": 3,
+        "example": "common/technologies/land_doctrine.txt:4861"
+      },
+      "command_power_gain_mult": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:5123"
+      },
+      "commando": {
+        "count": 3,
+        "example": "common/technologies/_hidden.txt:569"
+      },
+      "compliance_growth_on_our_occupied_states": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:3202"
+      },
+      "conscription": {
+        "count": 10,
+        "example": "common/technologies/industry.txt:601"
+      },
+      "conscription_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:3334"
+      },
+      "conscripts": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:2385"
+      },
+      "consumer_goods_expected_value": {
+        "count": 1,
+        "example": "common/technologies/civillian.txt:1657"
+      },
+      "conversion_bauxite_input": {
+        "count": 3,
+        "example": "common/technologies/civillian.txt:2302"
+      },
+      "conversion_coal_input": {
+        "count": 3,
+        "example": "common/technologies/civillian.txt:2832"
+      },
+      "conversion_fuel_coal_input": {
+        "count": 8,
+        "example": "common/technologies/civillian.txt:4418"
+      },
+      "conversion_iron_input": {
+        "count": 2,
+        "example": "common/technologies/civillian.txt:2535"
+      },
+      "convoy_escort_efficiency": {
+        "count": 25,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:1657"
+      },
+      "convoy_raiding_efficiency_factor": {
+        "count": 8,
+        "example": "common/technologies/naval_doctrine.txt:236"
+      },
+      "coordination_bonus": {
+        "count": 16,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:217"
+      },
+      "critical_receive_chance": {
+        "count": 4,
+        "example": "common/technologies/MTG_naval_techs.txt:6261"
+      },
+      "crypto_strength": {
+        "count": 3,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:2583"
+      },
+      "custom_modifier_tooltip": {
+        "count": 13,
+        "example": "common/technologies/land_doctrine.txt:5769"
+      },
+      "cv_cas": {
+        "count": 1,
+        "example": "common/technologies/air_doctrine.txt:169"
+      },
+      "decryption": {
+        "count": 3,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:2427"
+      },
+      "decryption_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:1730"
+      },
+      "decryption_power": {
+        "count": 3,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:2738"
+      },
+      "decryption_power_factor": {
+        "count": 3,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:2739"
+      },
+      "desc": {
+        "count": 1,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:275"
+      },
+      "destroyer": {
+        "count": 5,
+        "example": "common/technologies/MTG_naval_techs.txt:1169"
+      },
+      "destroyer_escort": {
+        "count": 5,
+        "example": "common/technologies/MTG_naval_techs.txt:1166"
+      },
+      "dig_in_speed_factor": {
+        "count": 9,
+        "example": "common/technologies/_hidden.txt:2492"
+      },
+      "DIV_HQ": {
+        "count": 3,
+        "example": "common/technologies/_hidden.txt:1073"
+      },
+      "DIV_HQ_airborne": {
+        "count": 3,
+        "example": "common/technologies/_hidden.txt:1078"
+      },
+      "DIV_HQ_car": {
+        "count": 3,
+        "example": "common/technologies/_hidden.txt:1083"
+      },
+      "DIV_HQ_mech": {
+        "count": 3,
+        "example": "common/technologies/_hidden.txt:1088"
+      },
+      "enable_building": {
+        "count": 95,
+        "example": "common/technologies/_hidden.txt:1169"
+      },
+      "enable_tactic": {
+        "count": 30,
+        "example": "common/technologies/land_doctrine.txt:36"
+      },
+      "encryption": {
+        "count": 3,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:2272"
+      },
+      "encryption_factor": {
+        "count": 1,
+        "example": "common/technologies/industry.txt:4333"
+      },
+      "enemy_army_bonus_air_superiority_factor": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:3204"
+      },
+      "energy_consumption_factor": {
+        "count": 5,
+        "example": "common/technologies/civillian.txt:3274"
+      },
+      "energy_fuel_fraction_cap": {
+        "count": 4,
+        "example": "common/technologies/_hidden.txt:1228"
+      },
+      "energy_production_factor": {
+        "count": 3,
+        "example": "common/technologies/civillian.txt:3067"
+      },
+      "engine_production_capacity": {
+        "count": 7,
+        "example": "common/technologies/_hidden.txt:1221"
+      },
+      "engineer": {
+        "count": 2,
+        "example": "common/technologies/_hidden.txt:2494"
+      },
+      "equipment_capture": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:2999"
+      },
+      "equipment_conversion_speed": {
+        "count": 2,
+        "example": "common/technologies/industry.txt:683"
+      },
+      "equipment_upgrade_xp_cost": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5340"
+      },
+      "escort": {
+        "count": 4,
+        "example": "common/technologies/MTG_naval_techs.txt:1160"
+      },
+      "experience_gain_air_factor": {
+        "count": 1,
+        "example": "common/technologies/air_doctrine.txt:283"
+      },
+      "experience_gain_airborne_artillery_brigade_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6642"
+      },
+      "experience_gain_airborne_artillery_brigade_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6632"
+      },
+      "experience_gain_army_unit_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5190"
+      },
+      "experience_gain_artillery_brigade_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6635"
+      },
+      "experience_gain_artillery_brigade_med_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6636"
+      },
+      "experience_gain_artillery_brigade_med_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6626"
+      },
+      "experience_gain_artillery_brigade_mot_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6637"
+      },
+      "experience_gain_artillery_brigade_mot_med_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6638"
+      },
+      "experience_gain_artillery_brigade_mot_med_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6628"
+      },
+      "experience_gain_artillery_brigade_mot_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6627"
+      },
+      "experience_gain_artillery_brigade_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6625"
+      },
+      "experience_gain_artillery_division_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6639"
+      },
+      "experience_gain_artillery_division_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6629"
+      },
+      "experience_gain_cavalry_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5970"
+      },
+      "experience_gain_cavalry_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5963"
+      },
+      "experience_gain_factor": {
+        "count": 3,
+        "example": "common/technologies/land_doctrine.txt:4857"
+      },
+      "experience_gain_garrison_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5852"
+      },
+      "experience_gain_garrison_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5843"
+      },
+      "experience_gain_gurkha_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:7182"
+      },
+      "experience_gain_infantry_assault_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5850"
+      },
+      "experience_gain_infantry_assault_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5841"
+      },
+      "experience_gain_infantry_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5849"
+      },
+      "experience_gain_infantry_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5840"
+      },
+      "experience_gain_light_infantry_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5851"
+      },
+      "experience_gain_light_infantry_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5842"
+      },
+      "experience_gain_marine_assault_combat_factor": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:5855"
+      },
+      "experience_gain_marine_assault_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5846"
+      },
+      "experience_gain_marine_combat_factor": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:5854"
+      },
+      "experience_gain_marine_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5845"
+      },
+      "experience_gain_mechanized_assault_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5976"
+      },
+      "experience_gain_mechanized_assault_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5969"
+      },
+      "experience_gain_mechanized_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5975"
+      },
+      "experience_gain_mechanized_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5968"
+      },
+      "experience_gain_militia_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5853"
+      },
+      "experience_gain_militia_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5844"
+      },
+      "experience_gain_motorized_assault_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5974"
+      },
+      "experience_gain_motorized_assault_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5967"
+      },
+      "experience_gain_motorized_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5973"
+      },
+      "experience_gain_motorized_rocket_brigade_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6644"
+      },
+      "experience_gain_motorized_rocket_brigade_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6634"
+      },
+      "experience_gain_motorized_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5966"
+      },
+      "experience_gain_mountain_artillery_brigade_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6640"
+      },
+      "experience_gain_mountain_artillery_brigade_mot_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6641"
+      },
+      "experience_gain_mountain_artillery_brigade_mot_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6631"
+      },
+      "experience_gain_mountain_artillery_brigade_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6630"
+      },
+      "experience_gain_mountaineers_combat_factor": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:5856"
+      },
+      "experience_gain_mountaineers_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5847"
+      },
+      "experience_gain_paratrooper_combat_factor": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:5857"
+      },
+      "experience_gain_paratrooper_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5848"
+      },
+      "experience_gain_recon_ac_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6089"
+      },
+      "experience_gain_recon_ac_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6085"
+      },
+      "experience_gain_recon_cav_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6087"
+      },
+      "experience_gain_recon_cav_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6083"
+      },
+      "experience_gain_recon_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6086"
+      },
+      "experience_gain_recon_mot_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6088"
+      },
+      "experience_gain_recon_mot_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6084"
+      },
+      "experience_gain_recon_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6082"
+      },
+      "experience_gain_rocket_artillery_brigade_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6643"
+      },
+      "experience_gain_rocket_artillery_brigade_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:6633"
+      },
+      "experience_gain_semi_motorized_assault_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5972"
+      },
+      "experience_gain_semi_motorized_assault_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5965"
+      },
+      "experience_gain_semi_motorized_combat_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5971"
+      },
+      "experience_gain_semi_motorized_training_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5964"
+      },
+      "experience_loss_factor": {
+        "count": 7,
+        "example": "common/technologies/_hidden.txt:2420"
+      },
+      "extra_marine_supply_grace": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:7290"
+      },
+      "extra_paratrooper_supply_grace": {
+        "count": 3,
+        "example": "common/technologies/industry.txt:4055"
+      },
+      "fascist_militia": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:2355"
+      },
+      "field_hospital": {
+        "count": 3,
+        "example": "common/technologies/support.txt:1784"
+      },
+      "field_hospital_cav": {
+        "count": 3,
+        "example": "common/technologies/support.txt:1780"
+      },
+      "fighter_sortie_efficiency": {
+        "count": 4,
+        "example": "common/technologies/naval_doctrine.txt:5369"
+      },
+      "fleet_carrier": {
+        "count": 4,
+        "example": "common/technologies/MTG_naval_techs.txt:5482"
+      },
+      "food_decay_factor": {
+        "count": 3,
+        "example": "common/technologies/civillian.txt:1248"
+      },
+      "food_gain_factor": {
+        "count": 1,
+        "example": "common/technologies/civillian.txt:1295"
+      },
+      "food_need_civilian": {
+        "count": 7,
+        "example": "common/technologies/civillian.txt:929"
+      },
+      "food_resource_factor": {
+        "count": 1,
+        "example": "common/technologies/civillian.txt:769"
+      },
+      "force_use_small_tech_layout": {
+        "count": 4,
+        "example": "common/technologies/infantry.txt:2974"
+      },
+      "foreign_subversive_activites": {
+        "count": 6,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:1577"
+      },
+      "fuel_energy_cost": {
+        "count": 7,
+        "example": "common/technologies/civillian.txt:4528"
+      },
+      "fuel_gain_factor": {
+        "count": 5,
+        "example": "common/technologies/civillian.txt:4003"
+      },
+      "fuel_gain_factor_from_states": {
+        "count": 12,
+        "example": "common/technologies/civillian.txt:4004"
+      },
+      "garrison": {
+        "count": 2,
+        "example": "common/technologies/_hidden.txt:856"
+      },
+      "global_building_slots_factor": {
+        "count": 11,
+        "example": "common/technologies/civillian.txt:3430"
+      },
+      "ground_attack_factor": {
+        "count": 4,
+        "example": "common/technologies/air_doctrine.txt:712"
+      },
+      "guards_cavalry": {
+        "count": 12,
+        "example": "common/technologies/_hidden.txt:131"
+      },
+      "guards_infantry": {
+        "count": 11,
+        "example": "common/technologies/_hidden.txt:26"
+      },
+      "guards_infantry_assault": {
+        "count": 8,
+        "example": "common/technologies/_hidden.txt:31"
+      },
+      "guards_mechanized": {
+        "count": 10,
+        "example": "common/technologies/_hidden.txt:116"
+      },
+      "guards_mechanized_assault": {
+        "count": 9,
+        "example": "common/technologies/_hidden.txt:126"
+      },
+      "guards_motorized": {
+        "count": 7,
+        "example": "common/technologies/_hidden.txt:111"
+      },
+      "guards_motorized_assault": {
+        "count": 6,
+        "example": "common/technologies/_hidden.txt:121"
+      },
+      "guards_motorized_rocket_brigade": {
+        "count": 1,
+        "example": "common/technologies/artillery.txt:2481"
+      },
+      "guards_mountain_artillery_brigade": {
+        "count": 1,
+        "example": "common/technologies/artillery.txt:1246"
+      },
+      "guards_mountain_artillery_brigade_mot": {
+        "count": 1,
+        "example": "common/technologies/artillery.txt:1252"
+      },
+      "guards_paratrooper": {
+        "count": 10,
+        "example": "common/technologies/_hidden.txt:165"
+      },
+      "gurkha": {
+        "count": 8,
+        "example": "common/technologies/_hidden.txt:140"
+      },
+      "heavy_cruiser": {
+        "count": 8,
+        "example": "common/technologies/MTG_naval_techs.txt:1175"
+      },
+      "hidden_modifier": {
+        "count": 284,
+        "example": "common/technologies/air_doctrine.txt:66"
+      },
+      "industrial_capacity_dockyard": {
+        "count": 18,
+        "example": "common/technologies/civillian.txt:2699"
+      },
+      "industrial_capacity_factory": {
+        "count": 20,
+        "example": "common/technologies/civillian.txt:1522"
+      },
+      "industry_air_damage_factor": {
+        "count": 15,
+        "example": "common/technologies/civillian.txt:3275"
+      },
+      "industry_repair_factor": {
+        "count": 4,
+        "example": "common/technologies/industry.txt:641"
+      },
+      "infantry": {
+        "count": 11,
+        "example": "common/technologies/_hidden.txt:6"
+      },
+      "infantry_assault": {
+        "count": 8,
+        "example": "common/technologies/_hidden.txt:11"
+      },
+      "intel_network_gain_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:3564"
+      },
+      "intelligence_agency_defense": {
+        "count": 3,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:1700"
+      },
+      "invasion_preparation": {
+        "count": 3,
+        "example": "common/technologies/MTG_naval.txt:4357"
+      },
+      "irregulars_unit": {
+        "count": 8,
+        "example": "common/technologies/_hidden.txt:21"
+      },
+      "is_special_project_tech": {
+        "count": 34,
+        "example": "common/technologies/armor_techs.txt:1249"
+      },
+      "land_bunker_effectiveness_factor": {
+        "count": 10,
+        "example": "common/technologies/industry.txt:2554"
+      },
+      "land_equipment_upgrade_xp_cost": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5339"
+      },
+      "land_night_attack": {
+        "count": 6,
+        "example": "common/technologies/_hidden.txt:2488"
+      },
+      "land_reinforce_rate": {
+        "count": 19,
+        "example": "common/technologies/_hidden.txt:2481"
+      },
+      "large_cruiser": {
+        "count": 13,
+        "example": "common/technologies/MTG_naval_techs.txt:1190"
+      },
+      "license_production_speed": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5303"
+      },
+      "license_purchase_cost": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5304"
+      },
+      "light_carrier": {
+        "count": 2,
+        "example": "common/technologies/MTG_naval_techs.txt:5490"
+      },
+      "light_cruiser": {
+        "count": 7,
+        "example": "common/technologies/MTG_naval_techs.txt:1172"
+      },
+      "light_infantry": {
+        "count": 10,
+        "example": "common/technologies/_hidden.txt:16"
+      },
+      "line_change_production_efficiency_factor": {
+        "count": 15,
+        "example": "common/technologies/industry.txt:474"
+      },
+      "local_factory_sabotage": {
+        "count": 6,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:1576"
+      },
+      "local_supply_in_core_states": {
+        "count": 4,
+        "example": "common/technologies/civillian.txt:1709"
+      },
+      "local_supply_in_states": {
+        "count": 4,
+        "example": "common/technologies/civillian.txt:1708"
+      },
+      "logistics_company": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:2137"
+      },
+      "logistics_company_car": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:2142"
+      },
+      "logistics_company_mech": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:2152"
+      },
+      "logistics_company_mot": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:2147"
+      },
+      "lr_submarine": {
+        "count": 4,
+        "example": "common/technologies/MTG_naval_techs.txt:1087"
+      },
+      "luftwaffe_infantry": {
+        "count": 2,
+        "example": "common/technologies/_hidden.txt:881"
+      },
+      "maintenance_company_arm": {
+        "count": 1,
+        "example": "common/technologies/armor_techs.txt:1313"
+      },
+      "marine": {
+        "count": 10,
+        "example": "common/technologies/_hidden.txt:150"
+      },
+      "marine_assault": {
+        "count": 9,
+        "example": "common/technologies/_hidden.txt:155"
+      },
+      "max_air_experience": {
+        "count": 7,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:3482"
+      },
+      "max_army_experience": {
+        "count": 12,
+        "example": "common/technologies/land_doctrine.txt:4919"
+      },
+      "max_command_power": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:4926"
+      },
+      "max_command_power_mult": {
+        "count": 7,
+        "example": "common/technologies/land_doctrine.txt:4994"
+      },
+      "max_dig_in": {
+        "count": 13,
+        "example": "common/technologies/_hidden.txt:2485"
+      },
+      "max_dig_in_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:4484"
+      },
+      "max_experience": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:4854"
+      },
+      "max_fuel_factor": {
+        "count": 4,
+        "example": "common/technologies/civillian.txt:3790"
+      },
+      "max_navy_experience": {
+        "count": 7,
+        "example": "common/technologies/land_doctrine.txt:4855"
+      },
+      "max_planning": {
+        "count": 8,
+        "example": "common/technologies/_hidden.txt:2478"
+      },
+      "max_shipyard": {
+        "count": 3,
+        "example": "common/technologies/industry.txt:1922"
+      },
+      "max_subyard": {
+        "count": 3,
+        "example": "common/technologies/industry.txt:1959"
+      },
+      "mechanized": {
+        "count": 10,
+        "example": "common/technologies/_hidden.txt:65"
+      },
+      "mechanized_assault": {
+        "count": 9,
+        "example": "common/technologies/_hidden.txt:80"
+      },
+      "military_police": {
+        "count": 3,
+        "example": "common/technologies/support.txt:1325"
+      },
+      "militia": {
+        "count": 8,
+        "example": "common/technologies/_hidden.txt:871"
+      },
+      "mines_planting_by_fleets_factor": {
+        "count": 5,
+        "example": "common/technologies/MTG_naval_techs.txt:6845"
+      },
+      "mines_sweeping_by_fleets_factor": {
+        "count": 2,
+        "example": "common/technologies/naval_doctrine.txt:4882"
+      },
+      "minimum_training_level": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:1270"
+      },
+      "mobilization_speed": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5244"
+      },
+      "monthly_population": {
+        "count": 6,
+        "example": "common/technologies/civillian.txt:288"
+      },
+      "motorcycle_infantry": {
+        "count": 4,
+        "example": "common/technologies/_hidden.txt:50"
+      },
+      "motorized": {
+        "count": 7,
+        "example": "common/technologies/_hidden.txt:60"
+      },
+      "motorized_assault": {
+        "count": 6,
+        "example": "common/technologies/_hidden.txt:75"
+      },
+      "motorized_rocket_brigade": {
+        "count": 1,
+        "example": "common/technologies/artillery.txt:2473"
+      },
+      "mountain_artillery_brigade": {
+        "count": 1,
+        "example": "common/technologies/artillery.txt:1228"
+      },
+      "mountain_artillery_brigade_mot": {
+        "count": 1,
+        "example": "common/technologies/artillery.txt:1234"
+      },
+      "mountaineers": {
+        "count": 9,
+        "example": "common/technologies/_hidden.txt:145"
+      },
+      "naval_coordination": {
+        "count": 3,
+        "example": "common/technologies/naval_doctrine.txt:3462"
+      },
+      "naval_critical_effect_factor": {
+        "count": 4,
+        "example": "common/technologies/MTG_naval_techs.txt:6262"
+      },
+      "naval_enemy_fleet_size_ratio_penalty_factor": {
+        "count": 4,
+        "example": "common/technologies/naval_doctrine.txt:4437"
+      },
+      "naval_general_support_factor": {
+        "count": 2,
+        "example": "common/technologies/special_projects_tech.txt:189"
+      },
+      "naval_general_support_value_factor": {
+        "count": 3,
+        "example": "common/technologies/special_projects_tech.txt:188"
+      },
+      "naval_hit_chance": {
+        "count": 18,
+        "example": "common/technologies/naval_doctrine.txt:380"
+      },
+      "naval_invasion_division_cap": {
+        "count": 4,
+        "example": "common/technologies/land_doctrine.txt:7349"
+      },
+      "naval_invasion_penalty": {
+        "count": 4,
+        "example": "common/technologies/land_doctrine.txt:7348"
+      },
+      "naval_invasion_plan_cap": {
+        "count": 3,
+        "example": "common/technologies/MTG_naval.txt:4307"
+      },
+      "naval_mines_damage_factor": {
+        "count": 3,
+        "example": "common/technologies/MTG_naval_techs.txt:6844"
+      },
+      "naval_mines_effect_reduction": {
+        "count": 3,
+        "example": "common/technologies/MTG_naval_techs.txt:6899"
+      },
+      "naval_night_attack": {
+        "count": 8,
+        "example": "common/technologies/naval_doctrine.txt:1027"
+      },
+      "naval_repair_support_factor": {
+        "count": 2,
+        "example": "common/technologies/special_projects_tech.txt:218"
+      },
+      "naval_repair_support_value_factor": {
+        "count": 3,
+        "example": "common/technologies/special_projects_tech.txt:217"
+      },
+      "naval_retreat_chance": {
+        "count": 6,
+        "example": "common/technologies/naval_doctrine.txt:3002"
+      },
+      "naval_retreat_speed": {
+        "count": 11,
+        "example": "common/technologies/MTG_naval.txt:1246"
+      },
+      "naval_strike_attack_factor": {
+        "count": 2,
+        "example": "common/technologies/_hidden.txt:1237"
+      },
+      "naval_torpedo_hit_chance_factor": {
+        "count": 2,
+        "example": "common/technologies/naval_doctrine.txt:1097"
+      },
+      "naval_torpedo_reveal_chance_factor": {
+        "count": 14,
+        "example": "common/technologies/MTG_naval_techs.txt:1241"
+      },
+      "naval_torpedo_screen_penetration_factor": {
+        "count": 24,
+        "example": "common/technologies/naval_doctrine.txt:92"
+      },
+      "navy_anti_air_attack_factor": {
+        "count": 13,
+        "example": "common/technologies/naval_doctrine.txt:1240"
+      },
+      "navy_capital_ship_attack_factor": {
+        "count": 21,
+        "example": "common/technologies/naval_doctrine.txt:162"
+      },
+      "navy_capital_ship_defence_factor": {
+        "count": 19,
+        "example": "common/technologies/naval_doctrine.txt:93"
+      },
+      "navy_carrier_air_agility_factor": {
+        "count": 14,
+        "example": "common/technologies/naval_doctrine.txt:95"
+      },
+      "navy_carrier_air_attack_factor": {
+        "count": 17,
+        "example": "common/technologies/naval_doctrine.txt:97"
+      },
+      "navy_carrier_air_targetting_factor": {
+        "count": 17,
+        "example": "common/technologies/naval_doctrine.txt:96"
+      },
+      "navy_intel_factor": {
+        "count": 3,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:1698"
+      },
+      "navy_screen_attack_factor": {
+        "count": 24,
+        "example": "common/technologies/naval_doctrine.txt:232"
+      },
+      "navy_screen_defence_factor": {
+        "count": 17,
+        "example": "common/technologies/naval_doctrine.txt:94"
+      },
+      "navy_submarine_attack_factor": {
+        "count": 7,
+        "example": "common/technologies/naval_doctrine.txt:2161"
+      },
+      "navy_submarine_defence_factor": {
+        "count": 6,
+        "example": "common/technologies/naval_doctrine.txt:2162"
+      },
+      "night_spotting_chance": {
+        "count": 6,
+        "example": "common/technologies/naval_doctrine.txt:1026"
+      },
+      "nkvd": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:866"
+      },
+      "no_supply_grace": {
+        "count": 8,
+        "example": "common/technologies/_hidden.txt:2490"
+      },
+      "nuclear_production": {
+        "count": 1,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:4380"
+      },
+      "nuclear_production_factor": {
+        "count": 1,
+        "example": "common/technologies/special_projects_tech.txt:117"
+      },
+      "oil_resource_factor": {
+        "count": 3,
+        "example": "common/technologies/civillian.txt:4275"
+      },
+      "on_research_complete": {
+        "count": 2503,
+        "example": "common/technologies/air_doctrine.txt:25"
+      },
+      "org_loss_when_moving": {
+        "count": 23,
+        "example": "common/technologies/_hidden.txt:2422"
+      },
+      "out_of_supply_factor": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:1661"
+      },
+      "paradrop_organization_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:7150"
+      },
+      "paratrooper": {
+        "count": 12,
+        "example": "common/technologies/_hidden.txt:160"
+      },
+      "paratrooper_aa_defense": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:7118"
+      },
+      "partisan": {
+        "count": 4,
+        "example": "common/technologies/land_doctrine.txt:3191"
+      },
+      "patrol_submarine": {
+        "count": 5,
+        "example": "common/technologies/MTG_naval_techs.txt:1084"
+      },
+      "planning_decay_rate_factor": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:2418"
+      },
+      "planning_speed": {
+        "count": 17,
+        "example": "common/technologies/_hidden.txt:2421"
+      },
+      "pocket_battleship": {
+        "count": 12,
+        "example": "common/technologies/MTG_naval_techs.txt:1178"
+      },
+      "political_power_factor": {
+        "count": 1,
+        "example": "common/technologies/industry.txt:4334"
+      },
+      "political_power_gain": {
+        "count": 1,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:179"
+      },
+      "positioning": {
+        "count": 23,
+        "example": "common/technologies/naval_doctrine.txt:381"
+      },
+      "power_plant_resilience": {
+        "count": 5,
+        "example": "common/technologies/industry.txt:2599"
+      },
+      "predreadnought": {
+        "count": 12,
+        "example": "common/technologies/MTG_naval_techs.txt:1181"
+      },
+      "press_cost_factor": {
+        "count": 1,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:180"
+      },
+      "production_factory_efficiency_gain_factor": {
+        "count": 12,
+        "example": "common/technologies/civillian.txt:1521"
+      },
+      "production_factory_max_efficiency_factor": {
+        "count": 13,
+        "example": "common/technologies/civillian.txt:1898"
+      },
+      "production_factory_start_efficiency_factor": {
+        "count": 11,
+        "example": "common/technologies/industry.txt:105"
+      },
+      "production_lack_of_resource_penalty_factor": {
+        "count": 5,
+        "example": "common/technologies/civillian.txt:1523"
+      },
+      "production_speed_air_assembly_factor": {
+        "count": 1,
+        "example": "common/technologies/industry.txt:5385"
+      },
+      "production_speed_air_base_factor": {
+        "count": 5,
+        "example": "common/technologies/industry.txt:2819"
+      },
+      "production_speed_aluminium_refinery_factor": {
+        "count": 3,
+        "example": "common/technologies/civillian.txt:2303"
+      },
+      "production_speed_anti_air_building_factor": {
+        "count": 5,
+        "example": "common/technologies/industry.txt:2598"
+      },
+      "production_speed_arms_factory_factor": {
+        "count": 8,
+        "example": "common/technologies/industry.txt:381"
+      },
+      "production_speed_buildings_factor": {
+        "count": 6,
+        "example": "common/technologies/civillian.txt:1478"
+      },
+      "production_speed_bunker_factor": {
+        "count": 5,
+        "example": "common/technologies/industry.txt:2646"
+      },
+      "production_speed_coastal_bunker_factor": {
+        "count": 5,
+        "example": "common/technologies/industry.txt:2647"
+      },
+      "production_speed_dockyard_factor": {
+        "count": 9,
+        "example": "common/technologies/industry.txt:600"
+      },
+      "production_speed_farm_factor": {
+        "count": 5,
+        "example": "common/technologies/civillian.txt:817"
+      },
+      "production_speed_industrial_complex_factor": {
+        "count": 16,
+        "example": "common/technologies/civillian.txt:3578"
+      },
+      "production_speed_infrastructure_factor": {
+        "count": 10,
+        "example": "common/technologies/industry.txt:2686"
+      },
+      "production_speed_naval_base_factor": {
+        "count": 5,
+        "example": "common/technologies/industry.txt:2688"
+      },
+      "production_speed_nuclear_reactor_factor": {
+        "count": 4,
+        "example": "common/technologies/civillian.txt:1613"
+      },
+      "production_speed_nuclear_reactor_heavy_water_factor": {
+        "count": 4,
+        "example": "common/technologies/civillian.txt:1614"
+      },
+      "production_speed_pillbox_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:3696"
+      },
+      "production_speed_power_plant_factor": {
+        "count": 3,
+        "example": "common/technologies/civillian.txt:3068"
+      },
+      "production_speed_radar_station_factor": {
+        "count": 6,
+        "example": "common/technologies/civillian.txt:1479"
+      },
+      "production_speed_rail_way_factor": {
+        "count": 10,
+        "example": "common/technologies/industry.txt:2687"
+      },
+      "production_speed_shipyard_factor": {
+        "count": 1,
+        "example": "common/technologies/civillian.txt:2787"
+      },
+      "production_speed_steel_refinery_factor": {
+        "count": 4,
+        "example": "common/technologies/civillian.txt:2585"
+      },
+      "production_speed_synthetic_refinery_factor": {
+        "count": 9,
+        "example": "common/technologies/civillian.txt:1710"
+      },
+      "production_speed_synthetic_rubber_refinery_factor": {
+        "count": 7,
+        "example": "common/technologies/civillian.txt:1711"
+      },
+      "promote_cost_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5189"
+      },
+      "reassignment_duration_factor": {
+        "count": 2,
+        "example": "common/technologies/industry.txt:4638"
+      },
+      "recon": {
+        "count": 8,
+        "example": "common/technologies/_hidden.txt:1103"
+      },
+      "recon_ac": {
+        "count": 5,
+        "example": "common/technologies/_hidden.txt:1123"
+      },
+      "recon_cav": {
+        "count": 8,
+        "example": "common/technologies/_hidden.txt:1108"
+      },
+      "recon_factor": {
+        "count": 2,
+        "example": "common/technologies/_hidden.txt:1233"
+      },
+      "recon_factor_while_entrenched": {
+        "count": 3,
+        "example": "common/technologies/_hidden.txt:1232"
+      },
+      "recon_mech": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:1118"
+      },
+      "recon_mot": {
+        "count": 3,
+        "example": "common/technologies/_hidden.txt:1113"
+      },
+      "repair_speed_factor": {
+        "count": 7,
+        "example": "common/technologies/industry.txt:2865"
+      },
+      "research_speed_factor": {
+        "count": 10,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:80"
+      },
+      "resistance_damage_to_garrison_on_our_occupied_states": {
+        "count": 4,
+        "example": "common/technologies/land_doctrine.txt:3069"
+      },
+      "resistance_decay_on_our_occupied_states": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:3251"
+      },
+      "resistance_growth_on_our_occupied_states": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:3135"
+      },
+      "resistance_target_on_our_occupied_states": {
+        "count": 3,
+        "example": "common/technologies/land_doctrine.txt:3068"
+      },
+      "resources_factor": {
+        "count": 8,
+        "example": "common/technologies/_hidden.txt:1226"
+      },
+      "river_crossing_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:7238"
+      },
+      "rocket_interceptor": {
+        "count": 1,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:3330"
+      },
+      "rubber_conversion_output": {
+        "count": 3,
+        "example": "common/technologies/civillian.txt:4895"
+      },
+      "screening_efficiency": {
+        "count": 26,
+        "example": "common/technologies/naval_doctrine.txt:513"
+      },
+      "screening_without_screens": {
+        "count": 2,
+        "example": "common/technologies/naval_doctrine.txt:4525"
+      },
+      "semi_motorized": {
+        "count": 7,
+        "example": "common/technologies/_hidden.txt:55"
+      },
+      "semi_motorized_assault": {
+        "count": 6,
+        "example": "common/technologies/_hidden.txt:70"
+      },
+      "shipyard_capital_capacity": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:1222"
+      },
+      "shore_bombardment_bonus": {
+        "count": 3,
+        "example": "common/technologies/land_doctrine.txt:7237"
+      },
+      "show_effect_as_desc": {
+        "count": 8,
+        "example": "common/technologies/civillian.txt:4765"
+      },
+      "sickness_chance": {
+        "count": 4,
+        "example": "common/technologies/civillian.txt:151"
+      },
+      "sortie_efficiency": {
+        "count": 17,
+        "example": "common/technologies/naval_doctrine.txt:3305"
+      },
+      "special_forces_cap": {
+        "count": 2,
+        "example": "common/technologies/infantry.txt:1952"
+      },
+      "special_forces_no_supply_grace": {
+        "count": 2,
+        "example": "common/technologies/land_doctrine.txt:6940"
+      },
+      "special_forces_out_of_supply_factor": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:7000"
+      },
+      "special_forces_training_time_factor": {
+        "count": 3,
+        "example": "common/technologies/land_doctrine.txt:6814"
+      },
+      "special_project_specialization": {
+        "count": 1958,
+        "example": "common/technologies/air_techs.txt:78"
+      },
+      "special_project_speed_factor": {
+        "count": 6,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:1985"
+      },
+      "specialization_nuclear_speed_factor": {
+        "count": 1,
+        "example": "common/technologies/special_projects_tech.txt:116"
+      },
+      "spotting_chance": {
+        "count": 14,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:1656"
+      },
+      "ss_anti_tank_brigade": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:2328"
+      },
+      "ss_anti_tank_brigade_med": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:2334"
+      },
+      "ss_anti_tank_brigade_mot": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:2331"
+      },
+      "ss_anti_tank_brigade_mot_med": {
+        "count": 1,
+        "example": "common/technologies/_hidden.txt:2337"
+      },
+      "ss_cavalry": {
+        "count": 10,
+        "example": "common/technologies/_hidden.txt:1060"
+      },
+      "ss_garrison": {
+        "count": 2,
+        "example": "common/technologies/_hidden.txt:861"
+      },
+      "ss_infantry": {
+        "count": 8,
+        "example": "common/technologies/_hidden.txt:411"
+      },
+      "ss_infantry_assault": {
+        "count": 5,
+        "example": "common/technologies/_hidden.txt:416"
+      },
+      "ss_light_infantry": {
+        "count": 8,
+        "example": "common/technologies/_hidden.txt:421"
+      },
+      "ss_mechanized": {
+        "count": 8,
+        "example": "common/technologies/_hidden.txt:510"
+      },
+      "ss_mechanized_assault": {
+        "count": 7,
+        "example": "common/technologies/_hidden.txt:525"
+      },
+      "ss_motorcycle_infantry": {
+        "count": 2,
+        "example": "common/technologies/_hidden.txt:495"
+      },
+      "ss_motorized": {
+        "count": 4,
+        "example": "common/technologies/_hidden.txt:505"
+      },
+      "ss_motorized_assault": {
+        "count": 3,
+        "example": "common/technologies/_hidden.txt:520"
+      },
+      "ss_motorized_rocket_brigade": {
+        "count": 1,
+        "example": "common/technologies/artillery.txt:2477"
+      },
+      "ss_mountain_artillery_brigade": {
+        "count": 1,
+        "example": "common/technologies/artillery.txt:1258"
+      },
+      "ss_mountain_artillery_brigade_mot": {
+        "count": 1,
+        "example": "common/technologies/artillery.txt:1264"
+      },
+      "ss_mountaineers": {
+        "count": 6,
+        "example": "common/technologies/_hidden.txt:574"
+      },
+      "ss_paratrooper": {
+        "count": 8,
+        "example": "common/technologies/_hidden.txt:579"
+      },
+      "ss_semi_motorized": {
+        "count": 5,
+        "example": "common/technologies/_hidden.txt:106"
+      },
+      "ss_semi_motorized_assault": {
+        "count": 3,
+        "example": "common/technologies/_hidden.txt:515"
+      },
+      "stability_factor": {
+        "count": 11,
+        "example": "common/technologies/civillian.txt:372"
+      },
+      "stability_weekly": {
+        "count": 10,
+        "example": "common/technologies/civillian.txt:516"
+      },
+      "static_anti_air_damage_factor": {
+        "count": 5,
+        "example": "common/technologies/artillery.txt:232"
+      },
+      "static_anti_air_hit_chance_factor": {
+        "count": 5,
+        "example": "common/technologies/electronic_mechanical_engineering.txt:1384"
+      },
+      "steel_conversion_output": {
+        "count": 3,
+        "example": "common/technologies/civillian.txt:2646"
+      },
+      "steel_energy_cost": {
+        "count": 1,
+        "example": "common/technologies/civillian.txt:2831"
+      },
+      "storage_output_factor": {
+        "count": 7,
+        "example": "common/technologies/_hidden.txt:1227"
+      },
+      "strategic_bomb_visibility": {
+        "count": 1,
+        "example": "common/technologies/air_doctrine.txt:1916"
+      },
+      "sub_retreat_speed": {
+        "count": 13,
+        "example": "common/technologies/naval_doctrine.txt:2095"
+      },
+      "super_carrier": {
+        "count": 4,
+        "example": "common/technologies/MTG_naval_techs.txt:5478"
+      },
+      "supply_consumption_factor": {
+        "count": 11,
+        "example": "common/technologies/_hidden.txt:2477"
+      },
+      "supply_node_range": {
+        "count": 7,
+        "example": "common/technologies/industry.txt:262"
+      },
+      "tac_bomber": {
+        "count": 3,
+        "example": "common/technologies/air_doctrine.txt:73"
+      },
+      "tank_production_capacity": {
+        "count": 8,
+        "example": "common/technologies/_hidden.txt:1219"
+      },
+      "torpedo_boat": {
+        "count": 5,
+        "example": "common/technologies/MTG_naval_techs.txt:1163"
+      },
+      "training_time_army_factor": {
+        "count": 3,
+        "example": "common/technologies/industry.txt:3032"
+      },
+      "training_time_factor": {
+        "count": 2,
+        "example": "common/technologies/industry.txt:4995"
+      },
+      "transport_capacity": {
+        "count": 5,
+        "example": "common/technologies/MTG_naval.txt:4255"
+      },
+      "trm_amph_tank_chassis_design_cost_factor": {
+        "count": 2,
+        "example": "common/technologies/armor_techs.txt:146"
+      },
+      "trm_cavalry_tank_chassis_design_cost_factor": {
+        "count": 2,
+        "example": "common/technologies/armor_techs.txt:147"
+      },
+      "trm_heavy_tank_chassis_design_cost_factor": {
+        "count": 2,
+        "example": "common/technologies/armor_techs.txt:151"
+      },
+      "trm_infantry_tank_chassis_design_cost_factor": {
+        "count": 2,
+        "example": "common/technologies/armor_techs.txt:150"
+      },
+      "trm_light_tank_chassis_design_cost_factor": {
+        "count": 2,
+        "example": "common/technologies/armor_techs.txt:144"
+      },
+      "trm_medium_advanced_tank_chassis_design_cost_factor": {
+        "count": 2,
+        "example": "common/technologies/armor_techs.txt:149"
+      },
+      "trm_medium_tank_chassis_design_cost_factor": {
+        "count": 2,
+        "example": "common/technologies/armor_techs.txt:148"
+      },
+      "trm_para_tank_chassis_design_cost_factor": {
+        "count": 2,
+        "example": "common/technologies/armor_techs.txt:145"
+      },
+      "trm_superheavy_tank_chassis_design_cost_factor": {
+        "count": 2,
+        "example": "common/technologies/armor_techs.txt:152"
+      },
+      "trm_tankette_tank_chassis_design_cost_factor": {
+        "count": 2,
+        "example": "common/technologies/armor_techs.txt:143"
+      },
+      "underway_replenishment_convoy_cost": {
+        "count": 3,
+        "example": "common/technologies/naval_doctrine.txt:6463"
+      },
+      "underway_replenishment_range": {
+        "count": 3,
+        "example": "common/technologies/naval_doctrine.txt:6462"
+      },
+      "war_support_weekly": {
+        "count": 1,
+        "example": "common/technologies/land_doctrine.txt:5414"
+      },
+      "wounded_chance_factor": {
+        "count": 2,
+        "example": "common/technologies/civillian.txt:250"
+      },
+      "xp_boost_cost": {
+        "count": 381,
+        "example": "common/technologies/air_doctrine.txt:10"
+      },
+      "xp_research_bonus": {
+        "count": 381,
+        "example": "common/technologies/air_doctrine.txt:11"
+      },
+      "xp_research_type": {
+        "count": 381,
+        "example": "common/technologies/air_doctrine.txt:9"
+      }
+    }
+  },
+  "note": "Generated by `nx run data-grounding:update-baseline`. Each key is a source key path present in the corpus that the extractor for its entity type does not project into the model. Widening this file is a claim that a newly-seen key is intentionally unmodeled — review it as such (ADR 023)."
+}
