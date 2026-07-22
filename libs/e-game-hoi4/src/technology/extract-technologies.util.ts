@@ -15,9 +15,12 @@ import type {
 import { isSymbolDefinition } from '@paradox-parser';
 
 const TECHNOLOGIES_BLOCK = 'technologies';
+const DEPENDENCIES_BLOCK = 'dependencies';
 const PATH_BLOCK = 'path';
 const FOLDER_BLOCK = 'folder';
 const POSITION_BLOCK = 'position';
+const SUB_TECHNOLOGIES_BLOCK = 'sub_technologies';
+const XOR_BLOCK = 'xor';
 
 // Modeled scalar surfaces, in render order (semantic, not alphabetical —
 // R-CODE-9 carve-out). Keys outside these sets stay verbatim in the lossless
@@ -29,18 +32,25 @@ const ROOT_KEYS: readonly string[] = [
   'doctrine_name',
   'show_equipment_icon',
 ];
-const PATH_KEYS: readonly string[] = ['leads_to_tech', 'research_cost_coeff'];
+const PATH_KEYS: readonly string[] = [
+  'leads_to_tech',
+  'research_cost_coeff',
+  'ignore_for_layout',
+];
 const FOLDER_KEYS: readonly string[] = ['name'];
 const POSITION_KEYS: readonly string[] = ['x', 'y'];
 
-// Bare-token ref-lists (cross-entity free-text items).
+// Bare-token additive ref-lists (cross-entity free-text items). Every one is read
+// across ALL repeated sibling blocks, not first-wins (survey #19 — BICE carries
+// `enable_equipments` ×6 on a real tech). `sub_technologies` reads mechanically
+// as a bare-token list, but is a distinct attached-node kind (see the model): the
+// parent's list of child sub-tech tokens the engine attaches to it.
 const REF_LISTS = {
   categories: 'categories',
-  dependencies: 'dependencies',
   enableEquipmentModules: 'enable_equipment_modules',
   enableEquipments: 'enable_equipments',
   enableSubunits: 'enable_subunits',
-  xor: 'xor',
+  subTechnologies: SUB_TECHNOLOGIES_BLOCK,
 } as const;
 
 export function extractTechnologies(
@@ -61,23 +71,66 @@ export function extractTechnologies(
       }
       const block = entry.value;
       entities.push({
-        categories: tokenList(block, REF_LISTS.categories),
-        dependencies: tokenList(block, REF_LISTS.dependencies),
-        enableEquipmentModules: tokenList(
+        categories: refTokens(block, REF_LISTS.categories),
+        dependencies: dependencyRefs(block),
+        enableEquipmentModules: refTokens(
           block,
           REF_LISTS.enableEquipmentModules,
         ),
-        enableEquipments: tokenList(block, REF_LISTS.enableEquipments),
-        enableSubunits: tokenList(block, REF_LISTS.enableSubunits),
+        enableEquipments: refTokens(block, REF_LISTS.enableEquipments),
+        enableSubunits: refTokens(block, REF_LISTS.enableSubunits),
         folders: folderBlocks(block),
         paths: pathBlocks(block),
         rootScalars: scalarLeaves(block, ROOT_KEYS),
+        subTechnologies: refTokens(block, REF_LISTS.subTechnologies),
         token: keyName(entry),
-        xor: tokenList(block, REF_LISTS.xor),
+        xor: refTokens(block, XOR_BLOCK, true),
       });
     }
   }
   return entities;
+}
+
+// Every repeated same-named sibling block, in source order — the additive-block
+// reader (`enable_equipments`/`dependencies` ×N). `caseInsensitive` folds the key
+// for `XOR`, which the format treats case-insensitively (survey — BICE `XOR` ×7).
+function blocksNamed(
+  block: BlockNode,
+  key: string,
+  caseInsensitive = false,
+): readonly BlockNode[] {
+  const target = caseInsensitive ? key.toLowerCase() : key;
+  const matches: BlockNode[] = [];
+  for (const child of block.children) {
+    if (child.kind !== 'Assignment' || child.value.kind !== 'Block') continue;
+    const name = keyName(child);
+    if ((caseInsensitive ? name.toLowerCase() : name) === target) {
+      matches.push(child.value);
+    }
+  }
+  return matches;
+}
+
+// The AND-prerequisite edge targets: every tech token across every repeated
+// `dependencies` block, from both source forms — a bare token, and the
+// `{ <tech> = 1 }` assignment form whose KEY is the target (dropped today because
+// `tokenOf` reads only bare values — survey #19). A symbol definition is never a
+// target (ADR 022 D7); a block-valued assignment is not a scalar edge and is left
+// to surface as unmodeled rather than absorbed.
+function dependencyRefs(block: BlockNode): readonly string[] {
+  const refs: string[] = [];
+  for (const list of blocksNamed(block, DEPENDENCIES_BLOCK)) {
+    for (const child of list.children) {
+      if (child.kind === 'Assignment') {
+        if (isSymbolDefinition(child) || child.value.kind === 'Block') continue;
+        refs.push(keyName(child));
+      } else {
+        const token = tokenOf(child);
+        if (token !== undefined) refs.push(token);
+      }
+    }
+  }
+  return refs;
 }
 
 // The single scalar-leaf projection point: a definition is never a field (ADR
@@ -164,6 +217,23 @@ function rawValueOf(value: ParadoxValue): string | undefined {
   }
 }
 
+// Bare-token values across ALL repeated sibling blocks of the given key (an
+// additive ref-list; first-wins would drop later blocks — survey #19).
+function refTokens(
+  block: BlockNode,
+  key: string,
+  caseInsensitive = false,
+): readonly string[] {
+  const tokens: string[] = [];
+  for (const list of blocksNamed(block, key, caseInsensitive)) {
+    for (const child of list.children) {
+      const token = tokenOf(child);
+      if (token !== undefined) tokens.push(token);
+    }
+  }
+  return tokens;
+}
+
 // The block's scalar leaves restricted to the modeled keys, in modeled order.
 function scalarLeaves(
   block: BlockNode,
@@ -182,17 +252,6 @@ function scalarLeaves(
     if (field !== undefined) fields.push(field);
   }
   return fields;
-}
-
-function tokenList(block: BlockNode, key: string): readonly string[] {
-  const list = findBlock(block, key);
-  if (list === undefined) return [];
-  const tokens: string[] = [];
-  for (const child of list.children) {
-    const token = tokenOf(child);
-    if (token !== undefined) tokens.push(token);
-  }
-  return tokens;
 }
 
 function tokenOf(node: BlockChild): string | undefined {
