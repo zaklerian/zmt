@@ -31,6 +31,7 @@ ADRs, or rule files are not journaled here — the live artifact is the record.
 | L-016 | Parse-diagnostic UI surfacing path (parse diagnostics have no channel to the user today; prerequisite for ADR 022 decision 5's unresolved-reference diagnostic to be observable) | In discussion — at ADR 022 implementation, or the first parse diagnostic that must reach the user | 2026-07-14 |
 | L-017 | `.gui` grammar gaps — `%` / `%%` percent literals and `rgb` / `hsv` keyword-tuple blocks, absent from the grammar and out of scope for ADR 022 (`@`-symbols) | In discussion — at the decision that models `.gui` | 2026-07-14 |
 | L-018 | Broaden the data-grounding corpus beyond the single BICE mod fork (ADR 023 decision 7 defers this — one real mod is sufficient to detect drops, and broadening is not a precondition for the harness) | Rejected for now — when one mod proves insufficient to surface a class of drop, or at a second ground-truth mod becoming available | 2026-07-21 |
+| L-019 | Survey item — air equipment modules are format-valid and absent from BICE (ADR 023 Amendment B: corpus absence is not evidence of non-support; unobserved format features are survey items, tracked against the format not the corpus, and the model is not narrowed to the corpus subset) | Open question — at the decision that surveys/models the equipment-module surface against engine documentation | 2026-07-22 |
 
 ## How to add an entry
 
