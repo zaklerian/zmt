@@ -270,8 +270,12 @@ function modeledState(entity: StateEntity): Set<string> {
 }
 
 // Mirrors technology/extract-technologies.util.ts (ROOT_KEYS, REF_LISTS source
-// keys, FOLDER/POSITION/PATH blocks). `xor` is modeled lowercase, so an uppercase
-// `XOR` in the source is (correctly) reported as unmodeled — the ADR 023 drop.
+// keys, FOLDER/POSITION/PATH blocks). `xor` is matched case-insensitively by the
+// extractor, so both `xor` and `XOR` are modeled (BICE carries `XOR`). The
+// `dependencies` edge reader accepts the `{ <tech> = 1 }` form, so each read
+// target's `dependencies.<tech>` leaf is derived from the entity and leaves the
+// unmodeled set (the block name stays so the walk still descends and surfaces any
+// non-target inner key). `sub_technologies` is now the attached-node list.
 function modeledTechnology(entity: TechnologyEntity): Set<string> {
   const set = new Set<string>([
     'categories',
@@ -282,9 +286,14 @@ function modeledTechnology(entity: TechnologyEntity): Set<string> {
     'folder',
     'folder.position',
     'path',
+    'sub_technologies',
+    'XOR',
     'xor',
   ]);
   for (const field of entity.rootScalars) set.add(field.key);
+  for (const dependency of entity.dependencies) {
+    set.add(`dependencies.${dependency}`);
+  }
   for (const folder of entity.folders) {
     addLeaves(set, 'folder', folder.scalars);
     addLeaves(set, 'folder.position', folder.position);

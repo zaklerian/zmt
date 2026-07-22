@@ -51,41 +51,57 @@ describe('computeFileCoverage', () => {
     });
   });
 
-  describe('technology — the four ADR 023 drop classes', () => {
+  describe('technology — ZMT-E28 modeled edge kinds, sub-techs, XOR', () => {
+    // The four ADR 023 drop classes are now modeled (ZMT-E28): the block-form
+    // `dependencies` edge, `sub_technologies`, uppercase `XOR`, and
+    // `path.ignore_for_layout`. The instrument still surfaces a genuine drop
+    // (`ai_will_do`) so the frontier report is not vacuously empty.
     const source = `technologies = {
 \tinfantry_weapons = {
 \t\tresearch_cost = 2.0
 \t\tfolder = { name = f position = { x = 0 y = 0 } }
+\t\tpath = { leads_to_tech = t research_cost_coeff = 1 ignore_for_layout = yes }
 \t\tcategories = { infantry_tech }
 \t\txor = { shotgun_branch }
 \t\tXOR = { smg_branch }
 \t\tsub_technologies = { infantry_at }
 \t\tdependencies = { artillery = 1 }
+\t\tai_will_do = { factor = 0 }
 \t}
 }
 `;
 
-    it('surfaces the block-form dependencies inner key as unmodeled', () => {
-      // The reader accepts only bare tokens; the `{ tech = n }` form is the drop.
-      expect(unmodeled('technology', source)).toContain(
+    it('models the block-form dependencies edge target (no longer a drop)', () => {
+      // The `{ tech = n }` form's key is the edge target; it is read, not dropped.
+      expect(unmodeled('technology', source)).not.toContain(
         'dependencies.artillery',
       );
     });
 
-    it('surfaces sub_technologies as unmodeled', () => {
-      expect(unmodeled('technology', source)).toContain('sub_technologies');
+    it('models sub_technologies as the attached-node list', () => {
+      expect(unmodeled('technology', source)).not.toContain('sub_technologies');
     });
 
-    it('surfaces uppercase XOR while lowercase xor stays modeled', () => {
+    it('models XOR case-insensitively (both xor and XOR)', () => {
       const keys = unmodeled('technology', source);
-      expect(keys).toContain('XOR');
+      expect(keys).not.toContain('XOR');
       expect(keys).not.toContain('xor');
+    });
+
+    it('models path.ignore_for_layout', () => {
+      expect(unmodeled('technology', source)).not.toContain(
+        'path.ignore_for_layout',
+      );
     });
 
     it('does not report modeled folder/position leaves', () => {
       const keys = unmodeled('technology', source);
       expect(keys).not.toContain('folder.name');
       expect(keys).not.toContain('folder.position.x');
+    });
+
+    it('still surfaces a genuinely unmodeled ecosystem block', () => {
+      expect(unmodeled('technology', source)).toContain('ai_will_do');
     });
   });
 
