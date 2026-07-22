@@ -10,7 +10,7 @@ import { CorpusConfigError, resolveCorpusRoot } from './corpus-config.util';
 import { diffManifests, snapshotCorpus } from './corpus-guard.util';
 import { scanCorpus } from './corpus-scan.util';
 import { computeCorpusCoverage } from './coverage.util';
-import { lineOf } from './key-path.util';
+import { makeLineLookup } from './key-path.util';
 import { parseSource } from './parse-file.util';
 import { renderReport, renderSummaryLine } from './report.util';
 import { checkSerializeIdentity } from './round-trip.util';
@@ -52,12 +52,15 @@ async function main(): Promise<number> {
     const source = await readFile.readFile(file.absolutePath, 'utf8');
     const script = parseSource(source);
     parsed.push({ file, script, source });
-    for (const parseError of script.errors) {
-      parseFailures.push({
-        line: lineOf(source, parseError.from),
-        message: parseError.message,
-        relativePath: file.relativePath,
-      });
+    if (script.errors.length > 0) {
+      const lineAt = makeLineLookup(source);
+      for (const parseError of script.errors) {
+        parseFailures.push({
+          line: lineAt(parseError.from),
+          message: parseError.message,
+          relativePath: file.relativePath,
+        });
+      }
     }
     const identity = checkSerializeIdentity(file.relativePath, script, source);
     if (identity !== null) serializeFailures.push(identity);

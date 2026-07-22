@@ -47,6 +47,31 @@ export function lineOf(source: string, offset: number): number {
   return line;
 }
 
+// A reusable offset→line lookup for one source. `lineOf` rescans from byte 0 on
+// every call (O(offset)); calling it once per item on a file that yields hundreds
+// of thousands of items makes the run O(n²). A real mod carries such files — a
+// map data file (`map/unitstacks.txt`) is not paradox-script and parses into
+// ~650k recovery errors, and the per-error line lookup alone then runs for tens of
+// minutes. This builds the newline index once (O(n)) and answers each query by
+// binary search, matching `lineOf` exactly: a newline at position p advances the
+// line only for offsets strictly greater than p.
+export function makeLineLookup(source: string): (offset: number) => number {
+  const newlines: number[] = [];
+  for (let i = 0; i < source.length; i += 1) {
+    if (source[i] === '\n') newlines.push(i);
+  }
+  return (offset: number): number => {
+    let lo = 0;
+    let hi = newlines.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (newlines[mid] < offset) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo + 1;
+  };
+}
+
 function walk(
   block: BlockNode,
   parentPath: null | string,
