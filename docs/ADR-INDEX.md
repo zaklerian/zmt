@@ -21,30 +21,30 @@ Each ADR follows a consistent structure:
 
 | ADR | Title                                                                                                     | Status   |
 | --- | --------------------------------------------------------------------------------------------------------- | -------- |
-| 001 | [Shared contracts library](001-shared-contracts-library.md)                                               | Accepted |
-| 002 | [Renderer process isolation](002-renderer-process-isolation.md)                                           | Accepted |
-| 003 | [IPC channel constants](003-ipc-channel-constants.md)                                                     | Accepted |
-| 004 | [Barrel exports as passive aggregation](004-barrel-exports-and-naming.md)                                 | Accepted |
-| 005 | [File naming and suffix conventions](005-file-naming-and-suffix-conventions.md)                           | Accepted |
-| 006 | [Branching and commit conventions](006-branching-and-commit-conventions.md)                               | Accepted |
-| 007 | [File classification model](007-file-classification.md)                                                   | Accepted |
-| 008 | [IPC error model](008-ipc-error-model.md)                                                                 | Accepted |
-| 009 | [Library taxonomy and extraction rule](009-library-taxonomy.md)                                           | Accepted |
-| 010 | [Paired-library architecture per game](010-plugin-architecture.md)                                        | Accepted |
-| 011 | [Form library: React Hook Form + Zod](011-form-library.md)                                                | Accepted |
-| 012 | [Code editor: CodeMirror 6](012-editor-choice.md)                                                         | Accepted |
-| 013 | [Multi-mod workspace model](013-multi-mod-workspace-model.md)                                             | Accepted |
-| 014 | [Reference / read-only sources](014-reference-readonly-sources.md)                                        | Accepted |
-| 015 | [Business actions: availability-driven interaction pattern](015-business-actions.md)                      | Accepted |
-| 016 | [Load-order file resolution and provenance](016-load-order-resolution.md)                                 | Accepted |
-| 017 | [Derive equipment domain from interface category](017-derive-equipment-domain-from-interface-category.md) | Accepted |
-| 018 | [Entity form shell and per-entity descriptors](018-entity-form-shell-and-descriptors.md)                  | Accepted |
-| 019 | [Atomic batched scoped deltas for entity writes](019-atomic-batched-entity-writes.md)                     | Accepted |
-| 020 | [Read-side recognizer registry](020-read-side-recognizer-registry.md)                                     | Accepted |
-| 021 | [Technology's intentionally thin editable surface](021-technology-thin-editable-surface.md)               | Accepted |
-| 022 | [Paradox `@` substitution-symbol model](022-paradox-symbol-model.md)                                       | Accepted |
-| 023 | [Data-grounding harness and coverage baseline](023-data-grounding-harness.md)                              | Accepted |
-| 024 | [Source-scoped entity read layer](024-source-scoped-read-layer.md)                                         | Accepted |
+| 001 | [Shared contracts library](adr/001-shared-contracts-library.md)                                           | Accepted |
+| 002 | [Renderer process isolation](adr/002-renderer-process-isolation.md)                                       | Accepted |
+| 003 | [IPC channel constants](adr/003-ipc-channel-constants.md)                                                 | Accepted |
+| 004 | [Barrel exports as passive aggregation](adr/004-barrel-exports-and-naming.md)                             | Accepted |
+| 005 | [File naming and suffix conventions](adr/005-file-naming-and-suffix-conventions.md)                       | Accepted |
+| 006 | [Branching and commit conventions](adr/006-branching-and-commit-conventions.md)                           | Accepted |
+| 007 | [File classification model](adr/007-file-classification.md)                                               | Accepted |
+| 008 | [IPC error model](adr/008-ipc-error-model.md)                                                             | Accepted |
+| 009 | [Library taxonomy and extraction rule](adr/009-library-taxonomy.md)                                       | Accepted |
+| 010 | [Paired-library architecture per game](adr/010-plugin-architecture.md)                                    | Accepted |
+| 011 | [Form library: React Hook Form + Zod](adr/011-form-library.md)                                            | Accepted |
+| 012 | [Code editor: CodeMirror 6](adr/012-editor-choice.md)                                                     | Accepted |
+| 013 | [Multi-mod workspace model](adr/013-multi-mod-workspace-model.md)                                         | Accepted |
+| 014 | [Reference / read-only sources](adr/014-reference-readonly-sources.md)                                    | Accepted |
+| 015 | [Business actions: availability-driven interaction pattern](adr/015-business-actions.md)                  | Accepted |
+| 016 | [Load-order file resolution and provenance](adr/016-load-order-resolution.md)                             | Accepted |
+| 017 | [Derive equipment domain from interface category](adr/017-derive-equipment-domain-from-interface-category.md) | Accepted |
+| 018 | [Entity form shell and per-entity descriptors](adr/018-entity-form-shell-and-descriptors.md)              | Accepted |
+| 019 | [Atomic batched scoped deltas for entity writes](adr/019-atomic-batched-entity-writes.md)                 | Accepted |
+| 020 | [Read-side recognizer registry](adr/020-read-side-recognizer-registry.md)                                 | Accepted |
+| 021 | [Technology's intentionally thin editable surface](adr/021-technology-thin-editable-surface.md)           | Accepted |
+| 022 | [Paradox `@` substitution-symbol model](adr/022-paradox-symbol-model.md)                                   | Accepted |
+| 023 | [Data-grounding harness and coverage baseline](adr/023-data-grounding-harness.md)                          | Accepted |
+| 024 | [Source-scoped entity read layer](adr/024-source-scoped-read-layer.md)                                     | Accepted |
 
 ## Amendments
 

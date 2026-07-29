@@ -30,6 +30,20 @@ ADRs, or rule files are not journaled here — the live artifact is the record.
 | L-017 | `.gui` grammar gaps — `%` / `%%` percent literals and `rgb` / `hsv` keyword-tuple blocks, absent from the grammar and out of scope for ADR 022 (`@`-symbols) | In discussion — at the decision that models `.gui` | 2026-07-14 |
 | L-018 | Broaden the data-grounding corpus beyond the single BICE mod fork (ADR 023 decision 7 defers this — one real mod is sufficient to detect drops, and broadening is not a precondition for the harness) | Rejected for now — when one mod proves insufficient to surface a class of drop, or at a second ground-truth mod becoming available | 2026-07-21 |
 | L-019 | Survey item — air equipment modules are format-valid and absent from BICE (ADR 023 Amendment B: corpus absence is not evidence of non-support; unobserved format features are survey items, tracked against the format not the corpus, and the model is not narrowed to the corpus subset) | Open question — at the decision that surveys/models the equipment-module surface against engine documentation | 2026-07-22 |
+| L-020 | Deferred repeated-block first-match-drop remainder (characterized by the ZMT-E27 survey; character bind-collapse **F-a** is handled on its own ticket, this is the rest): (1) **dup-scalar-in-block** — e.g. two `armor_value` in one `multiply_stats`; a data-model limitation, flat `EntityField[]` cannot hold two rows with the same key, so it corrupts on save where it occurs; (2) **module / ideology / state repeated additive blocks** — invisibility, not corruption; the second-plus repeat is dropped from the read; (3) **latent sites** — format-valid repeats BICE does not currently exercise (survey-flagged). All three are off the plane critical path. Recording the class so the knowledge does not evaporate; fixing it is not this ticket. | In discussion — post-S-3 / the `EntityField` data-model refactor, or the first deferred drop that lands on the plane critical path | 2026-07-29 |
+
+## Closed / partially closed (recorded for traceability)
+
+Retained deliberately against this file's usual remove-on-close discipline: ADR
+024 discusses and closes L-013/L-014, but the ledger never carried rows for them,
+so their end state was untracked. Recorded here (ZMT-32 truth-up) rather than left
+implicit. `Closed` / `Partially closed` are outcome descriptors, not additions to
+the status legend above, which governs open/deferred rows only.
+
+| ID    | Decision                                                                                                                                                                          | Status                                                                                                                                          | Date       |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| L-013 | Module catalog re-parsed on every call (uncached) — `catalog-modules.service` re-enumerated and re-parsed every source per call                                                  | Closed by ZMT-31 (ADR 024 D5/D6) — the source-scoped index caches per entity type with mtime validation on read                                | 2026-07-29 |
+| L-014 | "Where modules live" stated twice across the process boundary — `MODULE_DIR` (main-side, `@e-game-hoi4`) vs `MODULE_DIR_SEGMENTS` (renderer `module-recognizer`)                  | Partially closed by ZMT-31 (ADR 024 D2/D6) — folder location now lives once in the entity registry (enumeration side); residual: the renderer `module-recognizer`'s `MODULE_DIR_SEGMENTS` persists as an accepted negative, no recognizer migration | 2026-07-29 |
 
 ## How to add an entry
 

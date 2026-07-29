@@ -82,6 +82,34 @@ Decisions 2, 4, 5, 6, 7, and 8 stand unchanged. Only Decision 1's mechanism is c
 Decision 3's provenance origin is refined; the sections below are the original 2026-07-29
 record and are left intact except for this appended amendment.
 
+## Amendment (2026-07-29) — stage-2 order is re-derived, not the resolver's (ZMT-31)
+
+Implementing the two-stage resolution (ZMT-30 amendment) pinned down a stage-2 semantic that
+amendment left unstated — one that is load-bearing for every entity type the index will ever
+serve. Recorded here so it is not re-simplified away.
+
+**Stage-2 load order is re-derived, not passed through.** Stage-2 entity resolution orders
+contributing files source-precedence-major, filename-minor — the index re-derives this ordering;
+it does **not** adopt `resolveLoadOrder`'s file-return order, which is alphabetical. The engine
+resolves same-name entities by source load precedence first; trusting the resolver's alphabetical
+sequence for stage 2 would shadow the wrong definition (a lower-precedence source's entity winning
+because its filename sorts later). This ordering is an **invariant of the index, not an incidental
+detail** — a future change that "simplifies" stage 2 to iterate the resolver's output order in
+sequence would silently mis-resolve cross-source overrides. It is the same "correct for one
+consumer, silently wrong for another" failure shape the ZMT-30 amendment named, so it is fixed as
+an invariant here rather than left to be re-discovered.
+
+**Decision 6's "may change results" is wider than `replace_path`.** The ZMT-30 amendment recorded
+that subsuming `catalog-modules` "may change results" for a mod that uses `replace_path` on the
+module directory. ZMT-31 surfaced that the divergence the two-stage index corrects is wider than
+that: same-filename sources across mods also diverge (engine file replacement), not only
+`replace_path` cases. When two mods ship a module file at the same relative path, the engine
+replaces the whole file (stage-1 file resolution, last-wins), but `catalog-modules` parses both and
+entity-dedups — surfacing entities the engine never sees. So the listed modules may change for any
+mod whose module files collide by relative path with a lower-precedence source, not for
+`replace_path` mods alone. The scope of Decision 6's behavior change is **file replacement in
+general**, of which `replace_path` is one case.
+
 ## Context
 
 Every entity read in the app is **file-scoped**. `api.<entity>.list(filePath)` takes a path;
