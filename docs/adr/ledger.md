@@ -1,15 +1,29 @@
 # Decision ledger
 
-Open decisions and explicit deferrals only. Decisions that have landed in code,
-ADRs, or rule files are not journaled here — the live artifact is the record.
+Open decisions and explicit deferrals, plus a deliberate trail of closed items.
+When a decision lands in code, ADRs, or rule files, its entry is moved to the
+"Closed / partially closed" section with its outcome and closing ticket — kept as
+a trail, not deleted. The live artifact remains the record of the decision's
+substance; the ledger preserves the deferral-and-closure history.
 
 ## Status legend
+
+Open statuses describe what is still pending; closed outcomes describe how a
+decision resolved. The two are distinct vocabularies — an open row never carries a
+closed outcome, and vice versa.
+
+Open-state statuses (for rows under `## Open`):
 
 - `In discussion` — agreed for now; revisit on friction (per R-WORK-8, must
   carry a closure trigger)
 - `Rejected for now` — actively decided against; conditions for revisit noted
 - `Proposed` — raised but not yet decided
 - `Open question` — not yet decided
+
+Closed outcomes (for rows in the "Closed / partially closed" section):
+
+- `Closed` — resolved; the row names the closing ticket and how it landed
+- `Partially closed` — resolved in part; the row names what landed and the residual
 
 ---
 
@@ -34,11 +48,9 @@ ADRs, or rule files are not journaled here — the live artifact is the record.
 
 ## Closed / partially closed (recorded for traceability)
 
-Retained deliberately against this file's usual remove-on-close discipline: ADR
-024 discusses and closes L-013/L-014, but the ledger never carried rows for them,
-so their end state was untracked. Recorded here (ZMT-32 truth-up) rather than left
-implicit. `Closed` / `Partially closed` are outcome descriptors, not additions to
-the status legend above, which governs open/deferred rows only.
+Closed items are retained here as a deliberate trail rather than deleted, so the
+deferral-and-closure history is preserved. Each row names its outcome
+(`Closed` / `Partially closed`) and the ticket that closed it.
 
 | ID    | Decision                                                                                                                                                                          | Status                                                                                                                                          | Date       |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
@@ -53,5 +65,7 @@ landing in code/ADR/rule (i.e. it's deferred or in-discussion):
 1. Pick the next `L-NNN` ID
 2. One-line summary
 3. Status + date + closure trigger per R-WORK-8
-4. If status later becomes `Accepted` and the decision lands in code/ADR/rule,
-   remove the entry from this file — the live artifact is the record
+4. On close — when the decision lands in code/ADR/rule or is otherwise resolved —
+   move the entry to the "Closed / partially closed" section with its outcome
+   (`Closed` / `Partially closed`), the ticket that closed it, and any residual.
+   Closed items are preserved as a trail, not deleted.
