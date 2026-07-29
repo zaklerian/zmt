@@ -63,6 +63,7 @@ discoverable from the index.
 | 019 | Materializing absent intermediate blocks for added-only deltas                         |
 | 019 | Numeric assignment keys in the parser grammar (unquoted province-id keys)              |
 | 019 | Batch-coordinated (coalesced) intermediate materialization                             |
+| 024 | Resolution is two-stage: file resolution (stage 1) then entity-name last-wins (stage 2) |
 
 ## When to write an ADR
 
