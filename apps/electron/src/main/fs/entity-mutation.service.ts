@@ -15,6 +15,7 @@ import {
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
+import { entityIndexService } from '../entity-index';
 import { pluginRegistryService } from '../plugins';
 import { workspaceStoreService } from '../workspace';
 import { assertWritable } from './path-guard.util';
@@ -70,6 +71,10 @@ async function deleteEntity(request: EntityDeleteRequest): Promise<void> {
   const patched = source.slice(0, from) + source.slice(to);
 
   await writeFileService.writeText(absolutePath, patched);
+  // Same-tick guard (ADR 024 decision 5): invalidate the affected entity type's
+  // index explicitly so a read after our own write never serves a stale index on
+  // a coarse-mtime filesystem, independent of the read-side stat check.
+  entityIndexService.invalidateForRelativePath(request.relativePath);
 }
 
 function indentFor(
@@ -464,6 +469,8 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
   }
 
   await writeFileService.writeText(absolutePath, applyEdits(source, edits));
+  // Same-tick guard (ADR 024 decision 5): see deleteEntity.
+  entityIndexService.invalidateForRelativePath(request.relativePath);
 }
 
 export const entityMutationService = {

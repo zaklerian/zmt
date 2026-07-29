@@ -1,4 +1,5 @@
 export * from './character';
+export * from './entity-registry';
 export * from './equipment';
 export * from './hoi4-plugin.const';
 export * from './ideology';
