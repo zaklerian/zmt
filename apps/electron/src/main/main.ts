@@ -11,6 +11,7 @@ import {
   registerEquipmentHandlers,
   registerFsHandlers,
   registerIdeologyHandlers,
+  registerIndexHandlers,
   registerModuleHandlers,
   registerPluginsHandlers,
   registerPreferencesHandlers,
@@ -28,6 +29,7 @@ async function bootstrap(): Promise<void> {
   registerEquipmentHandlers();
   registerFsHandlers();
   registerIdeologyHandlers();
+  registerIndexHandlers();
   registerModuleHandlers();
   registerPreferencesHandlers();
   registerStateHandlers();

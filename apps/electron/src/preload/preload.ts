@@ -9,6 +9,9 @@ import {
   EquipmentSlotsResult,
   GamePlugin,
   IdeologyEntity,
+  IndexDetailResult,
+  IndexEntityType,
+  IndexListResult,
   IPC_CHANNELS,
   ListOptions,
   ModId,
@@ -69,6 +72,16 @@ const API = {
         IPC_CHANNELS.ideology.list,
         filePath,
       ),
+  },
+  index: {
+    detail: <K extends IndexEntityType>(entityType: K, id: string) =>
+      invokeStructured<IndexDetailResult<K>>(
+        IPC_CHANNELS.index.detail,
+        entityType,
+        id,
+      ),
+    list: <K extends IndexEntityType>(entityType: K) =>
+      invokeStructured<IndexListResult<K>>(IPC_CHANNELS.index.list, entityType),
   },
   module: {
     catalog: () =>

@@ -6,14 +6,16 @@ import type { Script } from '@paradox-parser';
 // is the existing per-entity extractor, unchanged. `identify` names an extracted
 // entity, keying stage-2 same-name resolution (required by the ZMT-30 amendment;
 // extractors return differently-shaped identities — module `name`, technology
-// `token` — so the registry supplies the accessor). Lives in the game lib beside
-// the extractors and folder consts it wires (ADR 010); the generic index that
-// consumes it is main-side. `slimProjector` is NOT here: it lands with the
-// `index:list`/`index:detail` channels next ticket, extending this additively
-// (ADR 024 decision 4).
-export interface EntityRegistryEntry<T> {
+// `token` — so the registry supplies the accessor). `slimProjector` projects one
+// entity to its own slim shape for `index:list` (ADR 024 decision 4); each entity
+// type projects a distinct `TSlim`, so the second type param keeps the row type
+// honest per entity rather than collapsing to one shared shape. Lives in the game
+// lib beside the extractors and folder consts it wires (ADR 010); the generic
+// index that consumes it is main-side.
+export interface EntityRegistryEntry<T, TSlim = unknown> {
   readonly entityId: string;
   readonly extract: (script: Script) => readonly T[];
   readonly folder: string;
   readonly identify: (entity: T) => string;
+  readonly slimProjector: (entity: T) => TSlim;
 }
