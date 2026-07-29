@@ -44,6 +44,7 @@ Each ADR follows a consistent structure:
 | 021 | [Technology's intentionally thin editable surface](021-technology-thin-editable-surface.md)               | Accepted |
 | 022 | [Paradox `@` substitution-symbol model](022-paradox-symbol-model.md)                                       | Accepted |
 | 023 | [Data-grounding harness and coverage baseline](023-data-grounding-harness.md)                              | Accepted |
+| 024 | [Source-scoped entity read layer](024-source-scoped-read-layer.md)                                         | Accepted |
 
 ## Amendments
 
