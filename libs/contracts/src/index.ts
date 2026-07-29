@@ -1,6 +1,7 @@
 export * from './api';
 export * from './character';
 export * from './entity';
+export * from './entity-index';
 export * from './equipment';
 export * from './fs';
 export * from './ideology';

@@ -1,6 +1,11 @@
 import { CharacterEntity } from '../character';
 import { EntityDeleteRequest, EntityWriteRequest } from '../entity';
 import {
+  IndexDetailResult,
+  IndexEntityType,
+  IndexListResult,
+} from '../entity-index';
+import {
   EquipmentEntity,
   EquipmentSlotsRequest,
   EquipmentSlotsResult,
@@ -48,6 +53,17 @@ export interface AppApiModel {
   };
   readonly ideology: {
     readonly list: (filePath: string) => Promise<readonly IdeologyEntity[]>;
+  };
+  // The source-scoped read layer (ADR 024). `entityType` discriminates the
+  // row/detail type at this boundary — no `unknown` reaches the renderer.
+  readonly index: {
+    readonly detail: <K extends IndexEntityType>(
+      entityType: K,
+      id: string,
+    ) => Promise<IndexDetailResult<K>>;
+    readonly list: <K extends IndexEntityType>(
+      entityType: K,
+    ) => Promise<IndexListResult<K>>;
   };
   readonly module: {
     readonly catalog: () => Promise<readonly CatalogModule[]>;

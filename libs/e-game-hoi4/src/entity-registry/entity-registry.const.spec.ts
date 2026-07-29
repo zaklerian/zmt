@@ -27,4 +27,24 @@ describe('ENTITY_REGISTRY', () => {
     const [entity] = extract(script);
     expect(identify(entity)).toBe('my_tech');
   });
+
+  it('wires each entry to its own slimProjector shape (module → category, technology → nodeKind)', () => {
+    const [module] = ENTITY_REGISTRY.module.extract(
+      parse('equipment_modules = { foo = { category = engine } }'),
+    );
+    expect(ENTITY_REGISTRY.module.slimProjector(module)).toEqual({
+      category: 'engine',
+      id: 'foo',
+      name: 'foo',
+    });
+
+    const [technology] = ENTITY_REGISTRY.technology.extract(
+      parse('technologies = { my_tech = { } }'),
+    );
+    expect(ENTITY_REGISTRY.technology.slimProjector(technology)).toMatchObject({
+      id: 'my_tech',
+      nodeKind: 'sub',
+      position: null,
+    });
+  });
 });

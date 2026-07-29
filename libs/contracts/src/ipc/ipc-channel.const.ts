@@ -21,6 +21,10 @@ export const IPC_CHANNELS = {
   ideology: {
     list: 'ideology:list',
   },
+  index: {
+    detail: 'index:detail',
+    list: 'index:list',
+  },
   module: {
     catalog: 'module:catalog',
     list: 'module:list',

@@ -1,16 +1,15 @@
+import type {
+  EntityProvenance,
+  IndexedEntity,
+  IndexSourceInfo,
+} from '@contracts';
 import type { EntityRegistryEntry } from '@e-game-hoi4';
 
 import { parse } from '@paradox-parser';
 import { promises as fs } from 'node:fs';
 
 import type { ResolvedFile } from '../resolution';
-import type {
-  EntityIndexResult,
-  EntityProvenance,
-  IndexedEntity,
-  IndexSource,
-  IndexSourceInfo,
-} from './entity-index.model';
+import type { EntityIndexResult, IndexSource } from './entity-index.model';
 
 import { resolveLoadOrder } from '../resolution';
 import { enumerateEntitySources } from './enumerate-entity-sources.util';
