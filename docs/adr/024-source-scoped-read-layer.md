@@ -10,6 +10,78 @@ as the equipment resolution pattern generalized across entity types — cached, 
 and subsuming the module catalog. It is additive to ADR 013, 014, 016, 019, and 020 and amends
 none of them._
 
+## Amendment (2026-07-29) — resolution is two-stage (ZMT-30)
+
+The original decisions stand except **Decision 1's resolution mechanism**, which was
+file-stage-only and is corrected here. Reading the code the index is meant to generalize
+and subsume shows two different, non-interchangeable resolution strategies already in the
+tree, and Decision 1 described only one of them:
+
+- **Equipment** (`resolve-equipment-files.util.ts`) resolves at the **file** level.
+  `resolveLoadOrder` selects a winning file per relative path; only the winners are parsed;
+  shadowed files are never read.
+- **Modules** (`catalog-modules.service.ts`) resolve at the **entity** level. Every file
+  across all sources is parsed, then modules are last-wins-deduped by name — the code says
+  so explicitly: "name-identity dedup, NOT the ADR 016 file-level resolver."
+
+These produce different results, and the module strategy is the one closer to the engine:
+Paradox concatenates files in load order and resolves same-named entities last-wins within
+the merged stream. File-level resolution is the coarser mechanism, and it applies when
+`replace_path` drops a whole directory. Equipment gets away with file-level-only because its
+files replace wholesale — its data never exercises a cross-file, same-name entity override.
+Technology and module both do. So Decision 1's "resolve load order → parse winners → extract"
+is correct for equipment and silently wrong for the index's actual consumers: a same-named
+entity override living in a differently-named, lower-precedence file would not be shadowed
+correctly, and `catalog-modules`' current behavior — which the index is to subsume — would
+change.
+
+**The correction: resolution is two-stage.**
+
+- **Stage 1 — file resolution.** `resolveLoadOrder` (ADR 016) over the entity type's
+  enumerated files across sources establishes load order and honours `replace_path`. This
+  determines which files contribute and in what order. (This is all equipment does, and for
+  equipment it is sufficient.)
+- **Stage 2 — entity resolution.** Extract entities from **all** contributing files — not
+  only the file-winners — then resolve same-name entities last-wins in load order. The
+  winning definition's source, the set of shadowed sources, and a reason describing the
+  entity-level resolution are recorded per entity.
+
+Equipment's file-only path is the special case of this where **stage 2 is a no-op** (files
+replace wholesale, so no two contributing files carry a same-named entity to resolve). The
+generic index implements **both** stages; equipment does not migrate onto it — Decision 8
+stands.
+
+**Consequences of the correction.**
+
+- **Decision 3 refined.** The per-entity provenance (`sourceId`, `shadowedSourceIds`,
+  `reason`) is produced by **stage 2**, and its `reason` describes **entity-name** resolution.
+  That is a distinct vocabulary from `ResolvedFile.reason` (the file resolver's
+  `'last-wins' | 'replace-path' | 'sole-provider'`, which describes **file** resolution). The
+  exact entity-level `reason` values are an implementation concern; this ADR records only that
+  entity provenance is a **stage-2 product**, not a direct passthrough of the file resolver's
+  output. Decision 3's original phrasing — "the `reason` rides the row because it is
+  per-entity-file" — is superseded by this two-vocabulary split: the row still carries a
+  `reason`, but it is the stage-2 entity reason, not `ResolvedFile.reason`.
+
+- **Subsuming `catalog-modules` is a strict improvement, and may change results.**
+  `catalog-modules` does stage 2 without stage 1 — it merges by source precedence and ignores
+  `replace_path` entirely. The two-stage index adds stage 1, so for a mod that uses
+  `replace_path` on the module directory the listed modules may change. This is a **correctness
+  fix, not a regression**, and it is recorded here so the change is expected — not alarming —
+  when the implementation lands. Decision 6 (the index subsumes `catalog-modules`) stands; this
+  records what "subsume" changes.
+
+- **Two strategies coexisting undetected is the failure shape this sprint keeps hitting:** a
+  mechanism correct for the data one consumer has, silently wrong for data the format permits
+  and another consumer will meet. It is the same shape as ADR 022's dropped `@`-sigil (a
+  round-trip test read as "we understood the file") and ADR 023's corpus-absence caveat (an
+  unobserved format feature read as unsupported). Recording it keeps the pattern visible rather
+  than re-discovered per entity.
+
+Decisions 2, 4, 5, 6, 7, and 8 stand unchanged. Only Decision 1's mechanism is corrected and
+Decision 3's provenance origin is refined; the sections below are the original 2026-07-29
+record and are left intact except for this appended amendment.
+
 ## Context
 
 Every entity read in the app is **file-scoped**. `api.<entity>.list(filePath)` takes a path;
