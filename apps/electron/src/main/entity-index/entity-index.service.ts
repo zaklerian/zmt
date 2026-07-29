@@ -1,12 +1,11 @@
 import type { CatalogModule } from '@contracts';
+import type { EntityRegistryEntry, EntityTypeId } from '@e-game-hoi4';
 
+import { ENTITY_REGISTRY } from '@e-game-hoi4';
 import { dialectsFromPlugins } from '@paradox-parser';
 import { promises as fs } from 'node:fs';
 
-import type {
-  EntityIndexResult,
-  EntityRegistryEntry,
-} from './entity-index.model';
+import type { EntityIndexResult } from './entity-index.model';
 
 import { pluginRegistryService } from '../plugins';
 import { activeGameFolderPath, workspaceStoreService } from '../workspace';
@@ -14,7 +13,6 @@ import {
   resolveContributingFiles,
   resolveEntities,
 } from './build-entity-index.util';
-import { ENTITY_REGISTRY, type EntityTypeId } from './entity-registry.const';
 import { resolveIndexSources } from './resolve-index-sources.util';
 
 interface CacheEntry {

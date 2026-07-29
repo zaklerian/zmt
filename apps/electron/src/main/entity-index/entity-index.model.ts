@@ -1,5 +1,4 @@
 import type { ModId } from '@contracts';
-import type { Script } from '@paradox-parser';
 
 // The index result for one entity type: the resolved entities plus the sources
 // table. Provenance is normalized — entities carry source ids, the table carries
@@ -17,27 +16,6 @@ export interface EntityProvenance {
   readonly reason: EntityResolutionReason;
   readonly shadowedSourceIds: readonly SourceId[];
   readonly sourceId: SourceId;
-}
-
-// One entity type's contribution to the registry (ADR 024 decision 2). `folder`
-// is the directory enumerated across sources (the single main-side home for the
-// type's file location — L-014's enumeration-side close). `extract` is the
-// existing per-entity extractor, unchanged. `identify` names an extracted
-// entity, keying stage-2 same-name resolution (required by the ZMT-30 amendment;
-// the extractors return differently-shaped identities — module `name`, technology
-// `token` — so the registry supplies the accessor). `slimProjector` is NOT here:
-// it lands with the `index:list`/`index:detail` channels next ticket, extending
-// this shape additively (ADR 024 decision 4).
-export interface EntityRegistryEntry<T> {
-  readonly entityId: string;
-  // The parser `Script` intentionally retains the parser's MUTABLE AST for
-  // lossless round-trip; a deep-readonly param is neither achievable nor
-  // meaningful for the extractor surface this registry mirrors, so
-  // prefer-readonly-parameter-types (P-1) is disabled for this member.
-
-  readonly extract: (script: Script) => readonly T[];
-  readonly folder: string;
-  readonly identify: (entity: T) => string;
 }
 
 // The entity-level resolution outcome for one surviving entity. A DISTINCT

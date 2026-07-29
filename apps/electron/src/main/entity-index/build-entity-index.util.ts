@@ -1,3 +1,5 @@
+import type { EntityRegistryEntry } from '@e-game-hoi4';
+
 import { parse } from '@paradox-parser';
 import { promises as fs } from 'node:fs';
 
@@ -5,7 +7,6 @@ import type { ResolvedFile } from '../resolution';
 import type {
   EntityIndexResult,
   EntityProvenance,
-  EntityRegistryEntry,
   IndexedEntity,
   IndexSource,
   IndexSourceInfo,

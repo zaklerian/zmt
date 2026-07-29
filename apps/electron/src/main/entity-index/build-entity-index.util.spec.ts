@@ -1,13 +1,17 @@
 import { DESCRIPTOR_FILENAME } from '@contracts';
+import { ENTITY_REGISTRY } from '@e-game-hoi4';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { IndexSource } from './entity-index.model';
+import type {
+  EntityIndexResult,
+  IndexedEntity,
+  IndexSource,
+} from './entity-index.model';
 
 import { buildEntityIndex } from './build-entity-index.util';
-import { ENTITY_REGISTRY } from './entity-registry.const';
 
 const MODULE_DIR = 'common/units/equipment/modules';
 
@@ -51,13 +55,10 @@ async function source(
   return { modId, path: root, permission };
 }
 
-function survivor(
-  // The indexed ModuleEntity keeps the parser's mutable node handle by design;
-  // the assertions only read it. Same carve-out as EntityRegistryEntry (P-1).
-
-  result: Awaited<ReturnType<typeof index>>,
+function survivor<T>(
+  result: EntityIndexResult<T>,
   id: string,
-) {
+): IndexedEntity<T> {
   const found = result.entities.find((entity) => entity.id === id);
   if (found === undefined) throw new Error(`No indexed entity: ${id}`);
   return found;
