@@ -6,12 +6,13 @@ import {
   ModuleEntity,
 } from '@contracts';
 
+import { entityIndexService } from '../entity-index';
 import { ipcHandle } from '../ipc';
-import { catalogModules, listModules } from '../module';
+import { listModules } from '../module';
 
 export function registerModuleHandlers(): void {
   ipcHandle<readonly CatalogModule[]>(IPC_CHANNELS.module.catalog, async () =>
-    catalogModules(),
+    entityIndexService.moduleCatalog(),
   );
 
   ipcHandle<readonly ModuleEntity[]>(
