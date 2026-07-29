@@ -52,7 +52,7 @@ function invalidate(entityId: EntityTypeId): void {
 function invalidateForRelativePath(relativePath: string): void {
   for (const entityId of Object.keys(ENTITY_REGISTRY) as EntityTypeId[]) {
     if (isUnderFolder(relativePath, ENTITY_REGISTRY[entityId].folder)) {
-      cache.delete(entityId);
+      invalidate(entityId);
     }
   }
 }
