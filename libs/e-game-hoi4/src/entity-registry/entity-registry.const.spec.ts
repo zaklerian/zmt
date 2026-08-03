@@ -2,6 +2,7 @@ import { parse } from '@paradox-parser';
 import { describe, expect, it } from 'vitest';
 
 import { MODULE_DIR } from '../module/module-location.const';
+import { TECHNOLOGY_CATEGORY_DIR } from '../technology-category/technology-category-location.const';
 import { TECHNOLOGY_DIR } from '../technology/technology-location.const';
 import { ENTITY_REGISTRY } from './entity-registry.const';
 
@@ -26,6 +27,24 @@ describe('ENTITY_REGISTRY', () => {
     const script = parse('technologies = { my_tech = { } }');
     const [entity] = extract(script);
     expect(identify(entity)).toBe('my_tech');
+  });
+
+  it('wires the technology-category entry to TECHNOLOGY_CATEGORY_DIR and identifies by id', () => {
+    const { extract, folder, identify } = ENTITY_REGISTRY.technologyCategory;
+    expect(folder).toBe(TECHNOLOGY_CATEGORY_DIR);
+
+    const script = parse('technology_categories = { armor }');
+    const [entity] = extract(script);
+    expect(identify(entity)).toBe('armor');
+  });
+
+  it('projects a technology-category to a slim row carrying only its id', () => {
+    const [category] = ENTITY_REGISTRY.technologyCategory.extract(
+      parse('technology_categories = { armor }'),
+    );
+    expect(ENTITY_REGISTRY.technologyCategory.slimProjector(category)).toEqual({
+      id: 'armor',
+    });
   });
 
   it('wires each entry to its own slimProjector shape (module → category, technology → nodeKind)', () => {

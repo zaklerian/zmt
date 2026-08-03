@@ -1,5 +1,9 @@
 import type { ModuleEntity, ModuleSlim } from '../module';
 import type { TechnologyEntity, TechnologySlim } from '../technology';
+import type {
+  TechnologyCategoryEntity,
+  TechnologyCategorySlim,
+} from '../technology-category';
 import type { SourcesTable } from './index-source.model';
 import type { EntityProvenance, IndexedEntity } from './indexed-entity.model';
 
@@ -18,6 +22,10 @@ export interface EntityIndexShapes {
   readonly technology: {
     readonly entity: TechnologyEntity;
     readonly slim: TechnologySlim;
+  };
+  readonly technologyCategory: {
+    readonly entity: TechnologyCategoryEntity;
+    readonly slim: TechnologyCategorySlim;
   };
 }
 

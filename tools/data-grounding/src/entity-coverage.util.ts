@@ -17,11 +17,12 @@ import {
   extractStates,
   extractTechnologies,
 } from '@e-game-hoi4';
+import { isSymbolDefinition } from '@paradox-parser';
 
 import type { EntityType } from './entity-type.const';
 import type { UnmodeledKey } from './key-path.util';
 
-import { collectUnmodeledKeys, keyNameOf } from './key-path.util';
+import { collectUnmodeledKeys, keyNameOf, lineOf } from './key-path.util';
 
 // The projection each extractor performs is bespoke per entity (heterogeneous
 // model shapes), so the "keys projected into the model" side is bespoke per type.
@@ -67,6 +68,8 @@ export function computeFileCoverage(
       return coverState(script, source);
     case 'technology':
       return coverTechnology(script, source);
+    case 'technologyCategory':
+      return coverTechnologyCategory(script, source);
   }
 }
 
@@ -172,6 +175,31 @@ function coverTechnology(script: Script, source: string): FileCoverage {
     );
   }
   return { keys, writeTargets: entities.map((entity) => entity.token) };
+}
+
+// --- technology category ---------------------------------------------------
+
+// The category vocabulary is FILE-LEVEL, not per-entity-block: a
+// `technology_tags/*.txt` file declares `technology_categories` (the flat
+// bare-token vocabulary this index models) and `technology_folders` (out of
+// scope, Q61). So coverage walks the file's TOP LEVEL, mirroring `walk`'s
+// frontier rule — a top-level block not in the modeled set is reported once and
+// NOT descended. `technology_categories` is modeled, so its bare tokens (value
+// nodes that carry no key) contribute nothing; `technology_folders` surfaces as a
+// single intentional unmodeled key rather than its whole subtree. `'technology_categories'`
+// mirrors TECHNOLOGY_CATEGORIES_BLOCK in extract-technology-categories.util.ts
+// (R-WORK-2). No write target is seeded — the vocabulary has no per-token editable
+// block, so the Electron write round-trip stays OUTSTANDING for this type (ZMT-35
+// gate 6).
+function coverTechnologyCategory(script: Script, source: string): FileCoverage {
+  const keys: UnmodeledKey[] = [];
+  for (const child of script.children) {
+    if (child.kind !== 'Assignment' || isSymbolDefinition(child)) continue;
+    const key = keyNameOf(child);
+    if (key === 'technology_categories') continue;
+    keys.push({ keyPath: key, line: lineOf(source, child.key.from) });
+  }
+  return { keys, writeTargets: [] };
 }
 
 // Mirrors character/extract-characters.util.ts (KEY_NAME, PORTRAITS_BLOCK,
