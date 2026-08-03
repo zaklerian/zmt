@@ -7,3 +7,4 @@ export * from './mod-descriptor-schema.const';
 export * from './module';
 export * from './state';
 export * from './technology';
+export * from './technology-category';

@@ -18,6 +18,9 @@ describe('classifyEntityFile', () => {
     expect(classifyEntityFile('common/technologies/inf.txt')).toBe(
       'technology',
     );
+    expect(classifyEntityFile('common/technology_tags/00_technology.txt')).toBe(
+      'technologyCategory',
+    );
   });
 
   it('disambiguates module from equipment by the innermost directory', () => {

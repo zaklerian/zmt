@@ -183,4 +183,23 @@ describe('computeFileCoverage', () => {
       expect(keys).not.toContain('types.sub.m');
     });
   });
+
+  describe('technologyCategory — ZMT-35 declared vocabulary', () => {
+    const source = `technology_categories = {
+\tarmor
+\tartillery
+}
+technology_folders = {
+\tinfantry_folder = { ledger = army }
+}
+`;
+
+    it('models the category vocabulary and reports technology_folders as the one unmodeled key (Q61)', () => {
+      // The bare tokens under technology_categories carry no key, so they never
+      // surface; technology_folders is the intentional known-unmodeled frontier.
+      expect(unmodeled('technologyCategory', source)).toEqual([
+        'technology_folders',
+      ]);
+    });
+  });
 });

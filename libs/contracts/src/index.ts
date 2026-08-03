@@ -11,4 +11,5 @@ export * from './plugin';
 export * from './preferences';
 export * from './state';
 export * from './technology';
+export * from './technology-category';
 export * from './workspace';

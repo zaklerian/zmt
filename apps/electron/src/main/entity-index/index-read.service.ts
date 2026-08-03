@@ -45,6 +45,8 @@ async function list(
       return listWith(ENTITY_REGISTRY.module);
     case 'technology':
       return listWith(ENTITY_REGISTRY.technology);
+    case 'technologyCategory':
+      return listWith(ENTITY_REGISTRY.technologyCategory);
     default: {
       const exhaustive: never = entityType;
       throw new Error(`Unhandled entity type: ${String(exhaustive)}`);
@@ -80,6 +82,8 @@ function readFor(entityType: EntityTypeId) {
       return entityIndexService.read(ENTITY_REGISTRY.module);
     case 'technology':
       return entityIndexService.read(ENTITY_REGISTRY.technology);
+    case 'technologyCategory':
+      return entityIndexService.read(ENTITY_REGISTRY.technologyCategory);
     default: {
       const exhaustive: never = entityType;
       throw new Error(`Unhandled entity type: ${String(exhaustive)}`);
