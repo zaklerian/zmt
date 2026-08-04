@@ -59,6 +59,7 @@ export type ParadoxNode =
   | NumberValueNode
   | OperatorNode
   | OrphanComment
+  | PercentValueNode
   | ScriptNode
   | StringValueNode
   | SymbolDefinitionNode
@@ -70,6 +71,7 @@ export type ParadoxValue =
   | DateValueNode
   | IdentifierNode
   | NumberValueNode
+  | PercentValueNode
   | StringValueNode
   | SymbolValueNode;
 
@@ -77,6 +79,18 @@ export interface ParseError {
   from: number;
   message: string;
   to: number;
+}
+
+// A Clausewitz GUI dimension literal — a number with a trailing percent unit
+// (`90%`, `100%%`, `-100%`). `unit` distinguishes `%` (percent of parent) from
+// `%%` (percent of the parent's other axis); `value` is the signed numeric part.
+// The verbatim token, unit included, is `source.slice(from, to)`; serialization
+// stays a byte-slice, so the suffix is never lost even though `value` drops it.
+export interface PercentValueNode extends NodeBase {
+  kind: 'PercentValue';
+  raw: string;
+  unit: '%' | '%%';
+  value: number;
 }
 
 export type Script = ScriptNode;

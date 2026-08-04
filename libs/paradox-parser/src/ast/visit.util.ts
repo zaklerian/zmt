@@ -36,6 +36,9 @@ function dispatch(node: ParadoxNode, visitors: Visitors): void {
     case 'OrphanComment':
       visitors.OrphanComment?.(node);
       return;
+    case 'PercentValue':
+      visitors.PercentValue?.(node);
+      return;
     case 'Script':
       visitors.Script?.(node);
       return;
@@ -68,6 +71,7 @@ function walk(node: ParadoxNode, visitors: Visitors): void {
     case 'NumberValue':
     case 'Operator':
     case 'OrphanComment':
+    case 'PercentValue':
     case 'StringValue':
     case 'SymbolDefinition':
     case 'SymbolValue':

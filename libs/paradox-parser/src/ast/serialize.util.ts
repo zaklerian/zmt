@@ -9,6 +9,7 @@ import type {
   OperatorKind,
   OperatorNode,
   ParadoxNode,
+  PercentValueNode,
   Script,
   StringValueNode,
   SymbolValueNode,
@@ -91,6 +92,8 @@ function canonicalBody(
       return canonicalOperator(node);
     case 'OrphanComment':
       return node.text;
+    case 'PercentValue':
+      return canonicalPercent(node);
     case 'Script':
       return serializeScript(node, source);
     case 'StringValue':
@@ -120,6 +123,12 @@ function canonicalNumber(node: NumberValueNode): string {
 
 function canonicalOperator(node: OperatorNode): string {
   return OPERATOR_SYMBOL[node.opKind];
+}
+
+// A dimension literal re-emits its numeric part + unit (`90%`, `100%%`). Only
+// reached for a dirtied node; an untouched one round-trips via the byte-slice.
+function canonicalPercent(node: PercentValueNode): string {
+  return node.raw !== '' ? node.raw : `${node.value}${node.unit}`;
 }
 
 function canonicalString(node: StringValueNode): string {
