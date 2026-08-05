@@ -20,6 +20,7 @@ import {
   Preferences,
   StateEntity,
   TechnologyEntity,
+  TechTreeGeometry,
   Workspace,
 } from '@contracts';
 import { contextBridge } from 'electron';
@@ -122,6 +123,10 @@ const API = {
         IPC_CHANNELS.technology.list,
         filePath,
       ),
+  },
+  techTreeGeometry: {
+    read: () =>
+      invokeStructured<TechTreeGeometry>(IPC_CHANNELS.techTreeGeometry.read),
   },
   workspace: {
     addMod: (path: string) =>

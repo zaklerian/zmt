@@ -12,5 +12,6 @@ export * from './preferences-handlers.setup';
 export * from './register-app-lifecycle.setup';
 export * from './state-handlers.setup';
 export * from './system-handlers.setup';
+export * from './tech-tree-geometry-handlers.setup';
 export * from './technology-handlers.setup';
 export * from './workspace-handlers.setup';
