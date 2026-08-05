@@ -12,6 +12,7 @@ import type {
   OperatorNode,
   ParadoxValue,
   ParseError,
+  PercentValueNode,
   Script,
   ScriptChild,
   StringValueNode,
@@ -284,6 +285,22 @@ function adaptOperator(node: SyntaxNode): OperatorNode {
   };
 }
 
+function adaptPercent(node: SyntaxNode, source: string): PercentValueNode {
+  const raw = source.slice(node.from, node.to);
+  const unit = raw.endsWith('%%') ? '%%' : '%';
+  return {
+    dirty: false,
+    from: node.from,
+    kind: 'PercentValue',
+    leadingTrivia: [],
+    raw,
+    to: node.to,
+    trailingTrivia: [],
+    unit,
+    value: Number(raw.slice(0, raw.length - unit.length)),
+  };
+}
+
 function adaptScriptChildren(
   root: SyntaxNode,
   source: string,
@@ -374,6 +391,8 @@ function adaptValue(
       return adaptIdentifier(inner, source);
     case 'NumberValue':
       return adaptNumber(inner, source);
+    case 'PercentValue':
+      return adaptPercent(inner, source);
     case 'StringValue':
       return adaptString(inner, source);
     case 'SymbolValue':

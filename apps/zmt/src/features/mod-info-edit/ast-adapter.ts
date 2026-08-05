@@ -233,6 +233,8 @@ function extractString(value: ParadoxValue): string {
       return value.name;
     case 'NumberValue':
       return value.raw;
+    case 'PercentValue':
+      return value.raw;
     case 'StringValue':
       return value.value;
     case 'SymbolValue':

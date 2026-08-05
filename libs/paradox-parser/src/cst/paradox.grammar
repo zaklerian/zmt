@@ -11,6 +11,7 @@ Operator {
 Value {
   StringValue
   | DateValue
+  | PercentValue
   | NumberValue
   | BooleanValue
   | Identifier
@@ -50,6 +51,15 @@ BracketExpression { BracketExprToken }
   DateValue  { $[0-9]+ "." $[0-9]+ "." $[0-9]+ }
   NumberValue { "-"? $[0-9]+ ("." $[0-9]+)? }
 
+  // A Clausewitz GUI dimension literal: a number with a trailing `%` (percent of
+  // parent) or `%%` (percent of the parent's other axis). Ubiquitous in `.gui`/
+  // `.gfx` `size`/`position` blocks (`width = 90%`, `height = 100%%`), never valid
+  // elsewhere, so — like `SymbolValue` — it is unambiguous and lives in the base
+  // grammar rather than behind a dialect flag (only genuinely-ambiguous `@[ … ]`
+  // is dialect-gated). The numeric part mirrors NumberValue; a `%` must follow, so
+  // the two never collide (maximal-munch takes `90%` over `90`).
+  PercentValue { "-"? $[0-9]+ ("." $[0-9]+)? "%" "%"? }
+
   LBrace      { "{" }
   RBrace      { "}" }
 
@@ -66,7 +76,7 @@ BracketExpression { BracketExprToken }
 
   whitespace { $[ \t\r\n]+ }
 
-  @precedence { DateValue, NumberValue }
+  @precedence { DateValue, PercentValue, NumberValue }
   @precedence { LessEq, LessThan }
   @precedence { GreaterEq, GreaterThan }
 }
