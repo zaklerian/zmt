@@ -46,6 +46,9 @@ export const IPC_CHANNELS = {
   technology: {
     list: 'technology:list',
   },
+  techTreeGeometry: {
+    read: 'techTreeGeometry:read',
+  },
   workspace: {
     addMod: 'workspace:addMod',
     get: 'workspace:get',

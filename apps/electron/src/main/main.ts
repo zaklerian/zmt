@@ -18,6 +18,7 @@ import {
   registerStateHandlers,
   registerSystemHandlers,
   registerTechnologyHandlers,
+  registerTechTreeGeometryHandlers,
   registerWorkspaceHandlers,
 } from './setup';
 import { workspaceStoreService } from './workspace';
@@ -34,6 +35,7 @@ async function bootstrap(): Promise<void> {
   registerPreferencesHandlers();
   registerStateHandlers();
   registerTechnologyHandlers();
+  registerTechTreeGeometryHandlers();
   registerWorkspaceHandlers();
   initializePlugins();
   registerPluginsHandlers();

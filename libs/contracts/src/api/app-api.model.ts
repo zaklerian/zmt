@@ -16,6 +16,7 @@ import { CatalogModule, ModuleEntity } from '../module';
 import { GamePlugin } from '../plugin';
 import { PreferenceKey, Preferences } from '../preferences';
 import { StateEntity } from '../state';
+import { TechTreeGeometry } from '../tech-tree-geometry';
 import { TechnologyEntity } from '../technology';
 import { ModId, Workspace } from '../workspace';
 
@@ -90,6 +91,12 @@ export interface AppApiModel {
   };
   readonly technology: {
     readonly list: (filePath: string) => Promise<readonly TechnologyEntity[]>;
+  };
+  // Tech-tree geometry — the folder-keyed render geometry projected from the
+  // tree-view `.gui` (ADR 025). A standalone resolved-file read, not the entity
+  // index: one channel returning every folder's geometry; the canvas selects one.
+  readonly techTreeGeometry: {
+    readonly read: () => Promise<TechTreeGeometry>;
   };
   readonly workspace: {
     readonly addMod: (path: string) => Promise<Workspace>;
