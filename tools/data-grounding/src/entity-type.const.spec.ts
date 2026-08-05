@@ -21,6 +21,17 @@ describe('classifyEntityFile', () => {
     expect(classifyEntityFile('common/technology_tags/00_technology.txt')).toBe(
       'technologyCategory',
     );
+    expect(classifyEntityFile('interface/Technologies.gfx')).toBe('sprite');
+  });
+
+  it('classifies a sprite by its .gfx extension, not .txt', () => {
+    // A `.gfx` under `interface` is a sprite; a `.gui`/`.txt` under `interface`
+    // is not — the extension gate is per type (sprite is `.gfx`).
+    expect(classifyEntityFile('interface/countrytechnologyview.gfx')).toBe(
+      'sprite',
+    );
+    expect(classifyEntityFile('interface/countrytechtreeview.gui')).toBeNull();
+    expect(classifyEntityFile('interface/some_window.txt')).toBeNull();
   });
 
   it('disambiguates module from equipment by the innermost directory', () => {

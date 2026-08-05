@@ -6,7 +6,7 @@ import type {
   StateEntity,
   TechnologyEntity,
 } from '@contracts';
-import type { BlockNode, Script } from '@paradox-parser';
+import type { BlockChild, BlockNode, Script } from '@paradox-parser';
 
 import {
   buildArchetypeIndex,
@@ -64,6 +64,8 @@ export function computeFileCoverage(
       return coverIdeology(script, source);
     case 'module':
       return coverModule(script, source);
+    case 'sprite':
+      return coverSprite(script, source);
     case 'state':
       return coverState(script, source);
     case 'technology':
@@ -200,6 +202,74 @@ function coverTechnologyCategory(script: Script, source: string): FileCoverage {
     keys.push({ keyPath: key, line: lineOf(source, child.key.from) });
   }
   return { keys, writeTargets: [] };
+}
+
+// --- sprite -----------------------------------------------------------------
+
+// A sprite's modeled keys, lowercased for the case-insensitive match the
+// extractor performs (BICE mixes `texturefile`/`textureFile`). Mirrors the keys
+// extract-sprites.util.ts projects: `name`→id, `texturefile`→texturefile,
+// `noOfFrames`→frames (R-WORK-2).
+const MODELED_SPRITE_KEYS = new Set(['name', 'noofframes', 'texturefile']);
+
+// Mirrors the block-type match in extract-sprites.util.ts: any key ending
+// `spritetype` (bare `SpriteType` plus the `*SpriteType` variants).
+const SPRITE_TYPE_SUFFIX = 'spritetype';
+
+// A `.gfx` file's coverage (ZMT-39): sprite blocks are the "entities", so coverage
+// walks every `*SpriteType` block (under the `spriteTypes` wrapper or at the top
+// level) and reports each inner key the model does NOT project — `size`,
+// `borderSize`, `effectFile`, `animation_rate_fps`, and the rest of the render
+// chrome — as unmodeled-by-design. A non-sprite top-level construct
+// (`bitmapfonts`, `objectTypes`) is reported once and not descended, the same
+// frontier rule coverTechnologyCategory uses for `technology_folders`. No write
+// target is seeded: sprites have no per-block editable write path (the write
+// boundary is out of ZMT-39's scope), so the Electron write round-trip stays
+// OUTSTANDING for this type, exactly as it does for technologyCategory.
+function coverSprite(script: Script, source: string): FileCoverage {
+  const keys: UnmodeledKey[] = [];
+  for (const child of script.children) {
+    if (child.kind !== 'Assignment' || isSymbolDefinition(child)) continue;
+    const key = keyNameOf(child);
+    const lowerKey = key.toLowerCase();
+    if (child.value.kind === 'Block' && lowerKey === 'spritetypes') {
+      for (const inner of child.value.children) {
+        coverSpriteBlock(inner, source, keys);
+      }
+      continue;
+    }
+    if (child.value.kind === 'Block' && lowerKey.endsWith(SPRITE_TYPE_SUFFIX)) {
+      coverSpriteBlock(child, source, keys);
+      continue;
+    }
+    keys.push({ keyPath: key, line: lineOf(source, child.key.from) });
+  }
+  return { keys, writeTargets: [] };
+}
+
+// Reports one sprite block's unmodeled inner keys (frontier: reported once, not
+// descended — a `size = { x y }` surfaces as `size`, not `size.x`/`size.y`). A
+// non-`*SpriteType` block sitting under the wrapper is itself unmodeled and
+// reported once.
+function coverSpriteBlock(
+  node: BlockChild,
+  source: string,
+  keys: UnmodeledKey[],
+): void {
+  if (node.kind !== 'Assignment' || node.value.kind !== 'Block') return;
+  if (!keyNameOf(node).toLowerCase().endsWith(SPRITE_TYPE_SUFFIX)) {
+    keys.push({
+      keyPath: keyNameOf(node),
+      line: lineOf(source, node.key.from),
+    });
+    return;
+  }
+  for (const inner of node.value.children) {
+    if (inner.kind !== 'Assignment' || isSymbolDefinition(inner)) continue;
+    const innerKey = keyNameOf(inner);
+    if (MODELED_SPRITE_KEYS.has(innerKey.toLowerCase())) continue;
+    keys.push({ keyPath: innerKey, line: lineOf(source, inner.key.from) });
+  }
 }
 
 // Mirrors character/extract-characters.util.ts (KEY_NAME, PORTRAITS_BLOCK,

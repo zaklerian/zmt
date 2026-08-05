@@ -14,6 +14,11 @@ import type { Script } from '@paradox-parser';
 // index that consumes it is main-side.
 export interface EntityRegistryEntry<T, TSlim = unknown> {
   readonly entityId: string;
+  // File extension of the type's declarations, defaulted to `.txt` by the
+  // enumerator when omitted. Sprites ship as `.gfx` (ZMT-39); every other type
+  // omits this and inherits `.txt`. The single home for the type's extension, the
+  // extension-side analogue of `folder` being the single home for its location.
+  readonly extension?: string;
   readonly extract: (script: Script) => readonly T[];
   readonly folder: string;
   readonly identify: (entity: T) => string;
