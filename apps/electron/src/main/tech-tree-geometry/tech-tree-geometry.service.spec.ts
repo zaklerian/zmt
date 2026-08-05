@@ -102,8 +102,11 @@ describe('techTreeGeometryService', () => {
     expect(geometry.folders.air_techs_folder?.background).toBe(
       'GFX_vanilla_bg',
     );
+    // `resolveLoadOrder` builds absolutePath with `posix.join` (ADR 016), so the
+    // separator is `/` on every platform — mirror it rather than `path.join`,
+    // which would use `\` on Windows and diverge from the resolved value.
     expect(geometry.provenance).toMatchObject({
-      absolutePath: path.join(vanilla.path, GUI_PATH),
+      absolutePath: path.posix.join(vanilla.path, GUI_PATH),
       modId: null,
       reason: 'sole-provider',
       relativePath: GUI_PATH,
@@ -123,7 +126,7 @@ describe('techTreeGeometryService', () => {
     // The mod's .gui wins: its background marker, not vanilla's.
     expect(geometry.folders.air_techs_folder?.background).toBe('GFX_bice_bg');
     expect(geometry.provenance).toMatchObject({
-      absolutePath: path.join(mod.path, GUI_PATH),
+      absolutePath: path.posix.join(mod.path, GUI_PATH),
       modId: 'bice',
       reason: 'last-wins',
     });
