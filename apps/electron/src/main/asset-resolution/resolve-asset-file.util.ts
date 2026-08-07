@@ -159,7 +159,12 @@ function provenanceOf(
   const source = sources.find((candidate) => candidate.path === root);
   const relativePath = match?.relativePath ?? winner.relativePath;
   return {
-    absolutePath: posix.join(root, relativePath),
+    // Native `path.join` (not `posix.join`) so the absolute path uses the OS
+    // separator: `relativePath` is `/`-normalized, and joining it onto a Windows
+    // drive root with `posix.join` yields mixed separators (`C:\…\zmt/gfx/…`).
+    // `relativePath` below stays `/`-based — it is the posix on-disk relative
+    // path, consistent with the resolver's `relativePath` vocabulary.
+    absolutePath: path.join(root, relativePath),
     modId: source?.modId ?? null,
     permission: source?.permission ?? 'readonly',
     reason: winner.reason,
