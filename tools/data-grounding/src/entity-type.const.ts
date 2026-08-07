@@ -7,11 +7,15 @@
 // change, this table changes in the same PR (R-WORK-2). `technologyCategory` has
 // no renderer recognizer (it is read through the generic index, not a table
 // recognizer, ZMT-35); its segments mirror TECHNOLOGY_CATEGORY_DIR in e-game-hoi4.
+// `sprite` (ZMT-39) likewise has no renderer recognizer — it is read through the
+// generic index — and is the one type whose files are `.gfx`, not `.txt`; its
+// segments and extension mirror SPRITE_DIR / SPRITE_FILE_EXTENSION in e-game-hoi4.
 export const ENTITY_TYPES = [
   'character',
   'equipment',
   'ideology',
   'module',
+  'sprite',
   'state',
   'technology',
   'technologyCategory',
@@ -26,9 +30,24 @@ export const ENTITY_DIR_SEGMENTS: Readonly<
   equipment: ['common', 'units', 'equipment'],
   ideology: ['common', 'ideologies'],
   module: ['common', 'units', 'equipment', 'modules'],
+  sprite: ['interface'],
   state: ['history', 'states'],
   technology: ['common', 'technologies'],
   technologyCategory: ['common', 'technology_tags'],
+};
+
+// The declaration file extension per type, matched case-insensitively. Every type
+// ships `.txt`; sprite ships `.gfx` (ZMT-39). Mirrors the registry's per-type
+// `extension` in e-game-hoi4 (R-WORK-2).
+export const ENTITY_FILE_EXTENSION: Readonly<Record<EntityType, string>> = {
+  character: '.txt',
+  equipment: '.txt',
+  ideology: '.txt',
+  module: '.txt',
+  sprite: '.gfx',
+  state: '.txt',
+  technology: '.txt',
+  technologyCategory: '.txt',
 };
 
 // A file is of an entity type when the type's dir segments appear as consecutive
@@ -39,13 +58,21 @@ export const ENTITY_DIR_SEGMENTS: Readonly<
 export function classifyEntityFile(relativePath: string): EntityType | null {
   const segments = relativePath.split(/[/\\]/).filter((s) => s.length > 0);
   const last = segments[segments.length - 1];
-  if (last === undefined || !last.toLowerCase().endsWith('.txt')) return null;
+  if (last === undefined) return null;
+  const lower = last.toLowerCase();
 
   // At most one type matches: the "directly inside" rule below means a module
   // file (`.../equipment/modules/x.txt`) matches only the module chain, never the
-  // equipment chain that is its prefix — so iteration order is immaterial.
+  // equipment chain that is its prefix — so iteration order is immaterial. The
+  // extension gate is per type (sprite is `.gfx`, the rest `.txt`), so a `.gfx`
+  // under `interface` is sprite while a `.gui`/`.txt` under `interface` is not.
   for (const type of ENTITY_TYPES) {
-    if (matchesDirChain(segments, ENTITY_DIR_SEGMENTS[type])) return type;
+    if (
+      lower.endsWith(ENTITY_FILE_EXTENSION[type]) &&
+      matchesDirChain(segments, ENTITY_DIR_SEGMENTS[type])
+    ) {
+      return type;
+    }
   }
   return null;
 }

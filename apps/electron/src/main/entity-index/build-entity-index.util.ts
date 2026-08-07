@@ -29,7 +29,12 @@ export async function buildEntityIndex<T>(
   entry: EntityRegistryEntry<T>,
   dialects: readonly string[],
 ): Promise<EntityIndexResult<T>> {
-  const files = await resolveContributingFiles(sources, entry.folder, dialects);
+  const files = await resolveContributingFiles(
+    sources,
+    entry.folder,
+    dialects,
+    entry.extension,
+  );
   return resolveEntities(files, sources, entry, dialects);
 }
 
@@ -38,13 +43,15 @@ export async function buildEntityIndex<T>(
 // `replace_path` (ADR 016). The result is the contributing files, one winner per
 // relative path. `resolveLoadOrder` sorts by relative path; stage 2 re-orders
 // these into the engine's load order (source precedence major, filename minor).
+// `extension` defaults to `.txt` in the enumerator; sprite passes `.gfx` (ZMT-39).
 export async function resolveContributingFiles(
   sources: readonly IndexSource[],
   folder: string,
   dialects: readonly string[],
+  extension?: string,
 ): Promise<readonly ResolvedFile[]> {
   return resolveLoadOrder(
-    await enumerateEntitySources(sources, folder, dialects),
+    await enumerateEntitySources(sources, folder, dialects, extension),
   );
 }
 

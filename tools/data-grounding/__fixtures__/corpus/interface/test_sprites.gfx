@@ -1,0 +1,18 @@
+spriteTypes = {
+	SpriteType = {
+		name = "GFX_test_techtree_bg"
+		texturefile = "gfx/interface/techtree/test_bg.dds"
+	}
+	frameAnimatedSpriteType = {
+		name = "GFX_test_anim"
+		textureFile = "gfx/interface/test_anim_strip.dds"
+		noOfFrames = 3
+		effectFile = "gfx/FX/buttonstate_blendframes.lua"
+	}
+	corneredTileSpriteType = {
+		name = "GFX_test_tile"
+		textureFile = "gfx//interface//tiles//test_tile.dds"
+		size = { x = 192 y = 192 }
+		borderSize = { x = 64 y = 64 }
+	}
+}

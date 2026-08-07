@@ -88,7 +88,12 @@ async function read<T>(
     await activeGameFolderPath(),
   );
 
-  const files = await resolveContributingFiles(sources, entry.folder, dialects);
+  const files = await resolveContributingFiles(
+    sources,
+    entry.folder,
+    dialects,
+    entry.extension,
+  );
   const validity = await statValidity(files);
 
   const cached = cache.get(entry.entityId);

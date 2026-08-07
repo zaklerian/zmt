@@ -32,6 +32,20 @@
         "example": "common/units/equipment/modules/test_modules.txt:12"
       }
     },
+    "sprite": {
+      "borderSize": {
+        "count": 1,
+        "example": "interface/test_sprites.gfx:16"
+      },
+      "effectFile": {
+        "count": 1,
+        "example": "interface/test_sprites.gfx:10"
+      },
+      "size": {
+        "count": 1,
+        "example": "interface/test_sprites.gfx:15"
+      }
+    },
     "state": {
       "history.add_core_of": {
         "count": 1,

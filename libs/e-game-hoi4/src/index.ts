@@ -5,6 +5,7 @@ export * from './hoi4-plugin.const';
 export * from './ideology';
 export * from './mod-descriptor-schema.const';
 export * from './module';
+export * from './sprite';
 export * from './state';
 export * from './tech-tree-geometry';
 export * from './technology';

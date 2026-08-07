@@ -9,6 +9,7 @@ export * from './ipc';
 export * from './module';
 export * from './plugin';
 export * from './preferences';
+export * from './sprite';
 export * from './state';
 export * from './tech-tree-geometry';
 export * from './technology';

@@ -43,6 +43,8 @@ async function list(
   switch (entityType) {
     case 'module':
       return listWith(ENTITY_REGISTRY.module);
+    case 'sprite':
+      return listWith(ENTITY_REGISTRY.sprite);
     case 'technology':
       return listWith(ENTITY_REGISTRY.technology);
     case 'technologyCategory':
@@ -80,6 +82,8 @@ function readFor(entityType: EntityTypeId) {
   switch (entityType) {
     case 'module':
       return entityIndexService.read(ENTITY_REGISTRY.module);
+    case 'sprite':
+      return entityIndexService.read(ENTITY_REGISTRY.sprite);
     case 'technology':
       return entityIndexService.read(ENTITY_REGISTRY.technology);
     case 'technologyCategory':

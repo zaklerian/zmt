@@ -1,4 +1,5 @@
 import type { ModuleEntity, ModuleSlim } from '../module';
+import type { SpriteEntity, SpriteSlim } from '../sprite';
 import type { TechnologyEntity, TechnologySlim } from '../technology';
 import type {
   TechnologyCategoryEntity,
@@ -18,6 +19,10 @@ export interface EntityIndexShapes {
   readonly module: {
     readonly entity: ModuleEntity;
     readonly slim: ModuleSlim;
+  };
+  readonly sprite: {
+    readonly entity: SpriteEntity;
+    readonly slim: SpriteSlim;
   };
   readonly technology: {
     readonly entity: TechnologyEntity;
