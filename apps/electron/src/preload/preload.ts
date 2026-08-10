@@ -1,5 +1,6 @@
 import {
   AppApiModel,
+  AssetImageResult,
   CatalogModule,
   CharacterEntity,
   EntityDeleteRequest,
@@ -28,6 +29,10 @@ import { contextBridge } from 'electron';
 import { invokeStructured } from './ipc-invoke.util';
 
 const API = {
+  asset: {
+    getImage: (spriteName: string) =>
+      invokeStructured<AssetImageResult>(IPC_CHANNELS.asset.image, spriteName),
+  },
   character: {
     list: (filePath: string) =>
       invokeStructured<readonly CharacterEntity[]>(
