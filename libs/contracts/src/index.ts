@@ -1,4 +1,5 @@
 export * from './api';
+export * from './asset';
 export * from './character';
 export * from './entity';
 export * from './entity-index';

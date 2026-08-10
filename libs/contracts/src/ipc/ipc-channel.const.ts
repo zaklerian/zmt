@@ -1,4 +1,7 @@
 export const IPC_CHANNELS = {
+  asset: {
+    image: 'asset:image',
+  },
   character: {
     list: 'character:list',
   },

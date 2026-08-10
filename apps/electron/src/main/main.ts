@@ -6,6 +6,7 @@ import {
   initializeDefaultRoot,
   installContentSecurityPolicy,
   registerAppLifecycle,
+  registerAssetImageHandlers,
   registerCharacterHandlers,
   registerEntityHandlers,
   registerEquipmentHandlers,
@@ -25,6 +26,7 @@ import { workspaceStoreService } from './workspace';
 
 async function bootstrap(): Promise<void> {
   registerSystemHandlers();
+  registerAssetImageHandlers();
   registerCharacterHandlers();
   registerEntityHandlers();
   registerEquipmentHandlers();

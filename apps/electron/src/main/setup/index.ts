@@ -1,3 +1,4 @@
+export * from './asset-image-handlers.setup';
 export * from './character-handlers.setup';
 export * from './entity-handlers.setup';
 export * from './equipment-handlers.setup';

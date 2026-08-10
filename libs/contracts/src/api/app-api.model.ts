@@ -1,3 +1,4 @@
+import { AssetImageResult } from '../asset';
 import { CharacterEntity } from '../character';
 import { EntityDeleteRequest, EntityWriteRequest } from '../entity';
 import {
@@ -21,6 +22,13 @@ import { TechnologyEntity } from '../technology';
 import { ModId, Workspace } from '../workspace';
 
 export interface AppApiModel {
+  // `asset:image` (ZMT-40) — sprite name → decoded PNG `data:` URL. Main decodes
+  // the resolved `.dds` (ZMT-39 resolves the path); the renderer receives pixels
+  // keyed by sprite name, never a file path. Three outcomes carried in the result
+  // union, not the error channel: `ok`/`unresolved`/`unsupported`.
+  readonly asset: {
+    readonly getImage: (spriteName: string) => Promise<AssetImageResult>;
+  };
   readonly character: {
     readonly list: (filePath: string) => Promise<readonly CharacterEntity[]>;
   };
