@@ -37,10 +37,21 @@ export const uk: typeof en = {
       collapse: 'Згорнути',
       expand: 'Розгорнути',
     },
+    panelMode: {
+      file: 'Навігація файлами',
+      nav: 'Навігація функціями',
+    },
   },
   modals: {
     unsavedChanges: {
       title: 'Незбережені зміни',
+    },
+  },
+  nav: {
+    noSelection: 'Виберіть функцію, щоб переглянути її дерево.',
+    treePlaceholder: {
+      caption: 'Полотно для цієї функції з’явиться в наступному тікеті.',
+      title: 'Тут відображається дерево',
     },
   },
   panel: {

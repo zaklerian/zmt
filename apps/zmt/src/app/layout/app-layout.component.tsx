@@ -21,6 +21,7 @@ interface AppLayoutProps {
   onOpenAppSettings: () => void;
   onOpenFolder: () => void;
   onToggleDrawer: () => void;
+  panelModeToggle?: ReactNode;
   panelToolbarRight?: ReactNode;
   selectedPath: null | string;
   sidebar: ReactNode;
@@ -34,6 +35,7 @@ export function AppLayout({
   onOpenAppSettings,
   onOpenFolder,
   onToggleDrawer,
+  panelModeToggle,
   panelToolbarRight,
   selectedPath,
   sidebar,
@@ -73,10 +75,16 @@ export function AppLayout({
                 display: 'flex',
                 flexDirection: drawerOpen ? 'row' : 'column',
                 gap: 0.5,
-                justifyContent: drawerOpen ? 'flex-end' : 'center',
+                justifyContent:
+                  drawerOpen && panelModeToggle != null
+                    ? 'space-between'
+                    : drawerOpen
+                      ? 'flex-end'
+                      : 'center',
                 p: 0.5,
               }}
             >
+              {drawerOpen && panelModeToggle}
               <Tooltip
                 placement="right"
                 title={translate(

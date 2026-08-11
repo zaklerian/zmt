@@ -1,10 +1,23 @@
-import { FileSupport, IncludedMod, ProjectedSource } from '@contracts';
+import {
+  FeatureId,
+  FileSupport,
+  IncludedMod,
+  ProjectedSource,
+} from '@contracts';
 import { Box } from '@mui/material';
 import { recognizerRegistry } from '@r-core';
 import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 
 import { AppSettingsModal } from '../../features/app-settings';
+import {
+  FeatureNavList,
+  FeatureTreePlaceholder,
+  NavModeToggle,
+  PANEL_MODES,
+  PanelMode,
+  useEnabledFeatures,
+} from '../../features/feature-nav';
 import {
   ContentModeToggle,
   FileTreeSelection,
@@ -34,6 +47,12 @@ export function AppShell() {
   const [appSettingsOpen, setAppSettingsOpen] = useState(false);
   const [hideUnsupportedFiles, setHideUnsupportedFiles] = useState(false);
   const [hideVanilla, setHideVanilla] = useState(false);
+  const [panelMode, setPanelMode] = useState<PanelMode>(PANEL_MODES.file);
+  const [activeFeatureId, setActiveFeatureId] = useState<FeatureId | null>(
+    null,
+  );
+  const { features: enabledFeatures, refetch: refetchFeatures } =
+    useEnabledFeatures();
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -60,6 +79,13 @@ export function AppShell() {
   }, []);
 
   const hasSource = includedMods.length > 0;
+
+  // Nav mode is only reachable while a feature is enabled. Deriving the effective
+  // mode (rather than storing it) means disabling the last feature in settings
+  // falls back to file mode without a mode-reset effect.
+  const inNavMode = panelMode === PANEL_MODES.nav && enabledFeatures.length > 0;
+  const activeFeature =
+    enabledFeatures.find((f) => f.featureId === activeFeatureId) ?? null;
 
   const activeMod = useMemo<IncludedMod | null>(() => {
     if (selectedPath === null) return null;
@@ -124,7 +150,13 @@ export function AppShell() {
     })();
   };
 
-  const sidebar = !hasSource ? null : (
+  const sidebar = !hasSource ? null : inNavMode ? (
+    <FeatureNavList
+      activeFeatureId={activeFeatureId}
+      features={enabledFeatures}
+      onSelect={setActiveFeatureId}
+    />
+  ) : (
     <ModContent
       hideUnsupportedFiles={hideUnsupportedFiles}
       selectedPath={selectedPath}
@@ -135,11 +167,18 @@ export function AppShell() {
 
   const content = !hasSource ? (
     <NoFolderState onOpenFolder={handleOpenFolder} />
+  ) : inNavMode ? (
+    <FeatureTreePlaceholder feature={activeFeature} />
   ) : (
     <Box sx={{ height: '100%' }}>
       <Outlet />
     </Box>
   );
+
+  const panelModeToggle =
+    enabledFeatures.length > 0 ? (
+      <NavModeToggle mode={panelMode} onChange={setPanelMode} />
+    ) : null;
 
   const isEntityFile =
     selectedPath !== null &&
@@ -180,6 +219,7 @@ export function AppShell() {
         content={content}
         drawerOpen={drawerOpen}
         hasSource={hasSource}
+        panelModeToggle={panelModeToggle}
         panelToolbarRight={
           isEntityFile || isModFile ? (
             <ContentModeToggle
@@ -202,6 +242,7 @@ export function AppShell() {
         open={appSettingsOpen}
         onClose={() => {
           setAppSettingsOpen(false);
+          refetchFeatures();
           window.api.preferences
             .get('hideUnsupportedFiles')
             .then((value) => setHideUnsupportedFiles(value ?? false))
