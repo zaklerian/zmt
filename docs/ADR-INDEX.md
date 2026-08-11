@@ -39,7 +39,7 @@ Each ADR follows a consistent structure:
 | 016 | [Load-order file resolution and provenance](adr/016-load-order-resolution.md)                                 | Accepted |
 | 017 | [Derive equipment domain from interface category](adr/017-derive-equipment-domain-from-interface-category.md) | Accepted |
 | 018 | [Entity form shell and per-entity descriptors](adr/018-entity-form-shell-and-descriptors.md)                  | Accepted |
-| 019 | [Atomic batched scoped deltas for entity writes](adr/019-atomic-batched-entity-writes.md)                     | Accepted |
+| 019 | [Atomic batched scoped deltas for entity writes](adr/019-atomic-batched-entity-writes.md)                     | Superseded by 027 |
 | 020 | [Read-side recognizer registry](adr/020-read-side-recognizer-registry.md)                                     | Accepted |
 | 021 | [Technology's intentionally thin editable surface](adr/021-technology-thin-editable-surface.md)               | Accepted |
 | 022 | [Paradox `@` substitution-symbol model](adr/022-paradox-symbol-model.md)                                      | Accepted |
@@ -47,6 +47,7 @@ Each ADR follows a consistent structure:
 | 024 | [Source-scoped entity read layer](adr/024-source-scoped-read-layer.md)                                        | Accepted |
 | 025 | [Tech-tree geometry from the tree-view `.gui`](adr/025-tech-tree-geometry.md)                                 | Accepted |
 | 026 | [Tech-tree canvas](adr/026-tech-tree-canvas.md)                                                               | Accepted |
+| 027 | [Write boundary: format strategies and cross-file atomic batch](adr/027-write-boundary.md)                    | Accepted |
 
 ## Amendments
 

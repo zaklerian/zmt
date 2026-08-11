@@ -1,7 +1,15 @@
 # ADR 019 — Atomic batched scoped deltas for entity writes
 
-- **Status**: Accepted
+- **Status**: Superseded by ADR 027
 - **Date**: 2026-06-15
+
+> **Superseded by [ADR 027](027-write-boundary.md) (2026-08-11).** ADR 027 generalizes this
+> decision along all three of its axes: single-file → cross-file atomic batch, single-format
+> (Clausewitz `.txt`) → pluggable format strategies (AST-scoped-delta + loc-lines), and
+> patch-only → patch/insert/delete (closing ledger L-012). This ADR's per-file atomicity becomes
+> the one-file, one-format special case of ADR 027's per-batch boundary; the scoped-delta contract
+> and its amendments below are the record of that special case and remain accurate for it. Read
+> ADR 027 for the current write boundary.
 
 ## Update (2026-06-16) — scope widened to an ordered path (ZMT-13)
 
