@@ -20,6 +20,11 @@ export interface TechnologySlim {
   readonly categories: readonly string[];
   // Undrawn AND-edges (`dependencies`) — a distinct list from `pathTargets`.
   readonly dependencyTargets: readonly string[];
+  // The `folder.name` this node's `position` is measured in (the first folder's
+  // name), null when the entity declares no folder — which is the `sub` signal.
+  // The canvas filters `index:list` rows to one folder by this; the slim row is
+  // the only per-entity carrier of it (provenance is source, not folder).
+  readonly folderName: null | string;
   // The resolution token, i.e. the node id.
   readonly id: string;
   readonly nodeKind: TechnologyNodeKind;
@@ -33,4 +38,8 @@ export interface TechnologySlim {
   readonly position: null | TechnologyPosition;
   // Distinct from `position.y`; the `start_year` scalar, null when omitted.
   readonly startYear: null | number;
+  // The parent's attached child-node tokens (`sub_technologies`). A `sub` node
+  // carries no own position; the canvas places it adjacent to the parent that
+  // lists it here, mirroring the engine's attach (never at absolute 0,0).
+  readonly subTechnologies: readonly string[];
 }

@@ -1,4 +1,5 @@
 import {
+  FEATURE_IDS,
   FeatureId,
   FileSupport,
   IncludedMod,
@@ -25,6 +26,7 @@ import {
   NoFolderState,
 } from '../../features/mod-content';
 import { modInfoEditService } from '../../features/mod-info-edit';
+import { TechTreeCanvas } from '../../features/tech-tree-canvas';
 import { AppLayout } from '../layout';
 import { ShellContextProvider, ShellContextValue } from './shell-context';
 import { useContentViewMode } from './use-content-view-mode.hook';
@@ -168,7 +170,11 @@ export function AppShell() {
   const content = !hasSource ? (
     <NoFolderState onOpenFolder={handleOpenFolder} />
   ) : inNavMode ? (
-    <FeatureTreePlaceholder feature={activeFeature} />
+    activeFeature?.featureId === FEATURE_IDS.aircraft ? (
+      <TechTreeCanvas />
+    ) : (
+      <FeatureTreePlaceholder feature={activeFeature} />
+    )
   ) : (
     <Box sx={{ height: '100%' }}>
       <Outlet />
