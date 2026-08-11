@@ -13,6 +13,8 @@ import { buildAirTreeFlow, TechFlowNode } from '../build-air-tree-flow.util';
 export const AIR_TECHS_FOLDER = 'air_techs_folder';
 
 interface AirTechTree {
+  // The `dependencies` overlay (off by default; the canvas shows it on toggle).
+  readonly dependencyEdges: readonly Edge[];
   readonly edges: readonly Edge[];
   readonly nodes: readonly TechFlowNode[];
   readonly status: AirTechTreeStatus;
@@ -20,7 +22,12 @@ interface AirTechTree {
 
 type AirTechTreeStatus = 'error' | 'loading' | 'ready';
 
-const EMPTY: AirTechTree = { edges: [], nodes: [], status: 'loading' };
+const EMPTY: AirTechTree = {
+  dependencyEdges: [],
+  edges: [],
+  nodes: [],
+  status: 'loading',
+};
 
 // Fetches `index:list('technology')` + `techTreeGeometry:read` once, scopes the
 // slim rows to `air_techs_folder` (plus the subs those techs attach), and holds
@@ -43,21 +50,36 @@ export function useAirTechTree(): AirTechTree {
         }
         const folder = geometry.folders[AIR_TECHS_FOLDER];
         if (folder === undefined) {
-          setState({ edges: [], nodes: [], status: 'ready' });
+          setState({
+            dependencyEdges: [],
+            edges: [],
+            nodes: [],
+            status: 'ready',
+          });
           return;
         }
         const slims = list.rows.map((row) => row.slim);
-        const air = slims.filter((slim) => slim.folderName === AIR_TECHS_FOLDER);
+        const air = slims.filter(
+          (slim) => slim.folderName === AIR_TECHS_FOLDER,
+        );
         const subIds = new Set(air.flatMap((slim) => slim.subTechnologies));
         const subs = slims.filter(
           (slim) => slim.position === null && subIds.has(slim.id),
         );
-        const { edges, nodes } = buildAirTreeFlow([...air, ...subs], folder);
-        setState({ edges, nodes, status: 'ready' });
+        const { dependencyEdges, edges, nodes } = buildAirTreeFlow(
+          [...air, ...subs],
+          folder,
+        );
+        setState({ dependencyEdges, edges, nodes, status: 'ready' });
       })
       .catch(() => {
         if (!cancelled) {
-          setState({ edges: [], nodes: [], status: 'error' });
+          setState({
+            dependencyEdges: [],
+            edges: [],
+            nodes: [],
+            status: 'error',
+          });
         }
       });
 
