@@ -46,6 +46,7 @@ Each ADR follows a consistent structure:
 | 023 | [Data-grounding harness and coverage baseline](adr/023-data-grounding-harness.md)                             | Accepted |
 | 024 | [Source-scoped entity read layer](adr/024-source-scoped-read-layer.md)                                        | Accepted |
 | 025 | [Tech-tree geometry from the tree-view `.gui`](adr/025-tech-tree-geometry.md)                                 | Accepted |
+| 026 | [Tech-tree canvas](adr/026-tech-tree-canvas.md)                                                               | Accepted |
 
 ## Amendments
 
