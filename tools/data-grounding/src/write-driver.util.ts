@@ -1,5 +1,11 @@
-import type { EntityWriteRequest } from '@contracts';
+import type {
+  EntityWriteRequest,
+  GamePlugin,
+  ProjectedSource,
+  Workspace,
+} from '@contracts';
 
+import { dialectsFromPlugins } from '@paradox-parser';
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -7,12 +13,24 @@ import { dirname, join } from 'node:path';
 import type { ParsedFile } from './coverage.util';
 import type { RoundTripFailure, WriteRoundTripResult } from './grounding.model';
 
+// Structural mirror of the write service's `EntityMutationConfig` (ADR 027
+// decision 6). Declared here rather than imported so the tool does not cross the
+// app module boundary at type level (the runtime import stays lazy, below).
+interface WriteConfig {
+  readonly dialects: readonly string[];
+  readonly sources: readonly ProjectedSource[];
+  readonly workspace: Workspace;
+}
+
 interface WriteContext {
   readonly entityMutationService: {
-    write(request: EntityWriteRequest): Promise<void>;
+    write(request: EntityWriteRequest, config: WriteConfig): Promise<void>;
+  };
+  readonly pluginRegistryService: {
+    list(): readonly GamePlugin[];
   };
   readonly workspaceStoreService: {
-    addMod(path: string): { includedMods: readonly { id: string }[] };
+    addMod(path: string): Workspace;
   };
 }
 
@@ -21,12 +39,14 @@ interface WriteContext {
 // to the source. This is done against a scratch MIRROR of the corpus, never the
 // corpus itself (gate 5), because the service writes to disk.
 //
-// That service is Electron-main application code: it resolves the mod path through
-// an electron-store-backed workspace store and writes through the app's atomic
-// writer. Where an Electron runtime is unavailable (electron-store cannot construct
-// without the Electron `app`), bootstrapping throws and this step reports `blocked`
-// with the reason — it is NEVER counted as passed (ADR 023: a data gate is not
-// satisfied by an argument that it must pass). Where Electron is available, it runs.
+// The write service itself is now Electron-free (ADR 027 decision 6): it takes its
+// config as parameters and never reaches a store. This driver still registers the
+// scratch mirror through the electron-store-backed `addMod`, so where an Electron
+// runtime is unavailable (electron-store cannot construct without the Electron
+// `app`), bootstrapping throws and this step reports `blocked` with the reason — it
+// is NEVER counted as passed (ADR 023: a data gate is not satisfied by an argument
+// that it must pass). Registering the scratch mod without the store is a later
+// harness change; this ticket only removed the Electron edge from the write path.
 export async function runWriteRoundTrip(
   entityFiles: readonly ParsedFile[],
   writeTargetsByPath: ReadonlyMap<string, readonly string[]>,
@@ -42,8 +62,16 @@ export async function runWriteRoundTrip(
       cpSync(parsed.file.absolutePath, target, { force: true });
     }
 
-    const mod = app.workspaceStoreService.addMod(scratchRoot);
-    const modId = mod.includedMods[mod.includedMods.length - 1].id;
+    const workspace = app.workspaceStoreService.addMod(scratchRoot);
+    const modId = workspace.includedMods[workspace.includedMods.length - 1].id;
+    // The write path now takes its config as parameters (ADR 027 decision 6):
+    // dialects from the plugin registry, and the scratch mirror as the sole
+    // editable source. The config lookups no longer live inside the write service.
+    const config: WriteConfig = {
+      dialects: dialectsFromPlugins(app.pluginRegistryService.list()),
+      sources: [{ path: scratchRoot, permission: 'editable' }],
+      workspace,
+    };
 
     const failures: RoundTripFailure[] = [];
     for (const parsed of entityFiles) {
@@ -55,7 +83,7 @@ export async function runWriteRoundTrip(
           modId,
           relativePath: parsed.file.relativePath,
         };
-        await app.entityMutationService.write(request);
+        await app.entityMutationService.write(request, config);
         const written = readFileSync(
           join(scratchRoot, parsed.file.relativePath),
           'utf8',
@@ -95,6 +123,7 @@ async function loadWriteContext(): Promise<WriteContext> {
   const mutation = await import('@main/fs/entity-mutation.service');
   return {
     entityMutationService: mutation.entityMutationService,
+    pluginRegistryService: plugins.pluginRegistryService,
     workspaceStoreService: workspace.workspaceStoreService,
   };
 }

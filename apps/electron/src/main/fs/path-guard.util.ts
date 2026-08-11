@@ -9,23 +9,41 @@ import {
   workspaceStoreService,
 } from '../workspace';
 
-export async function assertReadable(target: string): Promise<void> {
-  await assertUnderSource(target, () => true);
+export async function assertReadable(
+  target: string,
+  sources?: readonly ProjectedSource[],
+): Promise<void> {
+  await assertUnderSource(target, () => true, sources);
 }
 
-export async function assertWritable(target: string): Promise<void> {
-  await assertUnderSource(target, (source) => source.permission === 'editable');
+export async function assertWritable(
+  target: string,
+  sources?: readonly ProjectedSource[],
+): Promise<void> {
+  await assertUnderSource(
+    target,
+    (source) => source.permission === 'editable',
+    sources,
+  );
 }
 
+// `injectedSources`, when supplied, are the already-resolved projected sources
+// the caller guards against; the guard then touches no store. Omitting them keeps
+// the store-backed resolution every existing caller relies on. The containment and
+// permission checks below are identical either way — injection changes only where
+// the source list comes from, never what the guard enforces (ADR 027 decision 6).
 async function assertUnderSource(
   target: string,
   permits: (source: ProjectedSource) => boolean,
+  injectedSources?: readonly ProjectedSource[],
 ): Promise<void> {
-  const sources = resolveProjectedSources(
-    activeGameId(),
-    workspaceStoreService.get(),
-    await activeGameFolderPath(),
-  );
+  const sources =
+    injectedSources ??
+    resolveProjectedSources(
+      activeGameId(),
+      workspaceStoreService.get(),
+      await activeGameFolderPath(),
+    );
 
   if (sources.length === 0) {
     throw {

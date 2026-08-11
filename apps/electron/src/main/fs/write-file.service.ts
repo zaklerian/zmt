@@ -3,6 +3,7 @@ import {
   IpcError,
   isIpcError,
   MAX_PAYLOAD_BYTES,
+  ProjectedSource,
 } from '@contracts';
 import { randomBytes } from 'node:crypto';
 import { promises as fs } from 'node:fs';
@@ -43,8 +44,9 @@ async function atomicWrite(
   targetPath: string,
   payload: Readonly<Uint8Array> | string,
   byteLength: number,
+  sources?: readonly ProjectedSource[],
 ): Promise<void> {
-  await assertWritable(targetPath);
+  await assertWritable(targetPath, sources);
 
   if (byteLength > MAX_PAYLOAD_BYTES) {
     throw {
@@ -77,15 +79,29 @@ async function atomicWrite(
   }
 }
 
+// `sources`, when supplied, are passed straight to the path guard so a caller
+// that has already resolved its projected sources (the entity write path, ADR 027
+// decision 6) writes without the guard reaching a store. Omitting them keeps the
+// store-backed guard every other caller uses.
 async function writeBinary(
   targetPath: string,
   content: Readonly<Uint8Array>,
+  sources?: readonly ProjectedSource[],
 ): Promise<void> {
-  await atomicWrite(targetPath, content, content.byteLength);
+  await atomicWrite(targetPath, content, content.byteLength, sources);
 }
 
-async function writeText(targetPath: string, content: string): Promise<void> {
-  await atomicWrite(targetPath, content, Buffer.byteLength(content, 'utf8'));
+async function writeText(
+  targetPath: string,
+  content: string,
+  sources?: readonly ProjectedSource[],
+): Promise<void> {
+  await atomicWrite(
+    targetPath,
+    content,
+    Buffer.byteLength(content, 'utf8'),
+    sources,
+  );
 }
 
 export const writeFileService = {

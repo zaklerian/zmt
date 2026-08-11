@@ -97,4 +97,27 @@ describe('path guard read/write split', () => {
       code: IPC_ERROR_CODES.FORBIDDEN,
     });
   });
+
+  // ADR 027 decision 6: a caller may inject already-resolved sources so the guard
+  // enforces containment and permission without reaching a store. The check is the
+  // same one the store-backed path runs — injection changes only where the source
+  // list comes from.
+  it('guards against injected sources without reaching the store', async () => {
+    const target = path.join(mod, 'file.txt');
+    await fs.writeFile(target, 'hello');
+    await expect(
+      assertWritable(target, [{ path: mod, permission: 'editable' }]),
+    ).resolves.toBeUndefined();
+    expect(workspaceStoreService.get).not.toHaveBeenCalled();
+    expect(activeGameFolderPath).not.toHaveBeenCalled();
+  });
+
+  it('rejects FORBIDDEN for a write against an injected readonly source', async () => {
+    const target = path.join(vanilla, 'file.txt');
+    await fs.writeFile(target, 'hello');
+    await expect(
+      assertWritable(target, [{ path: vanilla, permission: 'readonly' }]),
+    ).rejects.toMatchObject({ code: IPC_ERROR_CODES.FORBIDDEN });
+    expect(workspaceStoreService.get).not.toHaveBeenCalled();
+  });
 });

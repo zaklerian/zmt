@@ -8,17 +8,33 @@ import {
   IPC_ERROR_CODES,
   IpcError,
 } from '@contracts';
+import { dialectsFromPlugins } from '@paradox-parser';
+
+import type { EntityMutationConfig } from '../fs';
 
 import { entityMutationService } from '../fs';
 import { ipcHandle } from '../ipc';
+import { pluginRegistryService } from '../plugins';
+import {
+  activeGameFolderPath,
+  activeGameId,
+  resolveProjectedSources,
+  workspaceStoreService,
+} from '../workspace';
 
 export function registerEntityHandlers(): void {
   ipcHandle<void>(IPC_CHANNELS.entity.write, async (_event, rawRequest) => {
-    await entityMutationService.write(coerceWriteRequest(rawRequest));
+    await entityMutationService.write(
+      coerceWriteRequest(rawRequest),
+      await resolveMutationConfig(),
+    );
   });
 
   ipcHandle<void>(IPC_CHANNELS.entity.delete, async (_event, rawRequest) => {
-    await entityMutationService.delete(coerceDeleteRequest(rawRequest));
+    await entityMutationService.delete(
+      coerceDeleteRequest(rawRequest),
+      await resolveMutationConfig(),
+    );
   });
 }
 
@@ -141,4 +157,21 @@ function requireStrings(value: unknown, field: string): readonly string[] {
   return value.map((entry, index) =>
     requireString(entry, `${field}[${String(index)}]`),
   );
+}
+
+// Resolves the write path's Electron-coupled config at the composition boundary
+// (ADR 027 decision 6): the store reach lives here, above the pure write service.
+// `sources` are resolved exactly as the store-backed path guard would resolve them,
+// so a write behaves identically to before the dependency inversion.
+async function resolveMutationConfig(): Promise<EntityMutationConfig> {
+  const workspace = workspaceStoreService.get();
+  return {
+    dialects: dialectsFromPlugins(pluginRegistryService.list()),
+    sources: resolveProjectedSources(
+      activeGameId(),
+      workspace,
+      await activeGameFolderPath(),
+    ),
+    workspace,
+  };
 }

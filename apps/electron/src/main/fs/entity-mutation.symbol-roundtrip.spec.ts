@@ -8,16 +8,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({ source: '', written: '' }));
 
-vi.mock('../workspace', () => ({
-  workspaceStoreService: {
-    get: vi.fn(() => ({ includedMods: [{ id: 'm', path: '/mods/m' }] })),
-  },
-}));
-
-vi.mock('../plugins', () => ({
-  pluginRegistryService: { list: vi.fn(() => []) },
-}));
-
 vi.mock('./path-guard.util', () => ({
   assertWritable: vi.fn(async () => undefined),
 }));
@@ -37,6 +27,20 @@ vi.mock('node:fs', () => ({
 // Imported after the mocks so its collaborators resolve to them.
 const { entityMutationService } = await import('./entity-mutation.service');
 
+// The workspace/plugins mocks are gone: the service no longer reaches those
+// singletons (ADR 027 decision 6). Their former contents are passed as config
+// instead — the resolved mod, empty dialects, and no projected sources (the path
+// guard is mocked, so sources are inert here). The asserted behavior is unchanged.
+const CONFIG = {
+  dialects: [],
+  sources: [],
+  workspace: {
+    includedMods: [
+      { id: 'm', name: 'm', path: '/mods/m', permission: 'editable' as const },
+    ],
+  },
+};
+
 const SOURCE = [
   '@FTR_START = -5',
   '@1933 = 100',
@@ -51,7 +55,11 @@ const SOURCE = [
   '',
 ].join('\n');
 
-const REQUEST = { entityName: 'infantry', modId: 'm', relativePath: 'tech.txt' };
+const REQUEST = {
+  entityName: 'infantry',
+  modId: 'm',
+  relativePath: 'tech.txt',
+};
 
 describe('entity-mutation.service — symbol-bearing round-trip (ADR 022, R3)', () => {
   beforeEach(() => {
@@ -60,17 +68,25 @@ describe('entity-mutation.service — symbol-bearing round-trip (ADR 022, R3)', 
   });
 
   it('writes a symbol-bearing file byte-identically under an unmodified write', async () => {
-    await entityMutationService.write({ ...REQUEST, deltas: [] });
+    await entityMutationService.write({ ...REQUEST, deltas: [] }, CONFIG);
     expect(state.written).toBe(SOURCE);
   });
 
   it('edits a non-symbol field and leaves every `@NAME` binding intact', async () => {
-    await entityMutationService.write({
-      ...REQUEST,
-      deltas: [
-        { added: [], block: null, changed: [{ key: 'research_cost', value: '99' }], removed: [] },
-      ],
-    });
+    await entityMutationService.write(
+      {
+        ...REQUEST,
+        deltas: [
+          {
+            added: [],
+            block: null,
+            changed: [{ key: 'research_cost', value: '99' }],
+            removed: [],
+          },
+        ],
+      },
+      CONFIG,
+    );
 
     expect(state.written).toContain('research_cost = 99');
     // The position symbols were not touched by the edit, so they survive verbatim.
