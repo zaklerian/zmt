@@ -5,6 +5,7 @@ import type {
   TechnologySlim,
 } from '@contracts';
 
+const FOLDER_NAME = 'name';
 const LEADS_TO_TECH = 'leads_to_tech';
 const POSITION_X = 'x';
 const POSITION_Y = 'y';
@@ -22,6 +23,7 @@ export function projectTechnologySlim(
   return {
     categories: entity.categories,
     dependencyTargets: entity.dependencies,
+    folderName: folderNameOf(entity),
     id: entity.token,
     nodeKind: nodeKindOf(entity, position),
     pathTargets: pathTargetsOf(entity),
@@ -29,6 +31,7 @@ export function projectTechnologySlim(
     startYear: finiteNumberOrNull(
       entity.rootScalars.find((field) => field.key === START_YEAR)?.value,
     ),
+    subTechnologies: entity.subTechnologies,
   };
 }
 
@@ -38,6 +41,16 @@ function finiteNumberOrNull(raw: null | string | undefined): null | number {
   }
   const parsed = Number(raw);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+// The first folder's `name` scalar (the folder this node's position is measured
+// in), null when the entity declares no folder — the same absence that makes it a
+// `sub` node. Never fabricated when missing (R-CODE-5).
+function folderNameOf(entity: TechnologyEntity): null | string {
+  const scalar = entity.folders[0]?.scalars.find(
+    (field) => field.key === FOLDER_NAME,
+  );
+  return scalar?.value ?? null;
 }
 
 // Resolver-by-signal (ADR 024 / Q7), NOT a lookup of which tokens are referenced

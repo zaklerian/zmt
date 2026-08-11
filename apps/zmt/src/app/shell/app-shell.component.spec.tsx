@@ -32,6 +32,10 @@ function installApiMock(): void {
       writeBinaryFile: vi.fn().mockResolvedValue(undefined),
       writeTextFile: vi.fn().mockResolvedValue(undefined),
     },
+    index: {
+      detail: vi.fn().mockResolvedValue(undefined),
+      list: vi.fn().mockResolvedValue({ rows: [], sources: {} }),
+    },
     plugins: { list: vi.fn().mockResolvedValue([AIRCRAFT_PLUGIN]) },
     preferences: {
       get: vi.fn().mockResolvedValue(null),
@@ -39,6 +43,9 @@ function installApiMock(): void {
       set: vi.fn().mockResolvedValue(undefined),
     },
     system: { ping: vi.fn().mockResolvedValue('pong') },
+    techTreeGeometry: {
+      read: vi.fn().mockResolvedValue({ folders: {}, provenance: null }),
+    },
     workspace: {
       addMod: vi.fn().mockResolvedValue({ includedMods: [EDITABLE_MOD] }),
       get: vi.fn().mockResolvedValue({ includedMods: [EDITABLE_MOD] }),
@@ -88,7 +95,7 @@ describe('AppShell nav mode', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders the placeholder tree region for the selected feature', async () => {
+  it('renders the tech-tree canvas region for the aircraft feature (ZMT-43, replacing the placeholder)', async () => {
     render(<ZmtApp />);
     await expandDrawer();
 
@@ -97,6 +104,10 @@ describe('AppShell nav mode', () => {
     );
     fireEvent.click(await screen.findByRole('button', { name: 'Aircraft' }));
 
-    expect(await screen.findByText('Tree renders here')).toBeInTheDocument();
+    // The canvas mounts and fetches; with no air folder in the (mocked) geometry
+    // it settles on its empty state rather than the retired placeholder text.
+    expect(
+      await screen.findByText('No air technologies to display.'),
+    ).toBeInTheDocument();
   });
 });

@@ -103,6 +103,29 @@ describe('projectTechnologySlim', () => {
     expect(slim.categories).toEqual(['air_equipment', 'cat_engines']);
   });
 
+  it('carries the folder name (the discriminator the canvas filters by) and sub-technologies', () => {
+    const slim = projectTechnologySlim(
+      techFrom(
+        [
+          '\tearly_fighter = {',
+          '\t\tfolder = { name = air_techs_folder position = { x = 5 y = 2 } }',
+          '\t\tsub_technologies = { cv_early_fighter }',
+          '\t}',
+        ].join('\n'),
+      ),
+    );
+
+    expect(slim.folderName).toBe('air_techs_folder');
+    expect(slim.subTechnologies).toEqual(['cv_early_fighter']);
+  });
+
+  it('reports a null folderName for a sub-tech that declares no folder rather than inventing one', () => {
+    const slim = projectTechnologySlim(techFrom('\tcv_early_fighter = { }'));
+
+    expect(slim.folderName).toBeNull();
+    expect(slim.subTechnologies).toEqual([]);
+  });
+
   it('reports a null position when a coordinate is not a finite number rather than inventing one', () => {
     const slim = projectTechnologySlim(
       techFrom(
