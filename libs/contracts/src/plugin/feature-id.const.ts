@@ -1,4 +1,5 @@
 export const FEATURE_IDS = {
+  aircraft: 'aircraft',
   traits: 'traits',
 } as const satisfies Record<string, string>;
 

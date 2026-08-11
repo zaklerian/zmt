@@ -34,10 +34,21 @@ export const en = {
       collapse: 'Collapse',
       expand: 'Expand',
     },
+    panelMode: {
+      file: 'File navigation',
+      nav: 'Feature navigation',
+    },
   },
   modals: {
     unsavedChanges: {
       title: 'Unsaved changes',
+    },
+  },
+  nav: {
+    noSelection: 'Select a feature to view its tree.',
+    treePlaceholder: {
+      caption: 'The canvas for this feature ships in a later ticket.',
+      title: 'Tree renders here',
     },
   },
   panel: {

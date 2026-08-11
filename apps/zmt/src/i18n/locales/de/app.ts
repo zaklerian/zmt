@@ -37,10 +37,22 @@ export const de: typeof en = {
       collapse: 'Einklappen',
       expand: 'Ausklappen',
     },
+    panelMode: {
+      file: 'Dateinavigation',
+      nav: 'Funktionsnavigation',
+    },
   },
   modals: {
     unsavedChanges: {
       title: 'Ungespeicherte Änderungen',
+    },
+  },
+  nav: {
+    noSelection: 'Wählen Sie eine Funktion, um ihren Baum anzuzeigen.',
+    treePlaceholder: {
+      caption:
+        'Die Arbeitsfläche für diese Funktion folgt in einem späteren Ticket.',
+      title: 'Hier wird der Baum dargestellt',
     },
   },
   panel: {
