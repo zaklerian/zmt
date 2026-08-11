@@ -4,22 +4,33 @@ import {
   EntityWriteRequest,
   IPC_ERROR_CODES,
   IpcError,
+  ProjectedSource,
+  Workspace,
 } from '@contracts';
 import {
   type AssignmentNode,
   type BlockChild,
   type BlockNode,
-  dialectsFromPlugins,
   parse,
 } from '@paradox-parser';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
 import { entityIndexService } from '../entity-index';
-import { pluginRegistryService } from '../plugins';
-import { workspaceStoreService } from '../workspace';
 import { assertWritable } from './path-guard.util';
 import { writeFileService } from './write-file.service';
+
+// The Electron-coupled config the write path used to reach through singletons
+// (ADR 027 decision 6): the composition boundary resolves it from the stores and
+// passes it in, so this service is pure Node `fs` plus its parameters and never
+// constructs an `electron-store`. `workspace` resolves a `modId` to its editable
+// mod path; `dialects` select the parser grammar; `sources` are the already-resolved
+// projected sources the path guard enforces against.
+export interface EntityMutationConfig {
+  readonly dialects: readonly string[];
+  readonly sources: readonly ProjectedSource[];
+  readonly workspace: Workspace;
+}
 
 interface AbsentAdd {
   readonly fields: readonly EntityField[];
@@ -60,17 +71,21 @@ function conflict(key: string): IpcError {
   };
 }
 
-async function deleteEntity(request: EntityDeleteRequest): Promise<void> {
+async function deleteEntity(
+  request: EntityDeleteRequest,
+  config: EntityMutationConfig,
+): Promise<void> {
   const { absolutePath, node, source } = await loadAndLocate(
     request.modId,
     request.relativePath,
     request.entityName,
+    config,
   );
 
   const { from, to } = lineRangeOf(source, node);
   const patched = source.slice(0, from) + source.slice(to);
 
-  await writeFileService.writeText(absolutePath, patched);
+  await writeFileService.writeText(absolutePath, patched, config.sources);
   // Same-tick guard (ADR 024 decision 5): invalidate the affected entity type's
   // index explicitly so a read after our own write never serves a stale index on
   // a coarse-mtime filesystem, independent of the read-side stat check.
@@ -103,10 +118,11 @@ async function loadAndLocate(
   modId: string,
   relativePath: string,
   entityName: string,
+  config: EntityMutationConfig,
 ): Promise<LocatedEntity> {
-  const mod = workspaceStoreService
-    .get()
-    .includedMods.find((candidate) => candidate.id === modId);
+  const mod = config.workspace.includedMods.find(
+    (candidate) => candidate.id === modId,
+  );
   if (mod === undefined) {
     throw {
       code: IPC_ERROR_CODES.FORBIDDEN,
@@ -115,12 +131,10 @@ async function loadAndLocate(
   }
 
   const absolutePath = path.resolve(mod.path, relativePath);
-  await assertWritable(absolutePath);
+  await assertWritable(absolutePath, config.sources);
   const source = await readSource(absolutePath);
 
-  const script = parse(source, {
-    dialects: dialectsFromPlugins(pluginRegistryService.list()),
-  });
+  const script = parse(source, { dialects: config.dialects });
 
   const worklist: BlockChild[] = [...script.children];
   while (worklist.length > 0) {
@@ -213,7 +227,10 @@ function renderFields(indent: string, fields: readonly EntityField[]): string {
   return text;
 }
 
-async function writeEntity(request: EntityWriteRequest): Promise<void> {
+async function writeEntity(
+  request: EntityWriteRequest,
+  config: EntityMutationConfig,
+): Promise<void> {
   // AST nodes from @paradox-parser are mutable, so descent stays inline on
   // locals: prefer-readonly-parameter-types (P-1) bars node-typed helper params.
   const {
@@ -224,6 +241,7 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
     request.modId,
     request.relativePath,
     request.entityName,
+    config,
   );
 
   const edits: SourceEdit[] = [];
@@ -468,7 +486,11 @@ async function writeEntity(request: EntityWriteRequest): Promise<void> {
     });
   }
 
-  await writeFileService.writeText(absolutePath, applyEdits(source, edits));
+  await writeFileService.writeText(
+    absolutePath,
+    applyEdits(source, edits),
+    config.sources,
+  );
   // Same-tick guard (ADR 024 decision 5): see deleteEntity.
   entityIndexService.invalidateForRelativePath(request.relativePath);
 }
