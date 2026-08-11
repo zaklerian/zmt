@@ -118,4 +118,3 @@ abstraction against the overengineering gate, req 7).
   labeled fallback; only `ok` swaps in the `<img>`. The generic roots and `cv_*` subs exercise the
   fallback with real data.
 - `nodeKind` drives the box (wide / simple / sub), **not** the icon source — the icon rule is uniform.
-  </content>
