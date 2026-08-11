@@ -18,7 +18,11 @@ const AIR_GEOMETRY: TechTreeFolderGeometry = {
 const ROWS: readonly TechnologySlim[] = [
   slim('generic_fighter', { x: 5, y: 2 }, ['early_fighter']),
   slim('early_fighter', { x: 5, y: 2 }, ['multi_role1'], ['cv_early_fighter']),
-  slim('multi_role1', { x: 11, y: 4 }, []),
+  // Carries a `dependencies` AND-edge (the game hides it) distinct from its `path`.
+  {
+    ...slim('multi_role1', { x: 11, y: 4 }, []),
+    dependencyTargets: ['early_fighter'],
+  },
   slim('generic_strategic_bomber', { x: 18, y: 2 }, ['strategic_bomber2']),
   slim('strategic_bomber2', { x: 22, y: 6 }, []),
   { ...slim('cv_early_fighter', null, []), nodeKind: 'sub' },
@@ -52,6 +56,34 @@ describe('buildAirTreeFlow', () => {
     expect(ids).toContain('generic_strategic_bomber->strategic_bomber2');
     // No edge targets the sub (it has no path) or a missing node.
     expect(edges.every((e) => e.target !== 'cv_early_fighter')).toBe(true);
+  });
+
+  it('draws dependencies as a separate dashed overlay, kept off the solid path edges', () => {
+    const { dependencyEdges, edges } = buildAirTreeFlow(ROWS, AIR_GEOMETRY);
+    const dep = dependencyEdges.find(
+      (e) => e.id === 'dep:multi_role1->early_fighter',
+    );
+
+    expect(dep?.source).toBe('multi_role1');
+    expect(dep?.target).toBe('early_fighter');
+    expect(dep?.data?.kind).toBe('dependency');
+    expect(dep?.style?.strokeDasharray).toBeDefined();
+    // The overlay is a distinct list — no dependency leaks into the solid path set.
+    expect(edges.some((e) => e.id.startsWith('dep:'))).toBe(false);
+  });
+
+  it('draws a dependency edge only when both endpoints are rendered', () => {
+    const rows: readonly TechnologySlim[] = [
+      slim('generic_fighter', { x: 5, y: 2 }, ['multi_role1']),
+      // Source renders (fighter component), but its dependency target is absent.
+      {
+        ...slim('multi_role1', { x: 11, y: 4 }, []),
+        dependencyTargets: ['ghost_tech'],
+      },
+    ];
+    const { dependencyEdges } = buildAirTreeFlow(rows, AIR_GEOMETRY);
+
+    expect(dependencyEdges).toEqual([]);
   });
 });
 

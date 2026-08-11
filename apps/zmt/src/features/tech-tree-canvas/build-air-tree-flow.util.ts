@@ -6,6 +6,15 @@ import { techNodePixel } from './tech-node-pixel.util';
 
 export const TECH_NODE_TYPE = 'tech';
 
+// The `dependencies` overlay (ADR 026 D3, Q12): the AND-prerequisites the game
+// hides. Drawn dashed so it reads as distinct from the solid `path` connectors;
+// carried on `data.kind` so a consumer (and its spec) can tell the two edge kinds
+// apart without inspecting the visual style.
+export const DEPENDENCY_EDGE_STYLE = {
+  stroke: '#c77700',
+  strokeDasharray: '6 4',
+} as const;
+
 export type TechFlowNode = Node<TechNodeData, typeof TECH_NODE_TYPE>;
 
 export interface TechNodeData extends Record<string, unknown> {
@@ -22,13 +31,18 @@ const SUB_STACK_STEP_Y = 44;
 // Builds the react-flow node/edge set for one folder from its slim rows and
 // geometry (ADR 026). Positioned nodes land at their bound gridbox's
 // `origin + cell × step` (the ZMT-43 binding); `path` targets draw as solid edges;
-// `sub` technologies attach as child nodes adjacent to their parent. Pure — the
-// hook fetches and holds; this shapes. No `dependencies` overlay, icons, or
-// selection here (those are ZMT-44).
+// `dependencies` targets draw as a separate dashed overlay (`dependencyEdges`, off
+// by default — the canvas concatenates them only when toggled on); `sub`
+// technologies attach as child nodes adjacent to their parent. Pure — the hook
+// fetches and holds; this shapes.
 export function buildAirTreeFlow(
   rows: readonly TechnologySlim[],
   geometry: TechTreeFolderGeometry,
-): { readonly edges: Edge[]; readonly nodes: TechFlowNode[] } {
+): {
+  readonly dependencyEdges: Edge[];
+  readonly edges: Edge[];
+  readonly nodes: TechFlowNode[];
+} {
   const binding = bindNodesToGridboxes(rows, geometry);
 
   const nodes: TechFlowNode[] = [];
@@ -50,6 +64,7 @@ export function buildAirTreeFlow(
   appendSubNodes(nodes, rows, rendered);
 
   const edges: Edge[] = [];
+  const dependencyEdges: Edge[] = [];
   for (const row of rows) {
     if (!rendered.has(row.id)) {
       continue;
@@ -59,9 +74,20 @@ export function buildAirTreeFlow(
         edges.push({ id: `${row.id}->${target}`, source: row.id, target });
       }
     }
+    for (const target of row.dependencyTargets) {
+      if (rendered.has(target)) {
+        dependencyEdges.push({
+          data: { kind: 'dependency' },
+          id: `dep:${row.id}->${target}`,
+          source: row.id,
+          style: DEPENDENCY_EDGE_STYLE,
+          target,
+        });
+      }
+    }
   }
 
-  return { edges, nodes };
+  return { dependencyEdges, edges, nodes };
 }
 
 // Attaches each `sub` technology (no own position) to the rendered parent that
