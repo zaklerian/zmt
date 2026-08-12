@@ -48,6 +48,7 @@ Each ADR follows a consistent structure:
 | 025 | [Tech-tree geometry from the tree-view `.gui`](adr/025-tech-tree-geometry.md)                                 | Accepted |
 | 026 | [Tech-tree canvas](adr/026-tech-tree-canvas.md)                                                               | Accepted |
 | 027 | [Write boundary: format strategies and cross-file atomic batch](adr/027-write-boundary.md)                    | Accepted |
+| 028 | [Technology edit model](adr/028-technology-edit-model.md)                                                     | Accepted |
 
 ## Amendments
 
