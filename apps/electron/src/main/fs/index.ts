@@ -4,6 +4,7 @@ export * from './default-file-classification.const';
 export * from './entity-mutation.service';
 export * from './equipment-slots.service';
 export * from './list-directory.service';
+export * from './loc-lines.strategy';
 export * from './path-guard.util';
 export * from './read-file.service';
 export * from './search-files.service';
