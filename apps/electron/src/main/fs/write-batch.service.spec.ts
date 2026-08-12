@@ -27,6 +27,10 @@ const TECH_FILE = l(
   '',
 );
 
+// A real-shape BOM'd BICE localisation file, for the cross-format batch gates.
+const BOM = '﻿';
+const LOC_FILE = BOM + l('l_english:', ' EXISTING_TECH:0 "Existing Tech"', '');
+
 const leftoverDotFiles = async (dir: string): Promise<readonly string[]> => {
   const entries = await fs.readdir(dir);
   return entries.filter(
@@ -280,15 +284,96 @@ describe('write-batch.service — cross-file two-phase atomic batch (ADR 027 dec
     expect(await leftoverDotFiles(readonlyDir)).toEqual([]);
   });
 
-  it('rejects a loc-format operation as unsupported without touching the file (scope)', async () => {
-    const target = await mirror('loc.yml', 'l_english:\n STAT_VALUE:0 "x"\n');
+  it('applies a cross-format batch — AST insert in .txt + loc insert in .yml — atomically (ADR 027 gate: add-a-technology-with-its-name)', async () => {
+    const techFile = await mirror('common/technologies/air.txt', TECH_FILE);
+    const locFile = await mirror('localisation/english/air.yml', LOC_FILE);
+
+    await applyWriteBatch(
+      [
+        {
+          absolutePath: techFile,
+          delta: {
+            body: [
+              {
+                added: [{ key: 'research_cost', value: '3' }],
+                block: null,
+                changed: [],
+                removed: [],
+              },
+            ],
+            kind: 'insert',
+            name: 'new_fighter',
+            parentName: 'technologies',
+          },
+          format: 'ast',
+        },
+        {
+          absolutePath: locFile,
+          delta: {
+            key: 'new_fighter',
+            kind: 'insert',
+            value: 'New Fighter',
+            version: '0',
+          },
+          format: 'loc',
+        },
+      ],
+      config(),
+    );
+
+    expect(await fs.readFile(techFile, 'utf8')).toBe(
+      l(
+        'technologies = {',
+        '\ttest_tech = {',
+        '\t\tresearch_cost = 2',
+        '\t}',
+        '\tnew_fighter = {',
+        '\t\tresearch_cost = 3',
+        '\t}',
+        '}',
+        '',
+      ),
+    );
+    expect(await fs.readFile(locFile, 'utf8')).toBe(
+      `${LOC_FILE} new_fighter:0 "New Fighter"\n`,
+    );
+    expect(await leftoverDotFiles(path.dirname(techFile))).toEqual([]);
+    expect(await leftoverDotFiles(path.dirname(locFile))).toEqual([]);
+  });
+
+  it('rolls a mixed .txt + .yml batch back to both originals on an induced phase-2 failure (ADR 027 gate: cross-format rollback)', async () => {
+    const techFile = await mirror('a.txt', TECH_FILE);
+    const locFile = await mirror('b.yml', LOC_FILE);
+
+    // Induce a phase-2 failure on the loc file: reject its back-up rename. The AST
+    // file commits first, then must roll back from its backup when the loc rename
+    // fails — proving the rollback composes across BOTH format strategies.
+    const actualRename = fs.rename.bind(fs);
+    vi.spyOn(fs, 'rename').mockImplementation(async (oldPath, newPath) => {
+      if (oldPath === locFile) {
+        throw Object.assign(new Error('induced phase-2 failure'), {
+          code: 'EIO',
+        });
+      }
+      return actualRename(oldPath as string, newPath as string);
+    });
 
     await expect(
-      applyWriteBatch([{ absolutePath: target, format: 'loc' }], config()),
-    ).rejects.toMatchObject({ code: IPC_ERROR_CODES.UNSUPPORTED_MEDIA });
+      applyWriteBatch(
+        [
+          patchOp(techFile, 'research_cost', '9'),
+          {
+            absolutePath: locFile,
+            delta: { key: 'EXISTING_TECH', kind: 'set', value: 'Changed' },
+            format: 'loc',
+          },
+        ],
+        config(),
+      ),
+    ).rejects.toMatchObject({ code: IPC_ERROR_CODES.INTERNAL });
 
-    expect(await fs.readFile(target, 'utf8')).toBe(
-      'l_english:\n STAT_VALUE:0 "x"\n',
-    );
+    expect(await fs.readFile(techFile, 'utf8')).toBe(TECH_FILE);
+    expect(await fs.readFile(locFile, 'utf8')).toBe(LOC_FILE);
+    expect(await leftoverDotFiles(scratchRoot)).toEqual([]);
   });
 });

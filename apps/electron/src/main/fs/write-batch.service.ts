@@ -10,8 +10,10 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
 import type { AstDelta } from './ast-scoped-delta.strategy';
+import type { LocDelta } from './loc-lines.strategy';
 
 import { applyAstDelta, validateAstBytes } from './ast-scoped-delta.strategy';
+import { applyLocDelta, validateLocBytes } from './loc-lines.strategy';
 import { assertWritable } from './path-guard.util';
 
 // The cross-file two-phase atomic batch (ADR 027 decision 3). It generalizes
@@ -37,11 +39,11 @@ export interface AstWriteOperation {
 }
 
 // loc-lines (`.yml` localisation) is the second format strategy (ADR 027 decision
-// 2) and the NEXT ticket. It is modeled here so a loc operation is a typed,
-// explicit rejection at the boundary rather than a silent gap — no loc reader or
-// writer is built in this ticket (scope).
+// 2). A loc operation carries a `LocDelta` (set/insert/delete) that the loc-lines
+// strategy applies losslessly, exactly as an `ast` operation carries an `AstDelta`.
 export interface LocWriteOperation {
   readonly absolutePath: string;
+  readonly delta: LocDelta;
   readonly format: 'loc';
 }
 
@@ -181,18 +183,18 @@ async function stageOne(
   operation: WriteOperation,
   config: WriteBatchConfig,
 ): Promise<StagedWrite> {
-  // loc is not handled in this ticket (ADR 027 decision 2 / scope); reject it
-  // explicitly rather than mis-route it through the AST strategy.
-  if (operation.format !== 'ast') {
-    throw {
-      code: IPC_ERROR_CODES.UNSUPPORTED_MEDIA,
-      message: `Unsupported write format: ${String(operation.format)}`,
-    } satisfies IpcError;
-  }
-
   await assertWritable(operation.absolutePath, config.sources);
   const source = await readSource(operation.absolutePath);
-  const patched = applyAstDelta(source, operation.delta, config.dialects);
+
+  // Route to the format strategy (ADR 027 decision 1): `ast` for the
+  // Clausewitz-family AST strategy, `loc` for the lossless loc-lines strategy.
+  // Each applies its delta in memory and self-checks via its serialize-back gate
+  // (AST re-parse / loc round-trip) — all fallible content work here, before any
+  // temp is written.
+  const patched =
+    operation.format === 'ast'
+      ? applyAstDelta(source, operation.delta, config.dialects)
+      : applyLocDelta(source, operation.delta);
 
   const byteLength = Buffer.byteLength(patched, 'utf8');
   if (byteLength > MAX_PAYLOAD_BYTES) {
@@ -201,7 +203,8 @@ async function stageOne(
       message: `Payload exceeds ${String(MAX_PAYLOAD_BYTES)} bytes`,
     } satisfies IpcError;
   }
-  validateAstBytes(patched, config.dialects);
+  if (operation.format === 'ast') validateAstBytes(patched, config.dialects);
+  else validateLocBytes(patched);
 
   const parent = path.dirname(operation.absolutePath);
   const base = path.basename(operation.absolutePath);
