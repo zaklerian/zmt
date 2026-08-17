@@ -8,6 +8,12 @@ import type { SourceId } from './index-source.model';
 // slim row), so it lives in @contracts (R-ELECTRON-2).
 export interface EntityProvenance {
   readonly reason: EntityResolutionReason;
+  // The winning source-relative path of the FILE the surviving definition was read
+  // from. The source root alone cannot name a file, so a form opened from the
+  // canvas — which never opened a file to begin with — had nowhere to write
+  // (ZMT-50). The ML form only ever had a `relativePath` because it was opened
+  // FROM one; this is the same fact, carried on the entity instead of the view.
+  readonly relativePath: string;
   readonly shadowedSourceIds: readonly SourceId[];
   readonly sourceId: SourceId;
 }

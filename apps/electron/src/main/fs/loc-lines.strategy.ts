@@ -1,4 +1,11 @@
-import { IPC_ERROR_CODES, IpcError } from '@contracts';
+import {
+  IPC_ERROR_CODES,
+  IpcError,
+  LocDeleteDelta,
+  LocDelta,
+  LocInsertDelta,
+  LocSetDelta,
+} from '@contracts';
 
 // The loc-lines strategy (ADR 027 decision 2): the localisation (`.yml`) format
 // strategy of the write boundary, alongside the Clausewitz-family AST strategy.
@@ -31,14 +38,12 @@ import { IPC_ERROR_CODES, IpcError } from '@contracts';
 // — the caller owns any `\"` / `\n` / `§` escaping, mirroring the AST strategy's
 // verbatim `EntityField.value`.
 
+// The delta vocabulary (`LocDelta` and its three variants) now lives in
+// @contracts: the TL edit form composes loc deltas renderer-side and ships them
+// over `entity:writeBatch`, so the shape crosses the wire (R-ELECTRON-2, ZMT-50).
+// This strategy consumes it; it does not declare it.
+
 const BOM = '﻿';
-
-export interface LocDeleteDelta {
-  readonly key: string;
-  readonly kind: 'delete';
-}
-
-export type LocDelta = LocDeleteDelta | LocInsertDelta | LocSetDelta;
 
 // The reader's output (ADR 027 decision 2): a loc file as ordered entries — the
 // UTF-8 BOM as a document flag, then physical lines in order. A key line exposes
@@ -47,16 +52,6 @@ export type LocDelta = LocDeleteDelta | LocInsertDelta | LocSetDelta;
 export interface LocDocument {
   readonly hasBom: boolean;
   readonly lines: readonly LocLine[];
-}
-
-export interface LocInsertDelta {
-  readonly key: string;
-  readonly kind: 'insert';
-  // The inner value bytes, written verbatim between the quotes (caller pre-escapes).
-  readonly value: string;
-  // The numeric version suffix, as text: '0' is typical, '' is the versionless
-  // `KEY: "value"` shape (both occur in BICE). A non-empty version emits `KEY:VER`.
-  readonly version: string;
 }
 
 export interface LocLine {
@@ -70,13 +65,6 @@ export interface LocLine {
   // The numeric version suffix as text ('' when versionless), null for a non-key
   // line. Recoverable from `raw`; surfaced so an entry reads as key/version/value.
   readonly version: null | string;
-}
-
-export interface LocSetDelta {
-  readonly key: string;
-  readonly kind: 'set';
-  // The new inner value bytes, written verbatim between the existing quotes.
-  readonly value: string;
 }
 
 // Applies a single loc delta to `source`, returning the patched bytes. Pure: no

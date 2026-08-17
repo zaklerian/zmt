@@ -1,4 +1,6 @@
 import {
+  EntityBatchOperation,
+  EntityBatchWriteRequest,
   EntityDeleteRequest,
   EntityWriteRequest,
   IPC_ERROR_CODES,
@@ -8,6 +10,8 @@ import {
   Workspace,
 } from '@contracts';
 import path from 'node:path';
+
+import type { WriteOperation } from './write-batch.service';
 
 import { entityIndexService } from '../entity-index';
 import { applyWriteBatch } from './write-batch.service';
@@ -74,6 +78,59 @@ function resolveModPath(
   return path.resolve(mod.path, relativePath);
 }
 
+function toWriteOperation(
+  operation: EntityBatchOperation,
+  workspace: Workspace,
+): WriteOperation {
+  const absolutePath = resolveModPath(
+    operation.modId,
+    operation.relativePath,
+    workspace,
+  );
+  return operation.format === 'loc'
+    ? { absolutePath, deltas: operation.deltas, format: 'loc' }
+    : {
+        absolutePath,
+        delta: {
+          deltas: operation.deltas,
+          entityName: operation.entityName,
+          kind: 'patch',
+          renameTo: operation.renameTo,
+        },
+        format: 'ast',
+      };
+}
+
+// The CROSS-FILE write (ADR 027 decision 3) as the entity layer exposes it: the
+// caller's operations are resolved to absolute paths and handed to the batch as
+// ONE all-or-nothing unit, so a technology `.txt` edit and its localisation `.yml`
+// edit land together or not at all (ADR 028 decision 1). A single-op script batch
+// through here is byte-identical to `writeEntity` — the same delta reaches the
+// same strategy; only the operation list differs.
+async function writeBatch(
+  request: EntityBatchWriteRequest,
+  config: EntityMutationConfig,
+): Promise<void> {
+  if (request.operations.length === 0) {
+    throw {
+      code: IPC_ERROR_CODES.BAD_REQUEST,
+      message: 'operations must not be empty',
+    } satisfies IpcError;
+  }
+
+  await applyWriteBatch(
+    request.operations.map((operation) =>
+      toWriteOperation(operation, config.workspace),
+    ),
+    { dialects: config.dialects, sources: config.sources },
+  );
+  // Same-tick guard (ADR 024 decision 5): see deleteEntity. Every operation's
+  // path is invalidated — a batch can touch more than one entity type's folder.
+  for (const operation of request.operations) {
+    entityIndexService.invalidateForRelativePath(operation.relativePath);
+  }
+}
+
 async function writeEntity(
   request: EntityWriteRequest,
   config: EntityMutationConfig,
@@ -105,4 +162,5 @@ async function writeEntity(
 export const entityMutationService = {
   delete: deleteEntity,
   write: writeEntity,
+  writeBatch,
 } as const;

@@ -280,6 +280,7 @@ export const uk: typeof en = {
       fields: {
         doctrine: 'Доктрина',
         doctrine_name: 'Назва доктрини',
+        publicName: 'Публічна назва',
         research_cost: 'Вартість дослідження',
         show_equipment_icon: 'Показувати значок спорядження',
         start_year: 'Рік початку',
@@ -310,6 +311,13 @@ export const uk: typeof en = {
         enableSubunits: 'Увімкнути підрозділи',
         xor: 'Взаємовиключні (xor)',
       },
+    },
+    renameWarning: {
+      cancel: 'Скасувати',
+      confirm: 'Усе одно перейменувати',
+      message:
+        'Токен цієї технології генерується з її публічної назви, тож перейменування створює його заново й переносить ключі локалізації. Посилання на старий токен в інших місцях (leads_to_tech, dependencies, token:, GFX_) НЕ оновлюються:',
+      title: 'Згенерувати токен технології заново?',
     },
     symbolWarning: {
       cancel: 'Скасувати',

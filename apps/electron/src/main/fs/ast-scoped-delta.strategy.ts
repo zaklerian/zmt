@@ -49,6 +49,19 @@ export interface AstPatchDelta {
   readonly deltas: readonly EntityBlockDelta[];
   readonly entityName: string;
   readonly kind: 'patch';
+  // Optional block RENAME, applied in the same edit pass as `deltas` (ZMT-50).
+  // It rides the patch rather than being its own delta kind because one batch
+  // operation owns one file: two operations on the same path would each stage from
+  // the on-disk original and the second would clobber the first. Absent (the
+  // overwhelmingly common case) → byte-identical to the pre-ZMT-50 patch.
+  //
+  // LIMIT, stated where it is implemented: this renames the block's own head
+  // identifier ONLY. References to the old name elsewhere in the corpus
+  // (`leads_to_tech`, `dependencies`, `token:<id>`, `GFX_<id>_medium`) are NOT
+  // rewritten — that cascade is the move-entity operation ADR 027 decision 4
+  // leaves unblocked but not closed (ledger L-011). The caller is responsible for
+  // surfacing it; the technology form does, via a save-time confirmation.
+  readonly renameTo?: string;
 }
 
 interface AbsentAdd {
@@ -181,6 +194,16 @@ function applyPatchDelta(
   const entityBlock = located.block;
 
   const edits: SourceEdit[] = [];
+  // The optional block rename, as one more byte-range edit in this same pass, so
+  // one operation still owns one file. `applyEdits` splices descending-offset, so
+  // it composes with the field edits below regardless of their relative positions.
+  if (delta.renameTo !== undefined && delta.renameTo !== delta.entityName) {
+    const key = located.node.key;
+    // A quoted key keeps its quotes; the span covers the literal including them.
+    const text =
+      key.kind === 'StringValue' ? `"${delta.renameTo}"` : delta.renameTo;
+    edits.push({ from: key.from, text, to: key.to });
+  }
   // Absent-intermediate materializations are coordinated across the batch, not
   // emitted per-delta (ADR 019, amended ZMT-15.1). Two added-only deltas whose
   // paths share the same absent block (e.g. `['buildings']` and

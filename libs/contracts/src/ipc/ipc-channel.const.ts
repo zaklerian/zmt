@@ -8,6 +8,7 @@ export const IPC_CHANNELS = {
   entity: {
     delete: 'entity:delete',
     write: 'entity:write',
+    writeBatch: 'entity:writeBatch',
   },
   equipment: {
     list: 'equipment:list',
@@ -27,6 +28,9 @@ export const IPC_CHANNELS = {
   index: {
     detail: 'index:detail',
     list: 'index:list',
+  },
+  localisation: {
+    lookup: 'localisation:lookup',
   },
   module: {
     catalog: 'module:catalog',

@@ -17,6 +17,7 @@ import { enumerateEntitySources } from './enumerate-entity-sources.util';
 interface EntityAccumulator<T> {
   readonly entity: T;
   readonly id: string;
+  readonly relativePath: string;
   readonly shadowedSourceIds: readonly string[];
   readonly sourceId: string;
 }
@@ -95,7 +96,13 @@ export async function resolveEntities<T>(
       const prev = byName.get(id);
       const shadowedSourceIds =
         prev === undefined ? [] : [...prev.shadowedSourceIds, prev.sourceId];
-      byName.set(id, { entity, id, shadowedSourceIds, sourceId });
+      byName.set(id, {
+        entity,
+        id,
+        relativePath: file.relativePath,
+        shadowedSourceIds,
+        sourceId,
+      });
     }
   }
 
@@ -116,6 +123,7 @@ function provenanceOf<T>(accumulator: EntityAccumulator<T>): EntityProvenance {
       accumulator.shadowedSourceIds.length > 0
         ? 'overriding-definition'
         : 'sole-definition',
+    relativePath: accumulator.relativePath,
     shadowedSourceIds: accumulator.shadowedSourceIds,
     sourceId: accumulator.sourceId,
   };

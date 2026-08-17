@@ -309,12 +309,14 @@ describe('write-batch.service — cross-file two-phase atomic batch (ADR 027 dec
         },
         {
           absolutePath: locFile,
-          delta: {
-            key: 'new_fighter',
-            kind: 'insert',
-            value: 'New Fighter',
-            version: '0',
-          },
+          deltas: [
+            {
+              key: 'new_fighter',
+              kind: 'insert',
+              value: 'New Fighter',
+              version: '0',
+            },
+          ],
           format: 'loc',
         },
       ],
@@ -364,7 +366,7 @@ describe('write-batch.service — cross-file two-phase atomic batch (ADR 027 dec
           patchOp(techFile, 'research_cost', '9'),
           {
             absolutePath: locFile,
-            delta: { key: 'EXISTING_TECH', kind: 'set', value: 'Changed' },
+            deltas: [{ key: 'EXISTING_TECH', kind: 'set', value: 'Changed' }],
             format: 'loc',
           },
         ],

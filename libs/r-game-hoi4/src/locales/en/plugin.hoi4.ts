@@ -275,6 +275,7 @@ export const en = {
       fields: {
         doctrine: 'Doctrine',
         doctrine_name: 'Doctrine name',
+        publicName: 'Public name',
         research_cost: 'Research cost',
         show_equipment_icon: 'Show equipment icon',
         start_year: 'Start year',
@@ -305,6 +306,13 @@ export const en = {
         enableSubunits: 'Enable subunits',
         xor: 'Mutually exclusive (xor)',
       },
+    },
+    renameWarning: {
+      cancel: 'Cancel',
+      confirm: 'Rename anyway',
+      message:
+        'This technology\u2019s token is generated from its public name, so renaming regenerates it and moves its localisation keys. References to the old token elsewhere (leads_to_tech, dependencies, token:, GFX_) are NOT rewritten:',
+      title: 'Regenerate the technology token?',
     },
     symbolWarning: {
       cancel: 'Cancel',
