@@ -60,8 +60,10 @@ folder, tokens where `token === normalize(name)`:
 
 Doctrine techs are autogen-shaped (`air_superiority` ↔ "Air Superiority");
 equipment techs are uniformly custom-shaped. ADR 028 decision 4's pivot is
-therefore not hypothetical — **both branches are reachable from real BICE data**,
-and the edit form must not treat either as the universal case.
+therefore not hypothetical — **both branches are reachable from real BICE data**.
+What §4 establishes is that the pivot's _consequence_ still cannot be acted on from
+the edit path: an autogen-shaped token is real, but regenerating it there is unsafe,
+so edit freezes the token and the derivation rule belongs to Add.
 
 ## 2. Autogen normalization rule (proposed from the convention; implemented)
 
@@ -113,13 +115,15 @@ technology tokens resolve to a loc key of their own name. Cited pairs:
 
 The Commonwealth air techs (`tech_avro_lancaster_equipment_1`, …) carry a name key
 and **no** `_desc` — so a derivation that assumes `_desc` exists is wrong on real
-data. The implementation deletes a `_desc` key only when it is present.
+data. The edit form writes only the **name** key (§4): with the token frozen, the
+derived keys still key on the unchanged token and are left untouched.
 
 **Third derived key: `<token>_short`, rare.** 24 of 2 670 tokens (0.9 %), all
 naval-hull techs (`basic_ship_hull_carrier_short`, `early_ship_hull_submarine_short`
-in `nrm_research_l_english.yml`). Not produced by autogen; carried through the
-autogen-rename cleanup because leaving it behind orphans it exactly as a stale
-name key would. No other suffix reaches materiality — the next-largest derived
+in `nrm_research_l_english.yml`). Enumerated by `technologyLocKeys` so the deferred
+rename cascade knows the full key set a token owns; the edit path touches none of
+them, because the token they derive from never moves. No other suffix reaches
+materiality — the next-largest derived
 suffix over a technology token is `_2` at 12 occurrences, which is a _different
 technology's_ token, not a derived key of this one.
 
@@ -142,6 +146,24 @@ not anticipate:
    but for **localisation**, not for the technology script file, and it needs no
    new machinery: the loc-lines strategy already has an `insert` delta kind. The
    `.txt` half still resolves to BICE as ADR 027 decision 5 verified.
+
+Recorded as ledger `L-024`.
+
+**The autogen branch of D4 is not implementable on the edit path at all.** The §1.1
+measurement makes both token states real, but the pivot's _consequence_ does not
+survive contact with edit: the token is the technology's identity, so regenerating
+it orphans every inbound reference — `path.leads_to_tech`, `dependencies`,
+`token:<id>` in effect blocks, the `GFX_<id>_medium` sprite name, other mods'
+overrides — and the form cannot know that reference set from where it sits.
+Rewriting them mod-wide and atomically **is** move-entity, deferred and now expanded
+to a worker-driven reference cascade (ledger `L-011`, its own ADR).
+
+**So on edit the token is frozen** and both token states write the same thing: a loc
+`set` (or `insert`) on the _current_ token's name key, with no block rename and no
+stale-key delete. The autogen derivation rule stays measured and tested
+(`technology-token.util.ts`) because its consumer is **Add**, where a brand-new
+technology has no inbound references to break. The `renameTo` AST primitive stays
+implemented and tested but has no production caller — `L-011` claims it.
 
 Also recorded, and fixed in this ticket: `EntityProvenance` (ADR 024) carried the
 winning **source root** but not the **file within it**, so a canvas-opened form had

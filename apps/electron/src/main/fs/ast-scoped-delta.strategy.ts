@@ -52,15 +52,18 @@ export interface AstPatchDelta {
   // Optional block RENAME, applied in the same edit pass as `deltas` (ZMT-50).
   // It rides the patch rather than being its own delta kind because one batch
   // operation owns one file: two operations on the same path would each stage from
-  // the on-disk original and the second would clobber the first. Absent (the
-  // overwhelmingly common case) → byte-identical to the pre-ZMT-50 patch.
+  // the on-disk original and the second would clobber the first. Absent (every
+  // caller today) → byte-identical to the pre-ZMT-50 patch.
   //
-  // LIMIT, stated where it is implemented: this renames the block's own head
-  // identifier ONLY. References to the old name elsewhere in the corpus
-  // (`leads_to_tech`, `dependencies`, `token:<id>`, `GFX_<id>_medium`) are NOT
-  // rewritten — that cascade is the move-entity operation ADR 027 decision 4
-  // leaves unblocked but not closed (ledger L-011). The caller is responsible for
-  // surfacing it; the technology form does, via a save-time confirmation.
+  // DORMANT PRIMITIVE — NO PRODUCTION CALLER (ZMT-50 review, Q89/Q90). It renames
+  // the block's own head identifier ONLY; references to the old name elsewhere in
+  // the corpus (`leads_to_tech`, `dependencies`, `token:<id>`, `GFX_<id>_medium`,
+  // other mods' overrides) are NOT rewritten. Renaming without that cascade
+  // produces dangling references, so no edit path may reach this: the technology
+  // edit form freezes the token, and its loc plan has no field that could carry a
+  // rename. This exists — implemented and tested — because the deferred
+  // reference-cascade work (ledger L-011, its own ADR) needs exactly this
+  // primitive, and it is the half that is safe to land now.
   readonly renameTo?: string;
 }
 

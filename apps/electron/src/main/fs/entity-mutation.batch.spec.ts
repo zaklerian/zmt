@@ -164,7 +164,12 @@ describe('entityMutationService.writeBatch — the technology edit loop (ZMT-50)
     expect(batchBytes).toBe(await fs.readFile(viaBatch, 'utf8'));
   });
 
-  it('renames the block and moves its loc keys atomically (gate 4, autogen branch)', async () => {
+  // The `renameTo` PRIMITIVE, exercised through the full request path so it is
+  // known-good when the deferred reference cascade (ledger L-011) claims it. It has
+  // NO production caller: the technology edit form freezes the token (fix-pass gate
+  // 1, specced in `technology-form-descriptor.spec.ts`). This is the primitive's
+  // own test, not an edit-path behaviour.
+  it('renames a block and moves its loc keys atomically — the dormant L-011 primitive (gate 4)', async () => {
     const techFile = await mirror(TECH_PATH, TECH_FILE);
     const locFile = await mirror(LOC_PATH, LOC_FILE);
 

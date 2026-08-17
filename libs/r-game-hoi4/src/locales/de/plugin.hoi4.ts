@@ -318,13 +318,6 @@ export const de: typeof en = {
         xor: 'Gegenseitig ausschließend (xor)',
       },
     },
-    renameWarning: {
-      cancel: 'Abbrechen',
-      confirm: 'Trotzdem umbenennen',
-      message:
-        'Das Token dieser Technologie wird aus ihrem öffentlichen Namen erzeugt. Eine Umbenennung erzeugt es neu und verschiebt ihre Lokalisierungsschlüssel. Verweise auf das alte Token an anderer Stelle (leads_to_tech, dependencies, token:, GFX_) werden NICHT angepasst:',
-      title: 'Technologie-Token neu erzeugen?',
-    },
     symbolWarning: {
       cancel: 'Abbrechen',
       confirm: 'Trotzdem speichern',

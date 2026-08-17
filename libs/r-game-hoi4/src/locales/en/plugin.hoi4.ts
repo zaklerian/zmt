@@ -307,13 +307,6 @@ export const en = {
         xor: 'Mutually exclusive (xor)',
       },
     },
-    renameWarning: {
-      cancel: 'Cancel',
-      confirm: 'Rename anyway',
-      message:
-        'This technology\u2019s token is generated from its public name, so renaming regenerates it and moves its localisation keys. References to the old token elsewhere (leads_to_tech, dependencies, token:, GFX_) are NOT rewritten:',
-      title: 'Regenerate the technology token?',
-    },
     symbolWarning: {
       cancel: 'Cancel',
       confirm: 'Save anyway',
