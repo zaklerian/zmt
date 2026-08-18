@@ -1,6 +1,10 @@
 import { AssetImageResult } from '../asset';
 import { CharacterEntity } from '../character';
-import { EntityDeleteRequest, EntityWriteRequest } from '../entity';
+import {
+  EntityBatchWriteRequest,
+  EntityDeleteRequest,
+  EntityWriteRequest,
+} from '../entity';
 import {
   IndexDetailResult,
   IndexEntityType,
@@ -13,6 +17,7 @@ import {
 } from '../equipment';
 import { FsNode, ListOptions } from '../fs';
 import { IdeologyEntity } from '../ideology';
+import { LocalisationLookupResult } from '../localisation';
 import { CatalogModule, ModuleEntity } from '../module';
 import { GamePlugin } from '../plugin';
 import { PreferenceKey, Preferences } from '../preferences';
@@ -35,6 +40,9 @@ export interface AppApiModel {
   readonly entity: {
     readonly delete: (request: EntityDeleteRequest) => Promise<void>;
     readonly write: (request: EntityWriteRequest) => Promise<void>;
+    // The ADR 027 cross-file atomic batch (ADR 028 decision 1). Additional to
+    // `write`, which the six other entity forms and the mod descriptor keep.
+    readonly writeBatch: (request: EntityBatchWriteRequest) => Promise<void>;
   };
   readonly equipment: {
     readonly list: (filePath: string) => Promise<readonly EquipmentEntity[]>;
@@ -73,6 +81,15 @@ export interface AppApiModel {
     readonly list: <K extends IndexEntityType>(
       entityType: K,
     ) => Promise<IndexListResult<K>>;
+  };
+  // `localisation:lookup` — current loc values for a key set, each with the file
+  // that owns it, plus the default insert target (the ADR 028 decision 6 seam).
+  // Read-only; loc WRITES ride the `entity:writeBatch` channel so they stay atomic
+  // with the script edit they accompany.
+  readonly localisation: {
+    readonly lookup: (
+      keys: readonly string[],
+    ) => Promise<LocalisationLookupResult>;
   };
   readonly module: {
     readonly catalog: () => Promise<readonly CatalogModule[]>;

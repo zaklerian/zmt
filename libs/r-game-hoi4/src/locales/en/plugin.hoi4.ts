@@ -275,6 +275,7 @@ export const en = {
       fields: {
         doctrine: 'Doctrine',
         doctrine_name: 'Doctrine name',
+        publicName: 'Public name',
         research_cost: 'Research cost',
         show_equipment_icon: 'Show equipment icon',
         start_year: 'Start year',

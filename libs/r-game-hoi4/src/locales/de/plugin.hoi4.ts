@@ -286,6 +286,7 @@ export const de: typeof en = {
       fields: {
         doctrine: 'Doktrin',
         doctrine_name: 'Doktrinname',
+        publicName: 'Öffentlicher Name',
         research_cost: 'Forschungskosten',
         show_equipment_icon: 'Ausrüstungssymbol anzeigen',
         start_year: 'Startjahr',

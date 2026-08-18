@@ -3,6 +3,7 @@ import {
   AssetImageResult,
   CatalogModule,
   CharacterEntity,
+  EntityBatchWriteRequest,
   EntityDeleteRequest,
   EntityWriteRequest,
   EquipmentEntity,
@@ -15,6 +16,7 @@ import {
   IndexListResult,
   IPC_CHANNELS,
   ListOptions,
+  LocalisationLookupResult,
   ModId,
   ModuleEntity,
   PreferenceKey,
@@ -45,6 +47,8 @@ const API = {
       invokeStructured<void>(IPC_CHANNELS.entity.delete, request),
     write: (request: EntityWriteRequest) =>
       invokeStructured<void>(IPC_CHANNELS.entity.write, request),
+    writeBatch: (request: EntityBatchWriteRequest) =>
+      invokeStructured<void>(IPC_CHANNELS.entity.writeBatch, request),
   },
   equipment: {
     list: (filePath: string) =>
@@ -88,6 +92,13 @@ const API = {
       ),
     list: <K extends IndexEntityType>(entityType: K) =>
       invokeStructured<IndexListResult<K>>(IPC_CHANNELS.index.list, entityType),
+  },
+  localisation: {
+    lookup: (keys: readonly string[]) =>
+      invokeStructured<LocalisationLookupResult>(
+        IPC_CHANNELS.localisation.lookup,
+        keys,
+      ),
   },
   module: {
     catalog: () =>

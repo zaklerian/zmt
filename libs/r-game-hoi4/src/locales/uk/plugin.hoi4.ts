@@ -280,6 +280,7 @@ export const uk: typeof en = {
       fields: {
         doctrine: 'Доктрина',
         doctrine_name: 'Назва доктрини',
+        publicName: 'Публічна назва',
         research_cost: 'Вартість дослідження',
         show_equipment_icon: 'Показувати значок спорядження',
         start_year: 'Рік початку',

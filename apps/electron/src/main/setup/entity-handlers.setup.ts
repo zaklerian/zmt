@@ -1,4 +1,6 @@
 import {
+  EntityBatchOperation,
+  EntityBatchWriteRequest,
   EntityBlockDelta,
   EntityBlockScopeSegment,
   EntityDeleteRequest,
@@ -7,6 +9,7 @@ import {
   IPC_CHANNELS,
   IPC_ERROR_CODES,
   IpcError,
+  LocDelta,
 } from '@contracts';
 import { dialectsFromPlugins } from '@paradox-parser';
 
@@ -36,10 +39,91 @@ export function registerEntityHandlers(): void {
       await resolveMutationConfig(),
     );
   });
+
+  ipcHandle<void>(
+    IPC_CHANNELS.entity.writeBatch,
+    async (_event, rawRequest) => {
+      await entityMutationService.writeBatch(
+        coerceBatchWriteRequest(rawRequest),
+        await resolveMutationConfig(),
+      );
+    },
+  );
 }
 
 function badRequest(message: string): IpcError {
   return { code: IPC_ERROR_CODES.BAD_REQUEST, message };
+}
+
+// The batch request crosses the SAME untrusted boundary as `entity:write`, so it
+// is coerced with the same discipline: every field checked, nothing passed
+// through. A loc operation's delta is validated per `kind` — the union is closed,
+// so an unknown kind is a bad request rather than a silently-ignored operation.
+function coerceBatchOperation(
+  value: unknown,
+  field: string,
+): EntityBatchOperation {
+  const record = requireRecord(value, field);
+  const modId = requireString(record.modId, `${field}.modId`);
+  const relativePath = requireString(
+    record.relativePath,
+    `${field}.relativePath`,
+  );
+  const format = requireString(record.format, `${field}.format`);
+  if (format === 'loc') {
+    if (!Array.isArray(record.deltas) || record.deltas.length === 0) {
+      throw badRequest(`${field}.deltas must be a non-empty array`);
+    }
+    return {
+      deltas: record.deltas.map((entry, index) =>
+        coerceLocDelta(entry, `${field}.deltas[${String(index)}]`),
+      ),
+      format: 'loc',
+      modId,
+      relativePath,
+    };
+  }
+  if (format === 'script') {
+    if (!Array.isArray(record.deltas)) {
+      throw badRequest(`${field}.deltas must be an array`);
+    }
+    const renameTo =
+      record.renameTo === undefined
+        ? undefined
+        : requireString(record.renameTo, `${field}.renameTo`);
+    // Unlike `entity:write`, an empty delta list is legal here — but only
+    // alongside a rename. Neither present is a no-op operation, which would
+    // rewrite a file for nothing and is a caller bug, not a valid request.
+    if (record.deltas.length === 0 && renameTo === undefined) {
+      throw badRequest(`${field} must carry deltas or renameTo`);
+    }
+    return {
+      deltas: record.deltas.map((entry, index) =>
+        coerceBlockDelta(entry, `${field}.deltas[${String(index)}]`),
+      ),
+      entityName: requireString(record.entityName, `${field}.entityName`),
+      format: 'script',
+      modId,
+      relativePath,
+      ...(renameTo === undefined ? {} : { renameTo }),
+    };
+  }
+  throw badRequest(`${field}.format must be "loc" or "script"`);
+}
+
+function coerceBatchWriteRequest(value: unknown): EntityBatchWriteRequest {
+  const record = requireRecord(value, 'request');
+  if (!Array.isArray(record.operations)) {
+    throw badRequest('operations must be an array');
+  }
+  if (record.operations.length === 0) {
+    throw badRequest('operations must not be empty');
+  }
+  return {
+    operations: record.operations.map((entry, index) =>
+      coerceBatchOperation(entry, `operations[${String(index)}]`),
+    ),
+  };
 }
 
 function coerceBlockDelta(value: unknown, field: string): EntityBlockDelta {
@@ -71,6 +155,31 @@ function coerceDeltas(value: unknown): readonly EntityBlockDelta[] {
   return value.map((entry, index) =>
     coerceBlockDelta(entry, `deltas[${String(index)}]`),
   );
+}
+
+function coerceLocDelta(value: unknown, field: string): LocDelta {
+  const record = requireRecord(value, field);
+  const key = requireString(record.key, `${field}.key`);
+  const kind = requireString(record.kind, `${field}.kind`);
+  switch (kind) {
+    case 'delete':
+      return { key, kind: 'delete' };
+    case 'insert':
+      return {
+        key,
+        kind: 'insert',
+        value: requireString(record.value, `${field}.value`),
+        version: requireString(record.version, `${field}.version`),
+      };
+    case 'set':
+      return {
+        key,
+        kind: 'set',
+        value: requireString(record.value, `${field}.value`),
+      };
+    default:
+      throw badRequest(`${field}.kind must be "delete", "insert" or "set"`);
+  }
 }
 
 function coerceWriteRequest(value: unknown): EntityWriteRequest {

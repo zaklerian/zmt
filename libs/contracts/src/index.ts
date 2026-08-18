@@ -7,6 +7,7 @@ export * from './equipment';
 export * from './fs';
 export * from './ideology';
 export * from './ipc';
+export * from './localisation';
 export * from './module';
 export * from './plugin';
 export * from './preferences';

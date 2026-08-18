@@ -7,6 +7,7 @@ export * from './ideology-handlers.setup';
 export * from './index-handlers.setup';
 export * from './initialize-default-root.setup';
 export * from './install-csp.setup';
+export * from './localisation-handlers.setup';
 export * from './module-handlers.setup';
 export * from './plugins-handlers.setup';
 export * from './preferences-handlers.setup';

@@ -48,6 +48,7 @@ beforeEach(() => {
 describe('TechTreeCanvas selection', () => {
   it('highlights a node on click, with no mutation (read-only)', async () => {
     mockUseAirTechTree.mockReturnValue({
+      allTechnologyIds: ['fighter1'],
       dependencyEdges: [],
       edges: [],
       nodes: [
@@ -58,6 +59,7 @@ describe('TechTreeCanvas selection', () => {
           type: 'tech',
         },
       ],
+      sources: {},
       status: 'ready',
     });
     render(<TechTreeCanvas />, { wrapper });

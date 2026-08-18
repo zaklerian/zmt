@@ -1,4 +1,11 @@
-import { Box, FormControlLabel, Switch, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  FormControlLabel,
+  Switch,
+  Typography,
+} from '@mui/material';
+import { TranslateFn } from '@r-core';
 import {
   Background,
   Controls,
@@ -6,10 +13,11 @@ import {
   ReactFlow,
   ReactFlowProvider,
 } from '@xyflow/react';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { useAirTechTree } from '../hooks';
+import { EntityFormShell } from '../../../shared/entity-form';
+import { useAirTechTree, useTechnologyEdit } from '../hooks';
 import { TechNode } from './tech-node.component';
 
 import '@xyflow/react/dist/style.css';
@@ -26,9 +34,18 @@ const nodeTypes = { tech: TechNode };
 // node selects it (highlight only — read-only, no mutation this ticket).
 export function TechTreeCanvas() {
   const { t } = useTranslation(['feature.techTreeCanvas']);
-  const { dependencyEdges, edges, nodes, status } = useAirTechTree();
+  const { allTechnologyIds, dependencyEdges, edges, nodes, sources, status } =
+    useAirTechTree();
   const [selectedId, setSelectedId] = useState<null | string>(null);
   const [showDependencies, setShowDependencies] = useState(false);
+
+  // The descriptor localizes its labels through the injected translate, the same
+  // seam the ML content panel supplies; a new `t` on locale change re-projects.
+  const translate = useCallback<TranslateFn>(
+    (key) => (t as (key: string) => string)(key),
+    [t],
+  );
+  const edit = useTechnologyEdit(sources, allTechnologyIds, translate);
 
   // react-flow's props are mutable arrays; our hook holds readonly ones (R-TS-5).
   // Copy at the boundary. Selection is parent-owned (ADR 026 D2, no store): the
@@ -80,10 +97,32 @@ export function TechTreeCanvas() {
           nodesConnectable={false}
           nodesDraggable={false}
           onNodeClick={(_, node) => setSelectedId(node.id)}
+          onNodeDoubleClick={(_, node) => {
+            setSelectedId(node.id);
+            edit.open(node.id);
+          }}
           onPaneClick={() => setSelectedId(null)}
         >
           <Background />
           <Controls showInteractive={false} />
+          <Panel position="top-left">
+            <Button
+              disabled={selectedId === null || edit.status === 'loading'}
+              size="small"
+              sx={{ bgcolor: 'background.paper' }}
+              variant="outlined"
+              onClick={() => {
+                if (selectedId !== null) edit.open(selectedId);
+              }}
+            >
+              {t('feature.techTreeCanvas:edit')}
+            </Button>
+            {edit.status !== 'idle' && edit.status !== 'loading' && (
+              <Typography color="text.secondary" variant="caption">
+                {t(`feature.techTreeCanvas:editStatus.${edit.status}`)}
+              </Typography>
+            )}
+          </Panel>
           <Panel position="top-right">
             <FormControlLabel
               control={
@@ -105,6 +144,16 @@ export function TechTreeCanvas() {
           </Panel>
         </ReactFlow>
       </ReactFlowProvider>
+      {/* The ML form shell (ADR 018), presented as a modal over the canvas —
+          reused wholesale, not rebuilt (ADR 028 decision 1). `onClose` is what
+          puts it in dialog chrome. */}
+      {edit.model !== null && (
+        <EntityFormShell
+          model={edit.model}
+          onClose={edit.close}
+          onSaved={edit.close}
+        />
+      )}
     </Box>
   );
 }
