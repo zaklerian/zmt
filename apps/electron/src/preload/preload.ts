@@ -22,6 +22,7 @@ import {
   PreferenceKey,
   Preferences,
   StateEntity,
+  TechnologyDeletePlanResult,
   TechnologyEntity,
   TechTreeGeometry,
   Workspace,
@@ -134,6 +135,11 @@ const API = {
     ping: () => invokeStructured<string>(IPC_CHANNELS.system.ping),
   },
   technology: {
+    deletePlan: (id: string) =>
+      invokeStructured<TechnologyDeletePlanResult>(
+        IPC_CHANNELS.technology.deletePlan,
+        id,
+      ),
     list: (filePath: string) =>
       invokeStructured<readonly TechnologyEntity[]>(
         IPC_CHANNELS.technology.list,

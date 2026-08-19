@@ -62,13 +62,15 @@ describe('write-batch.service — cross-file two-phase atomic batch (ADR 027 dec
     value: string,
   ): WriteOperation => ({
     absolutePath,
-    delta: {
-      deltas: [
-        { added: [], block: null, changed: [{ key, value }], removed: [] },
-      ],
-      entityName: 'test_tech',
-      kind: 'patch',
-    },
+    deltas: [
+      {
+        deltas: [
+          { added: [], block: null, changed: [{ key, value }], removed: [] },
+        ],
+        entityName: 'test_tech',
+        kind: 'patch',
+      },
+    ],
     format: 'ast',
   });
 
@@ -113,24 +115,26 @@ describe('write-batch.service — cross-file two-phase atomic batch (ADR 027 dec
       [
         {
           absolutePath: fileA,
-          delta: { entityName: 'test_tech', kind: 'delete' },
+          deltas: [{ entityName: 'test_tech', kind: 'delete' }],
           format: 'ast',
         },
         {
           absolutePath: fileB,
-          delta: {
-            body: [
-              {
-                added: [{ key: 'research_cost', value: '2' }],
-                block: null,
-                changed: [],
-                removed: [],
-              },
-            ],
-            kind: 'insert',
-            name: 'moved_tech',
-            parentName: 'technologies',
-          },
+          deltas: [
+            {
+              body: [
+                {
+                  added: [{ key: 'research_cost', value: '2' }],
+                  block: null,
+                  changed: [],
+                  removed: [],
+                },
+              ],
+              kind: 'insert',
+              name: 'moved_tech',
+              parentName: 'technologies',
+            },
+          ],
           format: 'ast',
         },
       ],
@@ -292,19 +296,21 @@ describe('write-batch.service — cross-file two-phase atomic batch (ADR 027 dec
       [
         {
           absolutePath: techFile,
-          delta: {
-            body: [
-              {
-                added: [{ key: 'research_cost', value: '3' }],
-                block: null,
-                changed: [],
-                removed: [],
-              },
-            ],
-            kind: 'insert',
-            name: 'new_fighter',
-            parentName: 'technologies',
-          },
+          deltas: [
+            {
+              body: [
+                {
+                  added: [{ key: 'research_cost', value: '3' }],
+                  block: null,
+                  changed: [],
+                  removed: [],
+                },
+              ],
+              kind: 'insert',
+              name: 'new_fighter',
+              parentName: 'technologies',
+            },
+          ],
           format: 'ast',
         },
         {

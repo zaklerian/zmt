@@ -9,7 +9,8 @@ import type { EntityBlockDelta } from './entity-write.model';
 // main side resolves and path-guards it unchanged.
 export type EntityBatchOperation =
   | EntityLocBatchOperation
-  | EntityScriptBatchOperation;
+  | EntityScriptBatchOperation
+  | EntityScriptDeleteBatchOperation;
 
 // `entity:writeBatch` — the ADR 027 cross-file batch surfaced over IPC, so a
 // single Save can span a Clausewitz `.txt` and a localisation `.yml` atomically
@@ -55,4 +56,25 @@ export interface EntityScriptBatchOperation {
   // ADR) leaves dangling references. The technology edit form freezes the token
   // precisely so it can never reach this field.
   readonly renameTo?: string;
+}
+
+// N block DELETIONS against ONE `.txt`, applied in the listed order (ZMT-52).
+// A list, not a single name, for exactly the reason the loc operation carries a
+// list: one operation owns one file (`assertOneOperationPerFile`), and
+// delete-tree routinely removes several technologies that live in the same file —
+// all 35 base `air_techs_folder` technologies live in one `air_techs.txt`. Two
+// operations on that path would each stage from the on-disk original, so the
+// second temp-write would silently drop the first's deletion.
+//
+// It is a SEPARATE union member rather than a `kind` on the script operation
+// because a delete carries no field deltas, no `insertUnder`, no `renameTo` and
+// no single `entityName`: the two shapes share nothing but the file address, and
+// folding them together would make every field of both optional. `format` still
+// routes to the AST strategy — `scriptDelete` is the same Clausewitz family as
+// `script`; what differs is the DELTA KIND, not the format.
+export interface EntityScriptDeleteBatchOperation {
+  readonly entityNames: readonly string[];
+  readonly format: 'scriptDelete';
+  readonly modId: ModId;
+  readonly relativePath: string;
 }

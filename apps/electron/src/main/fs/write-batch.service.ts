@@ -32,9 +32,15 @@ import { assertWritable } from './path-guard.util';
 // so phase 2 is nothing but fast renames — and it is DOCUMENTED here, not hidden.
 // This is not ACID.
 
+// An ORDERED list of AST deltas against one `.txt`, for the same reason the loc
+// operation below carries one: one operation owns one file, and a delete-tree
+// removes several technologies that share a file (ZMT-52). Each delta is applied
+// to the PREVIOUS delta's output, so a later delta locates its block in the
+// already-edited buffer rather than at a stale offset. A single-delta list is the
+// pre-ZMT-52 shape and produces byte-identical output.
 export interface AstWriteOperation {
   readonly absolutePath: string;
-  readonly delta: AstDelta;
+  readonly deltas: readonly AstDelta[];
   readonly format: 'ast';
 }
 
@@ -218,7 +224,10 @@ async function stageOne(
   // temp is written.
   const patched =
     operation.format === 'ast'
-      ? applyAstDelta(source, operation.delta, config.dialects)
+      ? operation.deltas.reduce(
+          (bytes, delta) => applyAstDelta(bytes, delta, config.dialects),
+          source,
+        )
       : operation.deltas.reduce(
           (bytes, delta) => applyLocDelta(bytes, delta),
           source,

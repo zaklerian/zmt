@@ -23,7 +23,7 @@ import { GamePlugin } from '../plugin';
 import { PreferenceKey, Preferences } from '../preferences';
 import { StateEntity } from '../state';
 import { TechTreeGeometry } from '../tech-tree-geometry';
-import { TechnologyEntity } from '../technology';
+import { TechnologyDeletePlanResult, TechnologyEntity } from '../technology';
 import { ModId, Workspace } from '../workspace';
 
 export interface AppApiModel {
@@ -115,6 +115,11 @@ export interface AppApiModel {
     readonly ping: () => Promise<string>;
   };
   readonly technology: {
+    // `technology:deletePlan` — what deleting this technology would remove, for
+    // both modes, computed main-side from the entity index's edge graph (ZMT-52).
+    // A READ: it computes and returns; the delete itself rides `entity:writeBatch`
+    // so the script and localisation halves stay atomic (ADR 028 decision 1).
+    readonly deletePlan: (id: string) => Promise<TechnologyDeletePlanResult>;
     readonly list: (filePath: string) => Promise<readonly TechnologyEntity[]>;
   };
   // Tech-tree geometry — the folder-keyed render geometry projected from the

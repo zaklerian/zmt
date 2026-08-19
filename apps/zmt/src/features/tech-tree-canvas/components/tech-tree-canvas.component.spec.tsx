@@ -1,15 +1,23 @@
+import type { TechnologyDeletePlan } from '@contracts';
+
 import { createTheme, ThemeProvider } from '@mui/material';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { ReactNode } from 'react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { initI18n } from '../../../i18n';
-import { useAirTechTree, useTechnologyAdd, useTechnologyEdit } from '../hooks';
+import {
+  useAirTechTree,
+  useTechnologyAdd,
+  useTechnologyDelete,
+  useTechnologyEdit,
+} from '../hooks';
 import { TechTreeCanvas } from './tech-tree-canvas.component';
 
 vi.mock('../hooks', () => ({
   useAirTechTree: vi.fn(),
   useTechnologyAdd: vi.fn(),
+  useTechnologyDelete: vi.fn(),
   useTechnologyEdit: vi.fn(),
 }));
 // Stub the node so rendering the ready canvas does not drag in the icon hook /
@@ -21,10 +29,56 @@ vi.mock('./tech-node.component', () => ({
 const theme = createTheme();
 const mockUseAirTechTree = vi.mocked(useAirTechTree);
 const mockUseTechnologyAdd = vi.mocked(useTechnologyAdd);
+const mockUseTechnologyDelete = vi.mocked(useTechnologyDelete);
 const mockUseTechnologyEdit = vi.mocked(useTechnologyEdit);
 const addOpenChild = vi.fn();
 const addOpenFree = vi.fn();
+const deleteOpen = vi.fn();
 const editOpen = vi.fn();
+
+const AIR_PATH = 'common/technologies/air_techs.txt';
+
+const leafPlan: TechnologyDeletePlan = {
+  blocked: [],
+  inboundReferences: [],
+  targets: [{ modId: 'bice', relativePath: AIR_PATH, token: 'fighter1' }],
+};
+
+const treePlan: TechnologyDeletePlan = {
+  blocked: [],
+  inboundReferences: [
+    { referencedTokens: ['fighter2'], token: 'interceptor1' },
+    { referencedTokens: ['fighter3'], token: 'naval_bomber1' },
+  ],
+  targets: ['fighter1', 'fighter2', 'fighter3'].map((token) => ({
+    modId: 'bice',
+    relativePath: AIR_PATH,
+    token,
+  })),
+};
+
+// One ready tree holding a single selectable node — the shape the mutation
+// buttons are exercised against.
+function readyWith(token: string): ReturnType<typeof useAirTechTree> {
+  return {
+    allTechnologyIds: [token],
+    dependencyEdges: [],
+    edges: [],
+    folder: null,
+    nodes: [
+      {
+        data: { nodeKind: 'wide', token },
+        id: token,
+        position: { x: 0, y: 0 },
+        type: 'tech',
+      },
+    ],
+    reload: vi.fn(),
+    rows: [],
+    sources: {},
+    status: 'ready',
+  };
+}
 
 function wrapper({ children }: { children: ReactNode }) {
   return <ThemeProvider theme={theme}>{children}</ThemeProvider>;
@@ -49,9 +103,11 @@ beforeAll(async () => {
 beforeEach(() => {
   mockUseAirTechTree.mockReset();
   mockUseTechnologyAdd.mockReset();
+  mockUseTechnologyDelete.mockReset();
   mockUseTechnologyEdit.mockReset();
   addOpenChild.mockReset();
   addOpenFree.mockReset();
+  deleteOpen.mockReset();
   editOpen.mockReset();
   mockUseTechnologyEdit.mockReturnValue({
     close: vi.fn(),
@@ -65,6 +121,14 @@ beforeEach(() => {
     openChild: addOpenChild,
     openFree: addOpenFree,
     status: 'idle',
+  });
+  mockUseTechnologyDelete.mockReturnValue({
+    cancel: vi.fn(),
+    commit: vi.fn(),
+    open: deleteOpen,
+    plan: null,
+    status: 'idle',
+    token: null,
   });
 });
 
@@ -234,5 +298,61 @@ describe('TechTreeCanvas', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add prerequisite' }));
 
     expect(addOpenChild).toHaveBeenCalledWith('fighter1');
+  });
+
+  it('asks for the delete plan of the selected node (ZMT-52)', () => {
+    mockUseAirTechTree.mockReturnValue(readyWith('fighter1'));
+    render(<TechTreeCanvas />, { wrapper });
+
+    // Selection is the precondition for Delete, exactly as for Edit and Add.
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeDisabled();
+
+    fireEvent.click(screen.getByText('fighter1'));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+
+    expect(deleteOpen).toHaveBeenCalledWith('fighter1');
+  });
+
+  // Req 8: item-vs-tree is offered ONLY when the tree removes more than the item.
+  it('confirms a leaf with a single delete option (ZMT-52)', () => {
+    mockUseAirTechTree.mockReturnValue(readyWith('fighter1'));
+    mockUseTechnologyDelete.mockReturnValue({
+      cancel: vi.fn(),
+      commit: vi.fn(),
+      open: deleteOpen,
+      plan: { item: leafPlan, tree: leafPlan },
+      status: 'idle',
+      token: 'fighter1',
+    });
+    render(<TechTreeCanvas />, { wrapper });
+
+    expect(
+      screen.getByRole('button', { name: 'Delete item' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Delete tree/ })).toBeNull();
+  });
+
+  it('offers item-vs-tree and warns about dangling references (ZMT-52)', () => {
+    mockUseAirTechTree.mockReturnValue(readyWith('fighter1'));
+    mockUseTechnologyDelete.mockReturnValue({
+      cancel: vi.fn(),
+      commit: vi.fn(),
+      open: deleteOpen,
+      plan: { item: leafPlan, tree: treePlan },
+      status: 'idle',
+      token: 'fighter1',
+    });
+    render(<TechTreeCanvas />, { wrapper });
+
+    // The tree count is the SERVER-computed set size, rendered as returned.
+    expect(
+      screen.getByRole('button', { name: 'Delete tree (3)' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Delete tree removes 3 technologies/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/2 technologies reference the deleted set/),
+    ).toBeInTheDocument();
   });
 });
