@@ -1,5 +1,6 @@
 export * from './known-technology-keys.const';
 export * from './technology-actions';
+export * from './technology-add.util';
 export * from './technology-columns.const';
 export * from './technology-delta.util';
 export * from './technology-entity-id.const';

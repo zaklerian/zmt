@@ -1,3 +1,4 @@
+export * from './add-placement.util';
 export * from './air-node-binding.util';
 export * from './build-air-tree-flow.util';
 export * from './components';

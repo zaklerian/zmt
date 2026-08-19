@@ -11,6 +11,7 @@ import {
 } from '@contracts';
 import path from 'node:path';
 
+import type { AstDelta } from './ast-scoped-delta.strategy';
 import type { WriteOperation } from './write-batch.service';
 
 import { entityIndexService } from '../entity-index';
@@ -87,18 +88,27 @@ function toWriteOperation(
     operation.relativePath,
     workspace,
   );
-  return operation.format === 'loc'
-    ? { absolutePath, deltas: operation.deltas, format: 'loc' }
-    : {
-        absolutePath,
-        delta: {
+  if (operation.format === 'loc') {
+    return { absolutePath, deltas: operation.deltas, format: 'loc' };
+  }
+  // `insertUnder` selects the delta KIND (ADR 027 decision 4): present → create
+  // `entityName` as a new named block under it, with the operation's deltas as the
+  // new block's body; absent → the patch path every other caller takes.
+  const delta: AstDelta =
+    operation.insertUnder === undefined
+      ? {
           deltas: operation.deltas,
           entityName: operation.entityName,
           kind: 'patch',
           renameTo: operation.renameTo,
-        },
-        format: 'ast',
-      };
+        }
+      : {
+          body: operation.deltas,
+          kind: 'insert',
+          name: operation.entityName,
+          parentName: operation.insertUnder,
+        };
+  return { absolutePath, delta, format: 'ast' };
 }
 
 // The CROSS-FILE write (ADR 027 decision 3) as the entity layer exposes it: the

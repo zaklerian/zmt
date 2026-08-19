@@ -90,6 +90,13 @@ export interface EntityFormModel {
 // Capabilities the host supplies to a descriptor's projection at present time.
 export interface EntityFormProjectContext {
   readonly localisation?: EntityFormLocalisationContext;
+  // Which side of the ADR 028 decision 5 shared model this projection is for. The
+  // SAME descriptor and the SAME blocks serve both; only the subject and the write
+  // differ — `add` projects over a seeded blank subject and saves as an INSERT of a
+  // new entity, `edit` (the default, and what every pre-ZMT-51 caller means) diffs
+  // against a real subject and saves as a patch. A descriptor with no create path
+  // ignores it.
+  readonly mode?: 'add' | 'edit';
   readonly modId: string;
   readonly relativePath: string;
   readonly translate: TranslateFn;

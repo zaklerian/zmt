@@ -35,6 +35,17 @@ export interface EntityScriptBatchOperation {
   readonly deltas: readonly EntityBlockDelta[];
   readonly entityName: string;
   readonly format: 'script';
+  // Turns the operation into an ADR 027 decision 4 INSERT (closing ledger L-012):
+  // `entityName` is CREATED as a new named block under the existing block this
+  // names (`technologies` for a technology file) instead of patching an existing
+  // one, and `deltas` are read as the new block's body — only their `added` and
+  // `block` fields, since a block that does not exist yet has nothing to change or
+  // remove. Absent → the patch semantics every pre-ZMT-51 caller has.
+  //
+  // Mutually exclusive with `renameTo`: renaming a block that is being created in
+  // the same breath is incoherent, and the pair would silently resolve to one of
+  // the two. The handler rejects both together rather than picking.
+  readonly insertUnder?: string;
   readonly modId: ModId;
   readonly relativePath: string;
   // Renames the entity's own block head in the same edit pass. DORMANT — no

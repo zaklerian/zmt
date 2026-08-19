@@ -1,3 +1,4 @@
+import { TechTreePoint } from '@contracts';
 import {
   Box,
   Button,
@@ -13,16 +14,24 @@ import {
   ReactFlow,
   ReactFlowProvider,
 } from '@xyflow/react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { EntityFormShell } from '../../../shared/entity-form';
-import { useAirTechTree, useTechnologyEdit } from '../hooks';
+import { useAirTechTree, useTechnologyAdd, useTechnologyEdit } from '../hooks';
 import { TechNode } from './tech-node.component';
 
 import '@xyflow/react/dist/style.css';
 
 const nodeTypes = { tech: TechNode };
+
+// The one projection free placement needs off the flow instance. Typed
+// structurally rather than as `ReactFlowInstance`, whose node generic defaults to
+// react-flow's own `Node` — our narrower `TechFlowNode` does not satisfy it, and
+// widening the ref would only be to name a type we never use.
+interface FlowProjection {
+  screenToFlowPosition: (point: TechTreePoint) => TechTreePoint;
+}
 
 // The tech-tree canvas: replaces the ZMT-41 placeholder for the `aircraft`
 // feature. Renders the air research tree at the game's real geometry — nodes at
@@ -31,13 +40,30 @@ const nodeTypes = { tech: TechNode };
 // Fidelity (ZMT-44): each node loads its `GFX_<token>_medium` icon; the three node
 // kinds render distinctly; the hidden `dependencies` AND-edges toggle on as a
 // dashed overlay (off by default — the default view matches the game); clicking a
-// node selects it (highlight only — read-only, no mutation this ticket).
+// node selects it.
+// Mutation (ADR 028): a selected node opens the shared technology form for EDIT
+// (ZMT-50) or for ADD-as-child (ZMT-51 path 1); right-clicking empty canvas opens
+// it for a free-placed technology at the click (ZMT-51 path 2). Both add paths
+// commit through the same atomic insert batch and reload the tree on save.
 export function TechTreeCanvas() {
   const { t } = useTranslation(['feature.techTreeCanvas']);
-  const { allTechnologyIds, dependencyEdges, edges, nodes, sources, status } =
-    useAirTechTree();
+  const {
+    allTechnologyIds,
+    dependencyEdges,
+    edges,
+    folder,
+    nodes,
+    reload,
+    rows,
+    sources,
+    status,
+  } = useAirTechTree();
   const [selectedId, setSelectedId] = useState<null | string>(null);
   const [showDependencies, setShowDependencies] = useState(false);
+  // The flow instance, captured at init purely for `screenToFlowPosition`: a
+  // right-click on the pane arrives in SCREEN pixels and free placement is
+  // measured in FLOW pixels, the same space the nodes are laid out in.
+  const flowRef = useRef<FlowProjection | null>(null);
 
   // The descriptor localizes its labels through the injected translate, the same
   // seam the ML content panel supplies; a new `t` on locale change re-projects.
@@ -46,6 +72,13 @@ export function TechTreeCanvas() {
     [t],
   );
   const edit = useTechnologyEdit(sources, allTechnologyIds, translate);
+  const add = useTechnologyAdd({
+    allTechnologyIds,
+    folder,
+    rows,
+    sources,
+    translate,
+  });
 
   // react-flow's props are mutable arrays; our hook holds readonly ones (R-TS-5).
   // Copy at the boundary. Selection is parent-owned (ADR 026 D2, no store): the
@@ -96,12 +129,29 @@ export function TechTreeCanvas() {
           nodes={flowNodes}
           nodesConnectable={false}
           nodesDraggable={false}
+          onInit={(instance) => {
+            flowRef.current = instance;
+          }}
           onNodeClick={(_, node) => setSelectedId(node.id)}
           onNodeDoubleClick={(_, node) => {
             setSelectedId(node.id);
             edit.open(node.id);
           }}
           onPaneClick={() => setSelectedId(null)}
+          // Free placement (ZMT-51 path 2). Right-click is the click position the
+          // add needs; the context menu itself is a later ticket, the ACTION is
+          // this one's.
+          onPaneContextMenu={(event) => {
+            event.preventDefault();
+            const instance = flowRef.current;
+            if (instance === null) return;
+            add.openFree(
+              instance.screenToFlowPosition({
+                x: event.clientX,
+                y: event.clientY,
+              }),
+            );
+          }}
         >
           <Background />
           <Controls showInteractive={false} />
@@ -117,11 +167,30 @@ export function TechTreeCanvas() {
             >
               {t('feature.techTreeCanvas:edit')}
             </Button>
+            <Button
+              disabled={selectedId === null || add.status === 'loading'}
+              size="small"
+              sx={{ bgcolor: 'background.paper', ml: 1 }}
+              variant="outlined"
+              onClick={() => {
+                if (selectedId !== null) add.openChild(selectedId);
+              }}
+            >
+              {t('feature.techTreeCanvas:addChild')}
+            </Button>
             {edit.status !== 'idle' && edit.status !== 'loading' && (
               <Typography color="text.secondary" variant="caption">
                 {t(`feature.techTreeCanvas:editStatus.${edit.status}`)}
               </Typography>
             )}
+            {add.status !== 'idle' && add.status !== 'loading' && (
+              <Typography color="text.secondary" variant="caption">
+                {t(`feature.techTreeCanvas:addStatus.${add.status}`)}
+              </Typography>
+            )}
+            <Typography color="text.secondary" component="p" variant="caption">
+              {t('feature.techTreeCanvas:addFreeHint')}
+            </Typography>
           </Panel>
           <Panel position="top-right">
             <FormControlLabel
@@ -151,7 +220,18 @@ export function TechTreeCanvas() {
         <EntityFormShell
           model={edit.model}
           onClose={edit.close}
-          onSaved={edit.close}
+          onSaved={reload}
+        />
+      )}
+      {/* The SAME shell and the SAME descriptor, projected in add mode (ADR 028
+          decision 5). `reload` on save is what makes the new node appear — and,
+          for a free-placed one, is the reload that proves it comes back at the
+          cell it was written to. */}
+      {add.model !== null && (
+        <EntityFormShell
+          model={add.model}
+          onClose={add.close}
+          onSaved={reload}
         />
       )}
     </Box>

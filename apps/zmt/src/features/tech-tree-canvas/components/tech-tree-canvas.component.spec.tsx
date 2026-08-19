@@ -4,11 +4,12 @@ import { ReactNode } from 'react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { initI18n } from '../../../i18n';
-import { useAirTechTree, useTechnologyEdit } from '../hooks';
+import { useAirTechTree, useTechnologyAdd, useTechnologyEdit } from '../hooks';
 import { TechTreeCanvas } from './tech-tree-canvas.component';
 
 vi.mock('../hooks', () => ({
   useAirTechTree: vi.fn(),
+  useTechnologyAdd: vi.fn(),
   useTechnologyEdit: vi.fn(),
 }));
 // Stub the node so rendering the ready canvas does not drag in the icon hook /
@@ -19,7 +20,10 @@ vi.mock('./tech-node.component', () => ({
 
 const theme = createTheme();
 const mockUseAirTechTree = vi.mocked(useAirTechTree);
+const mockUseTechnologyAdd = vi.mocked(useTechnologyAdd);
 const mockUseTechnologyEdit = vi.mocked(useTechnologyEdit);
+const addOpenChild = vi.fn();
+const addOpenFree = vi.fn();
 const editOpen = vi.fn();
 
 function wrapper({ children }: { children: ReactNode }) {
@@ -44,12 +48,22 @@ beforeAll(async () => {
 
 beforeEach(() => {
   mockUseAirTechTree.mockReset();
+  mockUseTechnologyAdd.mockReset();
   mockUseTechnologyEdit.mockReset();
+  addOpenChild.mockReset();
+  addOpenFree.mockReset();
   editOpen.mockReset();
   mockUseTechnologyEdit.mockReturnValue({
     close: vi.fn(),
     model: null,
     open: editOpen,
+    status: 'idle',
+  });
+  mockUseTechnologyAdd.mockReturnValue({
+    close: vi.fn(),
+    model: null,
+    openChild: addOpenChild,
+    openFree: addOpenFree,
     status: 'idle',
   });
 });
@@ -60,7 +74,10 @@ describe('TechTreeCanvas', () => {
       allTechnologyIds: [],
       dependencyEdges: [],
       edges: [],
+      folder: null,
       nodes: [],
+      reload: vi.fn(),
+      rows: [],
       sources: {},
       status: 'loading',
     });
@@ -74,7 +91,10 @@ describe('TechTreeCanvas', () => {
       allTechnologyIds: [],
       dependencyEdges: [],
       edges: [],
+      folder: null,
       nodes: [],
+      reload: vi.fn(),
+      rows: [],
       sources: {},
       status: 'error',
     });
@@ -90,7 +110,10 @@ describe('TechTreeCanvas', () => {
       allTechnologyIds: [],
       dependencyEdges: [],
       edges: [],
+      folder: null,
       nodes: [],
+      reload: vi.fn(),
+      rows: [],
       sources: {},
       status: 'ready',
     });
@@ -106,6 +129,7 @@ describe('TechTreeCanvas', () => {
       allTechnologyIds: ['fighter1'],
       dependencyEdges: [],
       edges: [],
+      folder: null,
       nodes: [
         {
           data: { nodeKind: 'wide', token: 'fighter1' },
@@ -114,6 +138,8 @@ describe('TechTreeCanvas', () => {
           type: 'tech',
         },
       ],
+      reload: vi.fn(),
+      rows: [],
       sources: {},
       status: 'ready',
     });
@@ -128,6 +154,7 @@ describe('TechTreeCanvas', () => {
       allTechnologyIds: ['fighter1'],
       dependencyEdges: [],
       edges: [],
+      folder: null,
       nodes: [
         {
           data: { nodeKind: 'wide', token: 'fighter1' },
@@ -136,6 +163,8 @@ describe('TechTreeCanvas', () => {
           type: 'tech',
         },
       ],
+      reload: vi.fn(),
+      rows: [],
       sources: {},
       status: 'ready',
     });
@@ -150,6 +179,7 @@ describe('TechTreeCanvas', () => {
       allTechnologyIds: ['fighter1'],
       dependencyEdges: [],
       edges: [],
+      folder: null,
       nodes: [
         {
           data: { nodeKind: 'wide', token: 'fighter1' },
@@ -158,6 +188,8 @@ describe('TechTreeCanvas', () => {
           type: 'tech',
         },
       ],
+      reload: vi.fn(),
+      rows: [],
       sources: {},
       status: 'ready',
     });
@@ -170,5 +202,37 @@ describe('TechTreeCanvas', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
 
     expect(editOpen).toHaveBeenCalledWith('fighter1');
+  });
+
+  it('adds a child of the selected node (ZMT-51 path 1)', () => {
+    mockUseAirTechTree.mockReturnValue({
+      allTechnologyIds: ['fighter1'],
+      dependencyEdges: [],
+      edges: [],
+      folder: null,
+      nodes: [
+        {
+          data: { nodeKind: 'wide', token: 'fighter1' },
+          id: 'fighter1',
+          position: { x: 0, y: 0 },
+          type: 'tech',
+        },
+      ],
+      reload: vi.fn(),
+      rows: [],
+      sources: {},
+      status: 'ready',
+    });
+    render(<TechTreeCanvas />, { wrapper });
+
+    // Selection is the precondition for add-as-child, exactly as for Edit.
+    expect(
+      screen.getByRole('button', { name: 'Add prerequisite' }),
+    ).toBeDisabled();
+
+    fireEvent.click(screen.getByText('fighter1'));
+    fireEvent.click(screen.getByRole('button', { name: 'Add prerequisite' }));
+
+    expect(addOpenChild).toHaveBeenCalledWith('fighter1');
   });
 });

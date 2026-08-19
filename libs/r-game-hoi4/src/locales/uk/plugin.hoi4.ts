@@ -277,6 +277,7 @@ export const uk: typeof en = {
       unknown: 'Щось пішло не так. Будь ласка, спробуйте ще раз.',
     },
     form: {
+      addTitle: 'Нова технологія',
       fields: {
         doctrine: 'Доктрина',
         doctrine_name: 'Назва доктрини',
@@ -284,6 +285,7 @@ export const uk: typeof en = {
         research_cost: 'Вартість дослідження',
         show_equipment_icon: 'Показувати значок спорядження',
         start_year: 'Рік початку',
+        token: 'Токен (порожньо = автоматично)',
       },
       folder: {
         add: 'Додати теку',
