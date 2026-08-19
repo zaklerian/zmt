@@ -6,28 +6,34 @@ import type { TechnologyInboundReference, TechnologySlim } from '@contracts';
 // and keeping it out of `apps/electron` keeps the readonly-parameter boundary
 // (P-1) free of it.
 //
-// THE EDGE RELATION IS "A DECLARES B". A technology's outbound refs are every
-// token its own block names as a tech-tree edge: each `path.leads_to_tech` and
-// every `dependencies` entry. Descendants are the forward closure of that
-// relation; inbound references are its inverse restricted to the deleted set.
-// The two are complements of ONE relation, which is what makes the count shown
-// and the warning shown describe the same graph.
+// THE TWO REF KINDS POINT OPPOSITE WAYS, SO THEY PLAY DIFFERENT ROLES (Q94 = A1).
+// A technology's block names both, but they are not one relation:
 //
-// DIVERGENCE, RECORDED NOT RESOLVED (ZMT-52 PR): the two ref kinds do not point
-// the same way in game terms. `path.leads_to_tech` names a SUCCESSOR (this tech
-// unlocks that one), while `dependencies` names a PREREQUISITE (this tech needs
-// that one) — see `TechnologyEntity`'s own model comment. So following both
-// forward walks downstream along `path` and UPSTREAM along `dependencies`, and a
-// delete-tree can therefore pull in a prerequisite rather than only descendants.
-// The ticket specifies both as the outbound set; it is implemented as specified,
-// the count is shown before the user confirms, and the direction question is
-// raised in the PR rather than silently decided here.
+//   - `path.leads_to_tech` names a SUCCESSOR — the tech this one unlocks. It is
+//     the DRAWN chain, and it is the ONLY edge the descendant closure follows.
+//   - `dependencies` names an AND-PREREQUISITE — a tech this one needs, i.e. an
+//     UPSTREAM edge (see `TechnologyEntity`'s own model comment).
+//
+// Following both forward would walk downstream along `path` and upstream along
+// `dependencies`, so "delete tree" could remove the prerequisites the target
+// depends on — never what delete-tree should mean. The ticket's original rule
+// said both; it was wrong, and this is the corrected one.
+//
+// `dependencies` keeps the two roles it is actually right for: the INBOUND scan
+// below (deleting a tech others depend on is exactly what dangles, so it must be
+// warned) and the canvas's dashed overlay (ZMT-44). Across the feature the split
+// is therefore consistent — `path` = the successor chain delete-tree follows;
+// `dependencies` = the AND-prereqs that surface as warnings and overlay, never as
+// descendants.
 
-// The tokens a delete-tree removes: the root plus its forward closure, in
-// breadth-first order with the root first. Traversal is confined to the ROOT'S
-// FOLDER — a ref leaving the folder (a doctrine prerequisite, another country's
-// tree) is a boundary, not a descendant — and to tokens the index actually
-// resolves, so a ref to a token no source defines contributes nothing.
+// The tokens a delete-tree removes: the root plus its SUCCESSOR closure over
+// `path.leads_to_tech` alone, in breadth-first order with the root first. A
+// `dependencies` prerequisite of a removed technology is NOT removed — it sits
+// upstream, and taking it would delete something the target needed rather than
+// something that needed the target (header). Traversal is further confined to the
+// ROOT'S FOLDER — a ref leaving the folder (another country's tree) is a
+// boundary, not a descendant — and to tokens the index actually resolves, so a
+// ref to a token no source defines contributes nothing.
 export function collectTechnologyDescendants(
   slims: readonly TechnologySlim[],
   rootId: string,
@@ -42,7 +48,7 @@ export function collectTechnologyDescendants(
   while (queue.length > 0) {
     const current = queue.shift();
     if (current === undefined) continue;
-    for (const ref of outboundRefs(current)) {
+    for (const ref of current.pathTargets) {
       if (seen.has(ref)) continue;
       const next = byId.get(ref);
       if (next === undefined || next.folderName !== root.folderName) continue;
@@ -55,9 +61,11 @@ export function collectTechnologyDescendants(
 }
 
 // Every technology OUTSIDE `deleted` that names something inside it, with the
-// deleted tokens it names. Workspace-wide by design: a technology in any folder
-// can name one in another, and the renderer holds one folder's rows — which is
-// why this is computed here and not there.
+// deleted tokens it names. BOTH ref kinds count here (unlike the closure above):
+// a `dependencies` entry pointing at a removed technology is precisely the
+// dangling AND-prerequisite this warning exists for. Workspace-wide by design: a
+// technology in any folder can name one in another, and the renderer holds one
+// folder's rows — which is why this is computed here and not there.
 //
 // It DETECTS ONLY (Q93 = A1). Nothing here rewrites a reference; the delete
 // proceeds and the listed references dangle until the L-011 worker cascade lands.
@@ -69,7 +77,7 @@ export function collectTechnologyInboundReferences(
   for (const slim of slims) {
     if (deleted.has(slim.id)) continue;
     const referencedTokens = [
-      ...new Set(outboundRefs(slim).filter((ref) => deleted.has(ref))),
+      ...new Set(declaredRefs(slim).filter((ref) => deleted.has(ref))),
     ];
     if (referencedTokens.length === 0) continue;
     references.push({ referencedTokens, token: slim.id });
@@ -77,7 +85,10 @@ export function collectTechnologyInboundReferences(
   return references.sort((a, b) => a.token.localeCompare(b.token));
 }
 
-// One technology's outbound refs: every token its own block names as an edge.
-function outboundRefs(slim: TechnologySlim): readonly string[] {
+// Every token one technology's block names as a tech-tree edge, in EITHER
+// direction. Only the inbound scan uses this: a reference dangles when its target
+// disappears regardless of which way the edge points, so both kinds count there.
+// The descendant closure deliberately does NOT use it — see the header.
+function declaredRefs(slim: TechnologySlim): readonly string[] {
   return [...slim.pathTargets, ...slim.dependencyTargets];
 }

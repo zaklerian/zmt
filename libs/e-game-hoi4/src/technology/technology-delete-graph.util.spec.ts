@@ -56,13 +56,26 @@ describe('collectTechnologyDescendants', () => {
     ]);
   });
 
-  it('follows dependencies as well as paths', () => {
+  // THE Q94 REGRESSION GUARD. `path.leads_to_tech` points at a successor,
+  // `dependencies` at a prerequisite. Following both would delete what the target
+  // NEEDS — the bug this assertion exists to catch.
+  it('follows path successors and leaves dependencies prerequisites alone', () => {
+    const slims = [
+      slim('a', { dependencyTargets: ['engine'], pathTargets: ['b'] }),
+      slim('b'),
+      slim('engine'),
+    ];
+
+    expect(collectTechnologyDescendants(slims, 'a')).toEqual(['a', 'b']);
+  });
+
+  it('never reaches a technology only a dependencies edge points at', () => {
     const slims = [
       slim('a', { dependencyTargets: ['engine'] }),
       slim('engine'),
     ];
 
-    expect(collectTechnologyDescendants(slims, 'a')).toEqual(['a', 'engine']);
+    expect(collectTechnologyDescendants(slims, 'a')).toEqual(['a']);
   });
 
   it('stops at the folder boundary', () => {

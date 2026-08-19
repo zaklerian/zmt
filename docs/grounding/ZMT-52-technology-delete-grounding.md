@@ -2,7 +2,7 @@
 
 - **Ticket**: ZMT-52 — Delete technology (baseline)
 - **Date**: 2026-08-19
-- **ADR**: 027 (write boundary, D3 batch + D4 delta kinds + D5 editable-owner routing), 028 (edit model, D4/D5 shared by delete). Feeds ledger `L-011` (delete as a second cascade trigger) and `L-024`.
+- **ADR**: 027 (write boundary, D3 batch + D4 delta kinds + D5 editable-owner routing), 028 (edit model, D4/D5 shared by delete). Feeds ledger `L-011` (delete as a second cascade trigger), `L-024`, `L-026` (sub-technology orphans) and `L-027` (S-4 validation-first sequencing).
 - **Corpus**: BICE at `/home/user/test-mod-bice`. Never vendored; never modified.
 - **Files read**: every `common/technologies/*.txt` (2 670 technology blocks) and every `localisation/english/*.yml`.
 
@@ -25,8 +25,11 @@ ticket, the same shape the loc operation has carried since ZMT-48 — not a
 special case bolted on for a rare tree, but the shape the canvas's only folder
 demands on its first non-leaf delete.
 
-Measured delete-tree sizes under the ticket's traversal rule, folder-scoped:
-`generic_fighter` → **14**, `early_fighter` → **13**, `jet_fighter1` → **1** (leaf).
+Measured delete-tree sizes under the shipped rule (`path.leads_to_tech` closure,
+folder-scoped): `generic_fighter` → **14**, `early_fighter` → **13**,
+`jet_fighter1` → **1** (leaf). The numbers are unchanged from the both-kinds rule
+here only because the air folder's live `dependencies` all leave the folder
+(Finding 4); the rule change is real, not cosmetic.
 
 ## Finding 2 — a folder's technologies DO span files, so the cascade is multi-file
 
@@ -75,12 +78,14 @@ block — `jet_fighter1` — names `tech_air_engine_jet` and `jet_aircraft_proto
 **both in `electronics_folder`**, so the folder scope alone stops the traversal
 there.
 
-The direction, however, is the divergence this ticket carries to the PR rather
-than resolving: `path.leads_to_tech` names a **successor**, `dependencies` names a
-**prerequisite**. The ticket defines a delete-tree as the closure over both as
-"outbound" edges, which walks downstream along `path` and **upstream** along
-`dependencies`. Implemented as specified (the count is shown before the user
-confirms); raised as Q94 in the PR body.
+The direction is what the fix pass settled (Q94 = A1): `path.leads_to_tech` names
+a **successor**, `dependencies` names a **prerequisite**. Defining a delete-tree
+as the closure over both would walk downstream along `path` and **upstream** along
+`dependencies`, so it could delete the technologies the target depends on. The
+shipped closure therefore follows **`path.leads_to_tech` only**; `dependencies`
+keeps the two roles it is right for — the inbound dangling-ref warning and the
+ZMT-44 dashed overlay. The regression guard is a fixture technology carrying both
+a `path` successor and a `dependencies` prerequisite.
 
 ## Finding 5 — nothing outside the air folder references into it
 

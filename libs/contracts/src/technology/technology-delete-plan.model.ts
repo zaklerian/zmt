@@ -31,9 +31,10 @@ export interface TechnologyDeletePlan {
 export interface TechnologyDeletePlanResult {
   // The selected technology alone.
   readonly item: TechnologyDeletePlan;
-  // The selected technology plus its downward closure. Equal to `item` for a leaf
-  // — which is exactly the signal the confirmation reads to offer one option
-  // instead of two.
+  // The selected technology plus its SUCCESSOR closure over `path.leads_to_tech`
+  // (Q94 = A1) — the techs it unlocks. A `dependencies` prerequisite is upstream
+  // and is never part of the tree. Equal to `item` for a leaf, which is exactly
+  // the signal the confirmation reads to offer one option instead of two.
   readonly tree: TechnologyDeletePlan;
 }
 

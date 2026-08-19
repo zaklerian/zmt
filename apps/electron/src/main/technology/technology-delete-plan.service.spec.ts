@@ -45,7 +45,12 @@ const AIR_FILE = `technologies = {
 \tfighter2 = {
 \t\tresearch_cost = 2
 \t\tpath = { leads_to_tech = fighter3 }
+\t\tdependencies = { engine_prereq }
 \t\tfolder = { name = air_techs_folder position = { x = 3 y = 6 } }
+\t}
+\tengine_prereq = {
+\t\tresearch_cost = 1
+\t\tfolder = { name = air_techs_folder position = { x = 5 y = 2 } }
 \t}
 \tinterceptor1 = {
 \t\tresearch_cost = 3
@@ -118,6 +123,18 @@ describe('buildTechnologyDeletePlan', () => {
       'fighter2',
       'fighter3',
     ]);
+  });
+
+  // THE Q94 REGRESSION GUARD, at the service level. `fighter2` is inside the
+  // removed tree and declares `dependencies = { engine_prereq }`. A closure that
+  // followed `dependencies` would take `engine_prereq` with it — deleting a
+  // technology the target NEEDED rather than one that needed the target.
+  it('removes a path successor and leaves a dependencies prerequisite untouched (gate 2)', async () => {
+    const plan = await buildTechnologyDeletePlan('early_fighter');
+    const removed = plan.tree.targets.map((target) => target.token);
+
+    expect(removed).toContain('fighter3');
+    expect(removed).not.toContain('engine_prereq');
   });
 
   it('gives a leaf an identical item and tree plan — the signal for a plain confirm (gate 2)', async () => {
