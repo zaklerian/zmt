@@ -50,7 +50,7 @@ async function deleteEntity(
     [
       {
         absolutePath,
-        delta: { entityName: request.entityName, kind: 'delete' },
+        deltas: [{ entityName: request.entityName, kind: 'delete' }],
         format: 'ast',
       },
     ],
@@ -91,6 +91,20 @@ function toWriteOperation(
   if (operation.format === 'loc') {
     return { absolutePath, deltas: operation.deltas, format: 'loc' };
   }
+  // A delete names N blocks in one file (ZMT-52) and compiles to that file's
+  // ORDERED delta list — the same shape loc has always used, and the reason a
+  // delete-tree spanning one file is one operation rather than N that
+  // `assertOneOperationPerFile` would reject.
+  if (operation.format === 'scriptDelete') {
+    return {
+      absolutePath,
+      deltas: operation.entityNames.map((entityName) => ({
+        entityName,
+        kind: 'delete' as const,
+      })),
+      format: 'ast',
+    };
+  }
   // `insertUnder` selects the delta KIND (ADR 027 decision 4): present → create
   // `entityName` as a new named block under it, with the operation's deltas as the
   // new block's body; absent → the patch path every other caller takes.
@@ -108,7 +122,7 @@ function toWriteOperation(
           name: operation.entityName,
           parentName: operation.insertUnder,
         };
-  return { absolutePath, delta, format: 'ast' };
+  return { absolutePath, deltas: [delta], format: 'ast' };
 }
 
 // The CROSS-FILE write (ADR 027 decision 3) as the entity layer exposes it: the
@@ -155,11 +169,13 @@ async function writeEntity(
     [
       {
         absolutePath,
-        delta: {
-          deltas: request.deltas,
-          entityName: request.entityName,
-          kind: 'patch',
-        },
+        deltas: [
+          {
+            deltas: request.deltas,
+            entityName: request.entityName,
+            kind: 'patch',
+          },
+        ],
         format: 'ast',
       },
     ],

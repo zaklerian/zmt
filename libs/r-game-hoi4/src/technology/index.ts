@@ -2,6 +2,7 @@ export * from './known-technology-keys.const';
 export * from './technology-actions';
 export * from './technology-add.util';
 export * from './technology-columns.const';
+export * from './technology-delete.util';
 export * from './technology-delta.util';
 export * from './technology-entity-id.const';
 export * from './technology-error.util';

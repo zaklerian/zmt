@@ -51,6 +51,7 @@ export const IPC_CHANNELS = {
     ping: 'system:ping',
   },
   technology: {
+    deletePlan: 'technology:deletePlan',
     list: 'technology:list',
   },
   techTreeGeometry: {

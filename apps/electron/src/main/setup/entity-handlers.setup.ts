@@ -83,6 +83,17 @@ function coerceBatchOperation(
       relativePath,
     };
   }
+  if (format === 'scriptDelete') {
+    if (!Array.isArray(record.entityNames) || record.entityNames.length === 0) {
+      throw badRequest(`${field}.entityNames must be a non-empty array`);
+    }
+    return {
+      entityNames: requireStrings(record.entityNames, `${field}.entityNames`),
+      format: 'scriptDelete',
+      modId,
+      relativePath,
+    };
+  }
   if (format === 'script') {
     if (!Array.isArray(record.deltas)) {
       throw badRequest(`${field}.deltas must be an array`);
@@ -120,7 +131,7 @@ function coerceBatchOperation(
       ...(renameTo === undefined ? {} : { renameTo }),
     };
   }
-  throw badRequest(`${field}.format must be "loc" or "script"`);
+  throw badRequest(`${field}.format must be "loc", "script" or "scriptDelete"`);
 }
 
 function coerceBatchWriteRequest(value: unknown): EntityBatchWriteRequest {

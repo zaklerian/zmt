@@ -18,8 +18,14 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { EntityFormShell } from '../../../shared/entity-form';
-import { useAirTechTree, useTechnologyAdd, useTechnologyEdit } from '../hooks';
+import {
+  useAirTechTree,
+  useTechnologyAdd,
+  useTechnologyDelete,
+  useTechnologyEdit,
+} from '../hooks';
 import { TechNode } from './tech-node.component';
+import { TechnologyDeleteDialog } from './technology-delete-dialog.component';
 
 import '@xyflow/react/dist/style.css';
 
@@ -72,6 +78,15 @@ export function TechTreeCanvas() {
     [t],
   );
   const edit = useTechnologyEdit(sources, allTechnologyIds, translate);
+  // The deleted node may be the selected one, so the selection is cleared with
+  // the same callback that reloads the tree — a selection pointing at a removed
+  // technology would leave Edit and Add-child armed against nothing.
+  const del = useTechnologyDelete(
+    useCallback(() => {
+      setSelectedId(null);
+      reload();
+    }, [reload]),
+  );
   const add = useTechnologyAdd({
     allTechnologyIds,
     folder,
@@ -178,6 +193,25 @@ export function TechTreeCanvas() {
             >
               {t('feature.techTreeCanvas:addChild')}
             </Button>
+            <Button
+              color="error"
+              disabled={selectedId === null || del.status === 'loading'}
+              size="small"
+              sx={{ bgcolor: 'background.paper', ml: 1 }}
+              variant="outlined"
+              onClick={() => {
+                if (selectedId !== null) del.open(selectedId);
+              }}
+            >
+              {t('feature.techTreeCanvas:delete')}
+            </Button>
+            {del.status !== 'idle' &&
+              del.status !== 'loading' &&
+              del.status !== 'deleting' && (
+                <Typography color="text.secondary" variant="caption">
+                  {t(`feature.techTreeCanvas:deleteStatus.${del.status}`)}
+                </Typography>
+              )}
             {edit.status !== 'idle' && edit.status !== 'loading' && (
               <Typography color="text.secondary" variant="caption">
                 {t(`feature.techTreeCanvas:editStatus.${edit.status}`)}
@@ -232,6 +266,18 @@ export function TechTreeCanvas() {
           model={add.model}
           onClose={add.close}
           onSaved={reload}
+        />
+      )}
+      {/* Delete is confirmed against the SERVER-COMPUTED plan (ZMT-52): the
+          tree count and the dangling-reference warning both come off the main
+          side, which is the only place that can see the whole edge graph. */}
+      {del.plan !== null && del.token !== null && (
+        <TechnologyDeleteDialog
+          busy={del.status === 'deleting'}
+          plan={del.plan}
+          token={del.token}
+          onCancel={del.cancel}
+          onConfirm={del.commit}
         />
       )}
     </Box>

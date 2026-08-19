@@ -8,6 +8,24 @@ export const de: typeof en = {
     error: 'Die Technologie konnte hier nicht hinzugefügt werden.',
     readonly: 'Keine bearbeitbare Quelle besitzt diesen Technologiebaum.',
   },
+  delete: 'Löschen',
+  deleteDialog: {
+    blocked:
+      '{{total}} davon gehören zu einer schreibgeschützten Quelle und können nicht gelöscht werden.',
+    cancel: 'Abbrechen',
+    confirmItem: 'Element löschen',
+    confirmTree: 'Baum löschen ({{total}})',
+    inbound:
+      '{{total}} Technologien verweisen auf die gelöschte Menge; ihre Voraussetzungen laufen ins Leere.',
+    itemSummary: 'Element löschen entfernt {{total}} Technologie.',
+    title: '{{token}} löschen?',
+    treeSummary: 'Baum löschen entfernt {{total}} Technologien.',
+  },
+  deleteStatus: {
+    error: 'Die Technologie konnte nicht gelöscht werden.',
+    readonly:
+      'Eine Technologie dieser Menge gehört zu einer schreibgeschützten Quelle.',
+  },
   dependenciesToggle: 'Abhängigkeiten anzeigen',
   edit: 'Bearbeiten',
   editStatus: {
