@@ -1,6 +1,13 @@
 import type { en } from '../en/feature.tech-tree-canvas';
 
 export const uk: typeof en = {
+  addChild: 'Додати передумову',
+  addFreeHint:
+    'Клацніть правою кнопкою на порожньому полотні, щоб додати технологію.',
+  addStatus: {
+    error: 'Не вдалося додати технологію тут.',
+    readonly: 'Це дерево технологій не належить жодному редагованому джерелу.',
+  },
   dependenciesToggle: 'Показати залежності',
   edit: 'Редагувати',
   editStatus: {

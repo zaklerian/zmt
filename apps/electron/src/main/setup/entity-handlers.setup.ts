@@ -91,9 +91,20 @@ function coerceBatchOperation(
       record.renameTo === undefined
         ? undefined
         : requireString(record.renameTo, `${field}.renameTo`);
+    const insertUnder =
+      record.insertUnder === undefined
+        ? undefined
+        : requireString(record.insertUnder, `${field}.insertUnder`);
+    // Creating a block and renaming it in the same operation is incoherent, and
+    // the pair would silently resolve to whichever the strategy checked first.
+    if (insertUnder !== undefined && renameTo !== undefined) {
+      throw badRequest(`${field} must not carry both insertUnder and renameTo`);
+    }
     // Unlike `entity:write`, an empty delta list is legal here — but only
     // alongside a rename. Neither present is a no-op operation, which would
-    // rewrite a file for nothing and is a caller bug, not a valid request.
+    // rewrite a file for nothing and is a caller bug, not a valid request. An
+    // insert with an empty body is likewise a caller bug: it would write a
+    // technology with no fields at all.
     if (record.deltas.length === 0 && renameTo === undefined) {
       throw badRequest(`${field} must carry deltas or renameTo`);
     }
@@ -105,6 +116,7 @@ function coerceBatchOperation(
       format: 'script',
       modId,
       relativePath,
+      ...(insertUnder === undefined ? {} : { insertUnder }),
       ...(renameTo === undefined ? {} : { renameTo }),
     };
   }

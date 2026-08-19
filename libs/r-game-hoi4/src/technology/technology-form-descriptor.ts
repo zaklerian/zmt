@@ -31,6 +31,10 @@ import {
   TECHNOLOGY_ROOT_SPECS,
 } from './known-technology-keys.const';
 import {
+  buildTechnologyAddOperations,
+  resolveTechnologyAddToken,
+} from './technology-add.util';
+import {
   collectSymbolReplacements,
   computeTechnologyDeltas,
   TechnologyListSnapshot,
@@ -55,6 +59,13 @@ const POSITION_BLOCK = 'position';
 // this form whose write lands in another file and another format (ADR 028 D3).
 const PUBLIC_NAME_FIELD = '__publicName';
 
+// The RHF binding of the token field, rendered on the ADD path only. Reserved the
+// same way and for the same reason as the public-name field: it is the entity's
+// IDENTITY, not one of its script scalars, and `computeTechnologyDeltas` must not
+// mistake it for one. On the edit path the token is frozen (ZMT-50 review
+// Q89/Q90), so the field does not exist there at all.
+const TOKEN_FIELD = '__token';
+
 function fieldsFromSpecs(
   specs: readonly FieldSpec[],
   group: string,
@@ -66,14 +77,20 @@ function fieldsFromSpecs(
   }));
 }
 
+// `originalIndex` null marks an item that does not exist in the source yet — the
+// ADD path, where every projected item (the seeded `folder` and `path`) is a NEW
+// object-list item. Omitting the index key is exactly the signal
+// `computeTechnologyDeltas` reads to materialize a fresh block instead of patching
+// the index-th existing one.
 function itemRecord(
   scalars: readonly EntityField[],
-  originalIndex: number,
+  originalIndex: null | number,
   nested?: { readonly fields: readonly EntityField[]; readonly name: string },
 ): Readonly<Record<string, unknown>> {
-  const record: Record<string, unknown> = {
-    [OBJECT_LIST_ITEM_INDEX_KEY]: originalIndex,
-  };
+  const record: Record<string, unknown> =
+    originalIndex === null
+      ? {}
+      : { [OBJECT_LIST_ITEM_INDEX_KEY]: originalIndex };
   for (const field of scalars) record[field.key] = field.value ?? '';
   if (nested !== undefined) {
     const nestedValue: Record<string, unknown> = {};
@@ -86,17 +103,32 @@ function itemRecord(
 
 function project(
   entity: TechnologyEntity,
-  { localisation, modId, relativePath, translate }: EntityFormProjectContext,
+  {
+    localisation,
+    mode,
+    modId,
+    relativePath,
+    translate,
+  }: EntityFormProjectContext,
 ): EntityFormModel {
   const { folders, paths, rootScalars, token } = entity;
 
+  // ADR 028 decision 5: the SAME form, projected in add mode. The subject is a
+  // blank technology the caller seeded with its placement (folder + position), the
+  // open-time snapshot is empty so every value saves as an addition, and the write
+  // is an INSERT batch rather than a patch batch.
+  const isAdd = mode === 'add';
+
   // The localised display name at open time. Absent context = the form was opened
   // from the ML file view, which resolves no localisation; the field is then not
-  // rendered at all rather than rendered empty and silently unwritable.
+  // rendered at all rather than rendered empty and silently unwritable. On add
+  // there is nothing to look up — a token that does not exist yet owns no key.
   const openTimePublicName =
     localisation === undefined
       ? null
-      : technologyPublicName(localisation, token);
+      : isAdd
+        ? ''
+        : technologyPublicName(localisation, token);
 
   const root: PropertyBagBlock = {
     kind: 'propertyBag',
@@ -113,6 +145,15 @@ function project(
                 value: openTimePublicName,
               },
             ]),
+        ...(isAdd
+          ? [
+              {
+                label: translate('plugin.hoi4:technology.form.fields.token'),
+                spec: { name: TOKEN_FIELD },
+                value: '',
+              },
+            ]
+          : []),
         ...TECHNOLOGY_ROOT_SPECS.map((spec) => ({
           label: translate(
             `plugin.hoi4:technology.form.fields.${fieldName(spec)}`,
@@ -130,7 +171,9 @@ function project(
     addLabel: translate('plugin.hoi4:technology.form.path.add'),
     fields: fieldsFromSpecs(TECHNOLOGY_PATH_SPECS, PATH_BLOCK, translate),
     itemLabel: translate('plugin.hoi4:technology.form.path.item'),
-    items: paths.map((path, index) => itemRecord(path.scalars, index)),
+    items: paths.map((path, index) =>
+      itemRecord(path.scalars, isAdd ? null : index),
+    ),
     kind: 'objectList',
     name: PATH_BLOCK,
     scope: null,
@@ -142,7 +185,7 @@ function project(
     fields: fieldsFromSpecs(TECHNOLOGY_FOLDER_SPECS, FOLDER_BLOCK, translate),
     itemLabel: translate('plugin.hoi4:technology.form.folder.item'),
     items: folders.map((folder, index) =>
-      itemRecord(folder.scalars, index, {
+      itemRecord(folder.scalars, isAdd ? null : index, {
         fields: folder.position,
         name: POSITION_BLOCK,
       }),
@@ -209,10 +252,17 @@ function project(
     },
   ];
 
+  // On add the snapshot is BLANK while the blocks still render the seeded values,
+  // so `computeTechnologyDeltas` compiles every value — seeded or typed — as an
+  // addition. That all-added delta set is exactly what the AST insert reads as the
+  // new block's body (ADR 027 decision 4), so the create path reuses the edit
+  // path's delta machinery instead of a parallel builder.
   const snapshot: TechnologySnapshot = {
-    lists,
-    objectLists,
-    root: rootScalars,
+    lists: isAdd ? lists.map((list) => ({ ...list, values: [] })) : lists,
+    objectLists: isAdd
+      ? objectLists.map((objectList) => ({ ...objectList, items: [] }))
+      : objectLists,
+    root: isAdd ? [] : rootScalars,
     rootKeys: TECHNOLOGY_ROOT_SPECS.map(fieldName),
   };
 
@@ -234,7 +284,32 @@ function project(
   // carried, so its `.txt` output is byte-identical for the same script edit — and
   // it NEVER carries `renameTo`: the token is frozen on the edit path (ZMT-50
   // review Q89/Q90; the plan type has no rename field to pass through).
-  const save = async (values: EntityFormValues): Promise<void> => {
+  //
+  // The ADD write (ADR 028 decision 5) is the same batch carrying an INSERT of the
+  // new block plus the insert of its loc name key. Its token is derived HERE, at
+  // save, not at open — the user may still be typing the public name the
+  // autogenerated token comes from, and a cleared token field means "autogenerate
+  // from what I finally typed".
+  const addOperations = (
+    values: EntityFormValues,
+  ): readonly EntityBatchOperation[] => {
+    const publicName = stringAt(values, PUBLIC_NAME_FIELD);
+    return buildTechnologyAddOperations({
+      body: computeTechnologyDeltas(snapshot, values),
+      localisation,
+      publicName,
+      target: { modId, relativePath },
+      token: resolveTechnologyAddToken(
+        stringAt(values, TOKEN_FIELD),
+        publicName,
+        localisation?.takenIds ?? [],
+      ),
+    });
+  };
+
+  const editOperations = (
+    values: EntityFormValues,
+  ): readonly EntityBatchOperation[] => {
     const deltas = computeTechnologyDeltas(snapshot, values);
     const script: readonly EntityBatchOperation[] =
       deltas.length === 0
@@ -248,7 +323,11 @@ function project(
               relativePath,
             },
           ];
-    const operations = [...script, ...locPlanFor(values).operations];
+    return [...script, ...locPlanFor(values).operations];
+  };
+
+  const save = async (values: EntityFormValues): Promise<void> => {
+    const operations = isAdd ? addOperations(values) : editOperations(values);
     if (operations.length === 0) return;
     const { api } = window as unknown as { readonly api: AppApiModel };
     await api.entity.writeBatch({ operations });
@@ -278,7 +357,9 @@ function project(
   return {
     blocks,
     confirmBeforeSave,
-    dialogTitle: token,
+    dialogTitle: isAdd
+      ? translate('plugin.hoi4:technology.form.addTitle')
+      : token,
     errorMessage: (code) => translate(technologyErrorMessageKey(code)),
     errorTitle: translate('plugin.hoi4:technology.errors.title'),
     save,

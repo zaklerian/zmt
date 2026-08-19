@@ -4,6 +4,8 @@ import type {
   TechTreeGridbox,
 } from '@contracts';
 
+import { anchorGridbox } from './add-placement.util';
+
 const TREE_SUFFIX = '_tree';
 
 // Resolves which gridbox each positioned technology in a folder binds to
@@ -22,6 +24,14 @@ const TREE_SUFFIX = '_tree';
 // selects the gridbox — the component-to-seed walk is the only rule that places
 // every tech correctly. Rows must already be scoped to one folder; edges to techs
 // outside `rows` are ignored so a stray cross-folder path cannot leak a component.
+//
+// ZMT-51 adds the case the rule alone leaves unplaced: a positioned technology in
+// NO component — a freshly free-placed one, which has no edges yet. Rule 2
+// partitions by edges, so such a technology binds to nothing and would render
+// nowhere, i.e. would vanish the moment it was saved. It falls back to the
+// folder's ANCHOR gridbox — the same frame Add measured its cell in
+// (`add-placement.util.ts`), which is what makes it reload exactly where it was
+// placed. As soon as it gains an edge, the component rule above claims it first.
 export function bindNodesToGridboxes(
   rows: readonly TechnologySlim[],
   geometry: TechTreeFolderGeometry,
@@ -37,6 +47,15 @@ export function bindNodesToGridboxes(
     }
     for (const member of reachableFrom(seedId, adjacency)) {
       binding.set(member, gridbox);
+    }
+  }
+
+  const anchor = anchorGridbox(geometry);
+  if (anchor !== null) {
+    for (const row of rows) {
+      if (row.position !== null && !binding.has(row.id)) {
+        binding.set(row.id, anchor);
+      }
     }
   }
   return binding;

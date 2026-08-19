@@ -272,6 +272,7 @@ export const en = {
       unknown: 'Something went wrong. Please try again.',
     },
     form: {
+      addTitle: 'New technology',
       fields: {
         doctrine: 'Doctrine',
         doctrine_name: 'Doctrine name',
@@ -279,6 +280,7 @@ export const en = {
         research_cost: 'Research cost',
         show_equipment_icon: 'Show equipment icon',
         start_year: 'Start year',
+        token: 'Token (auto-generated when empty)',
       },
       folder: {
         add: 'Add folder',

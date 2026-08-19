@@ -23,9 +23,12 @@ const AIR_GEOMETRY: TechTreeFolderGeometry = {
 // sub with no position — the real BICE topology in miniature.
 const ROWS: readonly TechnologySlim[] = [
   slim('generic_fighter', { x: 5, y: 2 }, ['early_fighter']),
-  slim('early_fighter', { x: 5, y: 2 }, ['fighter1', 'multi_role1'], [
-    'cv_early_fighter',
-  ]),
+  slim(
+    'early_fighter',
+    { x: 5, y: 2 },
+    ['fighter1', 'multi_role1'],
+    ['cv_early_fighter'],
+  ),
   slim('fighter1', { x: 3, y: 4 }, []),
   slim('multi_role1', { x: 11, y: 4 }, []),
   slim('generic_bomber', { x: 8, y: 2 }, ['CAS1']),
@@ -74,6 +77,34 @@ describe('bindNodesToGridboxes', () => {
     expect(
       [...binding.values()].some((g) => g.name === 'tech_air_engine_jet_tree'),
     ).toBe(false);
+  });
+
+  // ZMT-51 gate 2: a freshly free-placed technology has no edges, so no component
+  // claims it. Before the fallback it bound to nothing and rendered nowhere — it
+  // vanished the moment it was saved. It now binds to the anchor gridbox, the same
+  // frame Add measured its cell in, so it reloads where it was placed.
+  it('falls back to the anchor gridbox for a positioned tech in no component', () => {
+    const freePlaced = slim('experimental_jet', { x: 20, y: 2 }, []);
+
+    const binding = bindNodesToGridboxes([...ROWS, freePlaced], AIR_GEOMETRY);
+
+    expect(binding.get('experimental_jet')?.name).toBe(
+      'tech_air_engine_jet_tree',
+    );
+  });
+
+  it('lets the component rule win the moment the free-placed tech gains an edge', () => {
+    const connected = slim('experimental_jet', { x: 20, y: 2 }, ['fighter1']);
+
+    const binding = bindNodesToGridboxes([...ROWS, connected], AIR_GEOMETRY);
+
+    expect(binding.get('experimental_jet')?.name).toBe('generic_fighter_tree');
+  });
+
+  it('leaves a sub-technology unbound — it has no position to place', () => {
+    const binding = bindNodesToGridboxes(ROWS, AIR_GEOMETRY);
+
+    expect(binding.has('cv_early_fighter')).toBe(false);
   });
 });
 

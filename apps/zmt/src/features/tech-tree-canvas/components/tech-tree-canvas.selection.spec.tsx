@@ -51,6 +51,7 @@ describe('TechTreeCanvas selection', () => {
       allTechnologyIds: ['fighter1'],
       dependencyEdges: [],
       edges: [],
+      folder: null,
       nodes: [
         {
           data: { nodeKind: 'wide', token: 'fighter1' },
@@ -59,6 +60,8 @@ describe('TechTreeCanvas selection', () => {
           type: 'tech',
         },
       ],
+      reload: vi.fn(),
+      rows: [],
       sources: {},
       status: 'ready',
     });

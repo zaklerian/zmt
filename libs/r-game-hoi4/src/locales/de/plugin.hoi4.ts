@@ -283,6 +283,7 @@ export const de: typeof en = {
       unknown: 'Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.',
     },
     form: {
+      addTitle: 'Neue Technologie',
       fields: {
         doctrine: 'Doktrin',
         doctrine_name: 'Doktrinname',
@@ -290,6 +291,7 @@ export const de: typeof en = {
         research_cost: 'Forschungskosten',
         show_equipment_icon: 'Ausrüstungssymbol anzeigen',
         start_year: 'Startjahr',
+        token: 'Token (leer = automatisch)',
       },
       folder: {
         add: 'Ordner hinzufügen',

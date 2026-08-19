@@ -1,4 +1,10 @@
 export const en = {
+  addChild: 'Add prerequisite',
+  addFreeHint: 'Right-click empty canvas to add a technology there.',
+  addStatus: {
+    error: 'The technology could not be added here.',
+    readonly: 'No editable source owns this tech tree.',
+  },
   dependenciesToggle: 'Show dependencies',
   edit: 'Edit',
   editStatus: {
