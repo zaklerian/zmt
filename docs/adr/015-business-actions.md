@@ -14,6 +14,20 @@ actions available for the selected entity row. This corrects the first-consumer 
 _Scope_ below; the decision itself is unchanged — the availability-driven pattern holds
 identically for a toolbar host.
 
+## Addendum (2026-08-19) — second consumer
+
+The **tech-tree canvas context menu** (`CanvasContextMenu` +
+`apps/zmt/src/features/tech-tree-canvas/canvas-actions.ts`, ZMT-53) is the second
+realized consumer: right-clicking a technology node or the empty zone renders the AED
+verbs whose `isAvailable(context)` is true, over a context whose `technologyId` is the
+token for a node and `null` for the zone. Node-vs-zone lives in the context and is
+resolved by each action, exactly as the decision prescribes.
+
+This is **not** the surface the Correction below refers to. That one is the mod **file
+tree** in `features/mod-content/` (its motivating interaction was removing a mod from
+the project); it is still unbuilt. The canvas menu is a different surface on a different
+tree, and it does not close the file-tree gap.
+
 ## Context
 
 User-triggerable interactions recur across the renderer — saving and discarding in settings, switching locale, opening a folder, confirming a dialog, and now removing a mod from the project via a tree context menu. Each was implemented ad hoc: a handler wired directly to a control, with the control's presence and enablement decided by inline conditionals at the call site. Two costs compound as interactions multiply:
