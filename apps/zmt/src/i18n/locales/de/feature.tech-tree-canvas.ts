@@ -2,8 +2,9 @@ import type { en } from '../en/feature.tech-tree-canvas';
 
 export const de: typeof en = {
   addChild: 'Voraussetzung hinzufügen',
+  addFree: 'Technologie hier hinzufügen',
   addFreeHint:
-    'Rechtsklick auf die leere Fläche, um dort eine Technologie hinzuzufügen.',
+    'Rechtsklick auf eine Technologie oder die leere Fläche für Aktionen.',
   addStatus: {
     error: 'Die Technologie konnte hier nicht hinzugefügt werden.',
     readonly: 'Keine bearbeitbare Quelle besitzt diesen Technologiebaum.',

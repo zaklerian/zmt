@@ -332,6 +332,45 @@ describe('TechTreeCanvas', () => {
     expect(screen.queryByRole('button', { name: /Delete tree/ })).toBeNull();
   });
 
+  // ZMT-53 gate 1: the node context menu carries all three verbs, and choosing
+  // one runs the existing flow for the right-clicked technology.
+  it('opens the AED context menu on a node right-click (ZMT-53)', () => {
+    mockUseAirTechTree.mockReturnValue(readyWith('fighter1'));
+    render(<TechTreeCanvas />, { wrapper });
+
+    fireEvent.contextMenu(screen.getByText('fighter1'));
+
+    expect(
+      screen.getAllByRole('menuitem').map((item) => item.textContent),
+    ).toEqual(['Edit', 'Add prerequisite', 'Delete']);
+
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Edit' }));
+    expect(editOpen).toHaveBeenCalledWith('fighter1');
+  });
+
+  // ZMT-53 gate 2: the zone context excludes the node-only verbs; gate 5 —
+  // choosing Add hands the ZMT-51 free-placement path the projected click.
+  it('opens the zone context menu on a pane right-click (ZMT-53)', () => {
+    mockUseAirTechTree.mockReturnValue(readyWith('fighter1'));
+    const { container } = render(<TechTreeCanvas />, { wrapper });
+    const pane = container.querySelector('.react-flow__pane');
+    if (pane === null) throw new Error('no react-flow pane');
+
+    fireEvent.contextMenu(pane, { clientX: 220, clientY: 340 });
+
+    expect(
+      screen.getAllByRole('menuitem').map((item) => item.textContent),
+    ).toEqual(['Add technology here']);
+
+    fireEvent.click(
+      screen.getByRole('menuitem', { name: 'Add technology here' }),
+    );
+    expect(addOpenFree).toHaveBeenCalledTimes(1);
+    expect(addOpenChild).not.toHaveBeenCalled();
+    expect(editOpen).not.toHaveBeenCalled();
+    expect(deleteOpen).not.toHaveBeenCalled();
+  });
+
   it('offers item-vs-tree and warns about dangling references (ZMT-52)', () => {
     mockUseAirTechTree.mockReturnValue(readyWith('fighter1'));
     mockUseTechnologyDelete.mockReturnValue({

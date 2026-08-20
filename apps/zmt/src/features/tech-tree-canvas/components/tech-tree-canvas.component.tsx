@@ -13,17 +13,20 @@ import {
   Panel,
   ReactFlow,
   ReactFlowProvider,
+  useReactFlow,
 } from '@xyflow/react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { EntityFormShell } from '../../../shared/entity-form';
+import { canvasActions } from '../canvas-actions';
 import {
   useAirTechTree,
   useTechnologyAdd,
   useTechnologyDelete,
   useTechnologyEdit,
 } from '../hooks';
+import { CanvasContextMenu } from './canvas-context-menu.component';
 import { TechNode } from './tech-node.component';
 import { TechnologyDeleteDialog } from './technology-delete-dialog.component';
 
@@ -31,12 +34,23 @@ import '@xyflow/react/dist/style.css';
 
 const nodeTypes = { tech: TechNode };
 
-// The one projection free placement needs off the flow instance. Typed
-// structurally rather than as `ReactFlowInstance`, whose node generic defaults to
-// react-flow's own `Node` — our narrower `TechFlowNode` does not satisfy it, and
-// widening the ref would only be to name a type we never use.
-interface FlowProjection {
-  screenToFlowPosition: (point: TechTreePoint) => TechTreePoint;
+// One right-click, held until the menu closes: where to draw the menu (screen
+// pixels), where a free-placed technology would land (flow pixels), and what was
+// clicked — a technology token, or null for the empty zone.
+interface CanvasMenuTarget {
+  readonly anchor: TechTreePoint;
+  readonly position: TechTreePoint;
+  technologyId: null | string;
+}
+
+// The provider is the component's own, not the shell's: the flow below reads the
+// screen→flow projection off `useReactFlow`, which needs it as an ancestor.
+export function TechTreeCanvas() {
+  return (
+    <ReactFlowProvider>
+      <TechTreeCanvasFlow />
+    </ReactFlowProvider>
+  );
 }
 
 // The tech-tree canvas: replaces the ZMT-41 placeholder for the `aircraft`
@@ -51,7 +65,14 @@ interface FlowProjection {
 // (ZMT-50) or for ADD-as-child (ZMT-51 path 1); right-clicking empty canvas opens
 // it for a free-placed technology at the click (ZMT-51 path 2). Both add paths
 // commit through the same atomic insert batch and reload the tree on save.
-export function TechTreeCanvas() {
+// Context menu (ZMT-53, ADR 015): right-clicking a node or the empty zone opens
+// the same three verbs as availability-driven business actions — the canvas
+// builds the context, `canvas-actions.ts` decides what applies to it.
+//
+// Rendered INSIDE `ReactFlowProvider` (the exported wrapper above) so the
+// screen→flow projection both right-click paths need comes off `useReactFlow`,
+// which is live from first render — the `onInit` instance is not.
+function TechTreeCanvasFlow() {
   const { t } = useTranslation(['feature.techTreeCanvas']);
   const {
     allTechnologyIds,
@@ -64,12 +85,12 @@ export function TechTreeCanvas() {
     sources,
     status,
   } = useAirTechTree();
+  const [menuTarget, setMenuTarget] = useState<CanvasMenuTarget | null>(null);
   const [selectedId, setSelectedId] = useState<null | string>(null);
   const [showDependencies, setShowDependencies] = useState(false);
-  // The flow instance, captured at init purely for `screenToFlowPosition`: a
-  // right-click on the pane arrives in SCREEN pixels and free placement is
-  // measured in FLOW pixels, the same space the nodes are laid out in.
-  const flowRef = useRef<FlowProjection | null>(null);
+  // A right-click arrives in SCREEN pixels; free placement is measured in FLOW
+  // pixels, the same space the nodes are laid out in.
+  const { screenToFlowPosition } = useReactFlow();
 
   // The descriptor localizes its labels through the injected translate, the same
   // seam the ML content panel supplies; a new `t` on locale change re-projects.
@@ -94,6 +115,32 @@ export function TechTreeCanvas() {
     sources,
     translate,
   });
+
+  // Both right-click entry points land here. The projection is resolved ONCE, at
+  // open: the click arrives in screen pixels and free placement is measured in
+  // flow pixels, so the context carries the projected point and the Add action
+  // only hands it to the ZMT-51 hook.
+  const openMenu = useCallback(
+    (
+      event: {
+        clientX: number;
+        clientY: number;
+        preventDefault: () => void;
+      },
+      technologyId: null | string,
+    ) => {
+      event.preventDefault();
+      const anchor = { x: event.clientX, y: event.clientY };
+      setMenuTarget({
+        anchor,
+        position: screenToFlowPosition(anchor),
+        technologyId,
+      });
+    },
+    [screenToFlowPosition],
+  );
+
+  const closeMenu = useCallback(() => setMenuTarget(null), []);
 
   // react-flow's props are mutable arrays; our hook holds readonly ones (R-TS-5).
   // Copy at the boundary. Selection is parent-owned (ADR 026 D2, no store): the
@@ -135,118 +182,124 @@ export function TechTreeCanvas() {
 
   return (
     <Box sx={{ height: '100%', width: '100%' }}>
-      <ReactFlowProvider>
-        <ReactFlow
-          edges={flowEdges}
-          elementsSelectable={false}
-          fitView
-          nodeTypes={nodeTypes}
-          nodes={flowNodes}
-          nodesConnectable={false}
-          nodesDraggable={false}
-          onInit={(instance) => {
-            flowRef.current = instance;
-          }}
-          onNodeClick={(_, node) => setSelectedId(node.id)}
-          onNodeDoubleClick={(_, node) => {
-            setSelectedId(node.id);
-            edit.open(node.id);
-          }}
-          onPaneClick={() => setSelectedId(null)}
-          // Free placement (ZMT-51 path 2). Right-click is the click position the
-          // add needs; the context menu itself is a later ticket, the ACTION is
-          // this one's.
-          onPaneContextMenu={(event) => {
-            event.preventDefault();
-            const instance = flowRef.current;
-            if (instance === null) return;
-            add.openFree(
-              instance.screenToFlowPosition({
-                x: event.clientX,
-                y: event.clientY,
-              }),
-            );
-          }}
-        >
-          <Background />
-          <Controls showInteractive={false} />
-          <Panel position="top-left">
-            <Button
-              disabled={selectedId === null || edit.status === 'loading'}
-              size="small"
-              sx={{ bgcolor: 'background.paper' }}
-              variant="outlined"
-              onClick={() => {
-                if (selectedId !== null) edit.open(selectedId);
-              }}
-            >
-              {t('feature.techTreeCanvas:edit')}
-            </Button>
-            <Button
-              disabled={selectedId === null || add.status === 'loading'}
-              size="small"
-              sx={{ bgcolor: 'background.paper', ml: 1 }}
-              variant="outlined"
-              onClick={() => {
-                if (selectedId !== null) add.openChild(selectedId);
-              }}
-            >
-              {t('feature.techTreeCanvas:addChild')}
-            </Button>
-            <Button
-              color="error"
-              disabled={selectedId === null || del.status === 'loading'}
-              size="small"
-              sx={{ bgcolor: 'background.paper', ml: 1 }}
-              variant="outlined"
-              onClick={() => {
-                if (selectedId !== null) del.open(selectedId);
-              }}
-            >
-              {t('feature.techTreeCanvas:delete')}
-            </Button>
-            {del.status !== 'idle' &&
-              del.status !== 'loading' &&
-              del.status !== 'deleting' && (
-                <Typography color="text.secondary" variant="caption">
-                  {t(`feature.techTreeCanvas:deleteStatus.${del.status}`)}
-                </Typography>
-              )}
-            {edit.status !== 'idle' && edit.status !== 'loading' && (
+      <ReactFlow
+        edges={flowEdges}
+        elementsSelectable={false}
+        fitView
+        nodeTypes={nodeTypes}
+        nodes={flowNodes}
+        nodesConnectable={false}
+        nodesDraggable={false}
+        onNodeClick={(_, node) => setSelectedId(node.id)}
+        // Right-clicking a node selects it too, so the menu and the panel
+        // buttons never disagree about what is being acted on.
+        onNodeContextMenu={(event, node) => {
+          setSelectedId(node.id);
+          openMenu(event, node.id);
+        }}
+        onNodeDoubleClick={(_, node) => {
+          setSelectedId(node.id);
+          edit.open(node.id);
+        }}
+        onPaneClick={() => setSelectedId(null)}
+        onPaneContextMenu={(event) => openMenu(event, null)}
+      >
+        <Background />
+        <Controls showInteractive={false} />
+        <Panel position="top-left">
+          <Button
+            disabled={selectedId === null || edit.status === 'loading'}
+            size="small"
+            sx={{ bgcolor: 'background.paper' }}
+            variant="outlined"
+            onClick={() => {
+              if (selectedId !== null) edit.open(selectedId);
+            }}
+          >
+            {t('feature.techTreeCanvas:edit')}
+          </Button>
+          <Button
+            disabled={selectedId === null || add.status === 'loading'}
+            size="small"
+            sx={{ bgcolor: 'background.paper', ml: 1 }}
+            variant="outlined"
+            onClick={() => {
+              if (selectedId !== null) add.openChild(selectedId);
+            }}
+          >
+            {t('feature.techTreeCanvas:addChild')}
+          </Button>
+          <Button
+            color="error"
+            disabled={selectedId === null || del.status === 'loading'}
+            size="small"
+            sx={{ bgcolor: 'background.paper', ml: 1 }}
+            variant="outlined"
+            onClick={() => {
+              if (selectedId !== null) del.open(selectedId);
+            }}
+          >
+            {t('feature.techTreeCanvas:delete')}
+          </Button>
+          {del.status !== 'idle' &&
+            del.status !== 'loading' &&
+            del.status !== 'deleting' && (
               <Typography color="text.secondary" variant="caption">
-                {t(`feature.techTreeCanvas:editStatus.${edit.status}`)}
+                {t(`feature.techTreeCanvas:deleteStatus.${del.status}`)}
               </Typography>
             )}
-            {add.status !== 'idle' && add.status !== 'loading' && (
-              <Typography color="text.secondary" variant="caption">
-                {t(`feature.techTreeCanvas:addStatus.${add.status}`)}
-              </Typography>
-            )}
-            <Typography color="text.secondary" component="p" variant="caption">
-              {t('feature.techTreeCanvas:addFreeHint')}
+          {edit.status !== 'idle' && edit.status !== 'loading' && (
+            <Typography color="text.secondary" variant="caption">
+              {t(`feature.techTreeCanvas:editStatus.${edit.status}`)}
             </Typography>
-          </Panel>
-          <Panel position="top-right">
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={showDependencies}
-                  size="small"
-                  onChange={(event) =>
-                    setShowDependencies(event.target.checked)
-                  }
-                />
-              }
-              label={
-                <Typography variant="caption">
-                  {t('feature.techTreeCanvas:dependenciesToggle')}
-                </Typography>
-              }
-              sx={{ bgcolor: 'background.paper', borderRadius: 1, m: 0, pr: 1 }}
-            />
-          </Panel>
-        </ReactFlow>
-      </ReactFlowProvider>
+          )}
+          {add.status !== 'idle' && add.status !== 'loading' && (
+            <Typography color="text.secondary" variant="caption">
+              {t(`feature.techTreeCanvas:addStatus.${add.status}`)}
+            </Typography>
+          )}
+          <Typography color="text.secondary" component="p" variant="caption">
+            {t('feature.techTreeCanvas:addFreeHint')}
+          </Typography>
+        </Panel>
+        <Panel position="top-right">
+          <FormControlLabel
+            control={
+              <Switch
+                checked={showDependencies}
+                size="small"
+                onChange={(event) => setShowDependencies(event.target.checked)}
+              />
+            }
+            label={
+              <Typography variant="caption">
+                {t('feature.techTreeCanvas:dependenciesToggle')}
+              </Typography>
+            }
+            sx={{ bgcolor: 'background.paper', borderRadius: 1, m: 0, pr: 1 }}
+          />
+        </Panel>
+      </ReactFlow>
+      {/* The AED verbs as ADR 015 business actions (ZMT-53). The canvas supplies
+          the context — what was right-clicked and where — and the menu renders
+          whatever reports itself available for it; neither side switches on
+          node-vs-zone. The capabilities are the SAME hooks the panel buttons
+          drive, wrapped, not reimplemented. */}
+      {menuTarget !== null && (
+        <CanvasContextMenu
+          actions={canvasActions}
+          anchor={menuTarget.anchor}
+          context={{
+            openAddChild: add.openChild,
+            openAddFree: add.openFree,
+            openDelete: del.open,
+            openEdit: edit.open,
+            position: menuTarget.position,
+            technologyId: menuTarget.technologyId,
+          }}
+          onClose={closeMenu}
+        />
+      )}
       {/* The ML form shell (ADR 018), presented as a modal over the canvas —
           reused wholesale, not rebuilt (ADR 028 decision 1). `onClose` is what
           puts it in dialog chrome. */}
