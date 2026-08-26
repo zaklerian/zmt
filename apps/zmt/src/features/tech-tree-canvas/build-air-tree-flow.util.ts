@@ -18,6 +18,15 @@ export const DEPENDENCY_EDGE_STYLE = {
 export type TechFlowNode = Node<TechNodeData, typeof TECH_NODE_TYPE>;
 
 export interface TechNodeData extends Record<string, unknown> {
+  // The technology's own category tokens — what the ZMT-54 category filter matches
+  // a selection against. Carried on the node because the built graph is the only
+  // per-NODE carrier: the hook's `rows` cover one folder and miss the attached
+  // subs, which render and must therefore dim with everything else.
+  readonly categories: readonly string[];
+  // Emphasis (ZMT-54), applied per render by the canvas and absent from the built
+  // node: the tree is built once per fetch, the emphasis changes per keystroke.
+  readonly dimmed?: boolean;
+  readonly highlighted?: boolean;
   readonly nodeKind: TechnologySlim['nodeKind'];
   readonly token: string;
 }
@@ -53,7 +62,11 @@ export function buildAirTreeFlow(
       continue;
     }
     nodes.push({
-      data: { nodeKind: row.nodeKind, token: row.id },
+      data: {
+        categories: row.categories,
+        nodeKind: row.nodeKind,
+        token: row.id,
+      },
       id: row.id,
       position: techNodePixel(row.position, gridbox),
       type: TECH_NODE_TYPE,
@@ -110,7 +123,11 @@ function appendSubNodes(
         continue;
       }
       nodes.push({
-        data: { nodeKind: child.nodeKind, token: child.id },
+        data: {
+          categories: child.categories,
+          nodeKind: child.nodeKind,
+          token: child.id,
+        },
         id: child.id,
         parentId: parent.id,
         position: { x: SUB_OFFSET_X, y: stack * SUB_STACK_STEP_Y },
