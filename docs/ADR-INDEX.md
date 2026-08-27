@@ -49,6 +49,7 @@ Each ADR follows a consistent structure:
 | 026 | [Tech-tree canvas](adr/026-tech-tree-canvas.md)                                                               | Accepted |
 | 027 | [Write boundary: format strategies and cross-file atomic batch](adr/027-write-boundary.md)                    | Accepted |
 | 028 | [Technology edit model](adr/028-technology-edit-model.md)                                                     | Accepted |
+| 029 | [Write-target resolution](adr/029-write-target-resolution.md)                                                 | Accepted |
 
 ## Amendments
 
