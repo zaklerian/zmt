@@ -36,6 +36,13 @@ beforeAll(async () => {
     configurable: true,
     value: {
       asset: { getImage: vi.fn().mockResolvedValue({ status: 'unresolved' }) },
+      // The ZMT-54 toolbar reads the declared category vocabulary and the rendered
+      // nodes' public names; this spec drives the real hooks, so both channels
+      // answer here.
+      index: { list: vi.fn().mockResolvedValue({ rows: [], sources: {} }) },
+      localisation: {
+        lookup: vi.fn().mockResolvedValue({ defaultTarget: null, entries: [] }),
+      },
     },
     writable: true,
   });
@@ -54,7 +61,7 @@ describe('TechTreeCanvas selection', () => {
       folder: null,
       nodes: [
         {
-          data: { nodeKind: 'wide', token: 'fighter1' },
+          data: { categories: [], nodeKind: 'wide', token: 'fighter1' },
           id: 'fighter1',
           position: { x: 0, y: 0 },
           type: 'tech',

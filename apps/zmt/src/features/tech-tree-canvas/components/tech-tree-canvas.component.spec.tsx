@@ -9,28 +9,47 @@ import { initI18n } from '../../../i18n';
 import {
   useAirTechTree,
   useTechnologyAdd,
+  useTechnologyCategories,
   useTechnologyDelete,
   useTechnologyEdit,
+  useTechnologyNames,
 } from '../hooks';
 import { TechTreeCanvas } from './tech-tree-canvas.component';
 
 vi.mock('../hooks', () => ({
   useAirTechTree: vi.fn(),
   useTechnologyAdd: vi.fn(),
+  useTechnologyCategories: vi.fn(),
   useTechnologyDelete: vi.fn(),
   useTechnologyEdit: vi.fn(),
+  useTechnologyNames: vi.fn(),
 }));
 // Stub the node so rendering the ready canvas does not drag in the icon hook /
-// window.api; this spec is about the canvas shell, the toggle, and selection wiring.
+// window.api; this spec is about the canvas shell, the toggle, selection wiring,
+// and the ZMT-54 emphasis the canvas resolves onto each node's data.
 vi.mock('./tech-node.component', () => ({
-  TechNode: ({ data }: { data: { token: string } }) => <div>{data.token}</div>,
+  TechNode: ({
+    data,
+  }: {
+    data: { dimmed?: boolean; highlighted?: boolean; token: string };
+  }) => (
+    <div
+      data-dimmed={data.dimmed === true ? 'true' : 'false'}
+      data-highlighted={data.highlighted === true ? 'true' : 'false'}
+      data-testid={`node-${data.token}`}
+    >
+      {data.token}
+    </div>
+  ),
 }));
 
 const theme = createTheme();
 const mockUseAirTechTree = vi.mocked(useAirTechTree);
 const mockUseTechnologyAdd = vi.mocked(useTechnologyAdd);
+const mockUseTechnologyCategories = vi.mocked(useTechnologyCategories);
 const mockUseTechnologyDelete = vi.mocked(useTechnologyDelete);
 const mockUseTechnologyEdit = vi.mocked(useTechnologyEdit);
+const mockUseTechnologyNames = vi.mocked(useTechnologyNames);
 const addOpenChild = vi.fn();
 const addOpenFree = vi.fn();
 const deleteOpen = vi.fn();
@@ -67,7 +86,7 @@ function readyWith(token: string): ReturnType<typeof useAirTechTree> {
     folder: null,
     nodes: [
       {
-        data: { nodeKind: 'wide', token },
+        data: { categories: [], nodeKind: 'wide', token },
         id: token,
         position: { x: 0, y: 0 },
         type: 'tech',
@@ -77,6 +96,37 @@ function readyWith(token: string): ReturnType<typeof useAirTechTree> {
     rows: [],
     sources: {},
     status: 'ready',
+  };
+}
+
+// A ready tree of two categorised nodes with public names — the shape the ZMT-54
+// search and filter are exercised against.
+function readyWithCategorised(): ReturnType<typeof useAirTechTree> {
+  return {
+    ...readyWith('early_fighter'),
+    allTechnologyIds: ['early_fighter', 'naval_bomber1'],
+    nodes: [
+      {
+        data: {
+          categories: ['air_equipment'],
+          nodeKind: 'wide',
+          token: 'early_fighter',
+        },
+        id: 'early_fighter',
+        position: { x: 0, y: 0 },
+        type: 'tech',
+      },
+      {
+        data: {
+          categories: ['naval_equipment'],
+          nodeKind: 'wide',
+          token: 'naval_bomber1',
+        },
+        id: 'naval_bomber1',
+        position: { x: 200, y: 0 },
+        type: 'tech',
+      },
+    ],
   };
 }
 
@@ -103,8 +153,12 @@ beforeAll(async () => {
 beforeEach(() => {
   mockUseAirTechTree.mockReset();
   mockUseTechnologyAdd.mockReset();
+  mockUseTechnologyCategories.mockReset();
   mockUseTechnologyDelete.mockReset();
   mockUseTechnologyEdit.mockReset();
+  mockUseTechnologyNames.mockReset();
+  mockUseTechnologyCategories.mockReturnValue([]);
+  mockUseTechnologyNames.mockReturnValue(new Map());
   addOpenChild.mockReset();
   addOpenFree.mockReset();
   deleteOpen.mockReset();
@@ -196,7 +250,7 @@ describe('TechTreeCanvas', () => {
       folder: null,
       nodes: [
         {
-          data: { nodeKind: 'wide', token: 'fighter1' },
+          data: { categories: [], nodeKind: 'wide', token: 'fighter1' },
           id: 'fighter1',
           position: { x: 0, y: 0 },
           type: 'tech',
@@ -221,7 +275,7 @@ describe('TechTreeCanvas', () => {
       folder: null,
       nodes: [
         {
-          data: { nodeKind: 'wide', token: 'fighter1' },
+          data: { categories: [], nodeKind: 'wide', token: 'fighter1' },
           id: 'fighter1',
           position: { x: 0, y: 0 },
           type: 'tech',
@@ -246,7 +300,7 @@ describe('TechTreeCanvas', () => {
       folder: null,
       nodes: [
         {
-          data: { nodeKind: 'wide', token: 'fighter1' },
+          data: { categories: [], nodeKind: 'wide', token: 'fighter1' },
           id: 'fighter1',
           position: { x: 0, y: 0 },
           type: 'tech',
@@ -276,7 +330,7 @@ describe('TechTreeCanvas', () => {
       folder: null,
       nodes: [
         {
-          data: { nodeKind: 'wide', token: 'fighter1' },
+          data: { categories: [], nodeKind: 'wide', token: 'fighter1' },
           id: 'fighter1',
           position: { x: 0, y: 0 },
           type: 'tech',
@@ -289,9 +343,12 @@ describe('TechTreeCanvas', () => {
     });
     render(<TechTreeCanvas />, { wrapper });
 
-    // Selection is the precondition for add-as-child, exactly as for Edit.
+    // Selection is the precondition for add-as-child, exactly as for Edit. With
+    // nothing selected the panel row carries the shared action's zone label — the
+    // panel dispatches the SAME action set as the menu (ZMT-54), so it labels
+    // itself the same way; the selection is what enables it.
     expect(
-      screen.getByRole('button', { name: 'Add prerequisite' }),
+      screen.getByRole('button', { name: 'Add technology here' }),
     ).toBeDisabled();
 
     fireEvent.click(screen.getByText('fighter1'));
@@ -393,5 +450,135 @@ describe('TechTreeCanvas', () => {
     expect(
       screen.getByText(/2 technologies reference the deleted set/),
     ).toBeInTheDocument();
+  });
+
+  // ZMT-54 gate 1: search HIGHLIGHTS, it never hides — the non-matching node is
+  // still rendered, in place, undimmed.
+  it('highlights search matches by token and hides nothing (ZMT-54)', () => {
+    mockUseAirTechTree.mockReturnValue(readyWithCategorised());
+    render(<TechTreeCanvas />, { wrapper });
+
+    fireEvent.change(screen.getByLabelText('Search technologies'), {
+      target: { value: 'fighter' },
+    });
+
+    expect(screen.getByTestId('node-early_fighter')).toHaveAttribute(
+      'data-highlighted',
+      'true',
+    );
+    // Rendered, not removed, and not dimmed either — search only adds emphasis.
+    expect(screen.getByTestId('node-naval_bomber1')).toBeInTheDocument();
+    expect(screen.getByTestId('node-naval_bomber1')).toHaveAttribute(
+      'data-highlighted',
+      'false',
+    );
+    expect(screen.getByTestId('node-naval_bomber1')).toHaveAttribute(
+      'data-dimmed',
+      'false',
+    );
+  });
+
+  // ZMT-54 gate 1: the public name is the other half of the match, and it is the
+  // one the user thinks in — a query matching only the localised name still hits.
+  it('highlights a search match on the public name (ZMT-54)', () => {
+    mockUseAirTechTree.mockReturnValue(readyWithCategorised());
+    mockUseTechnologyNames.mockReturnValue(
+      new Map([['early_fighter', 'Air Superiority']]),
+    );
+    render(<TechTreeCanvas />, { wrapper });
+
+    fireEvent.change(screen.getByLabelText('Search technologies'), {
+      target: { value: 'superiority' },
+    });
+
+    expect(screen.getByTestId('node-early_fighter')).toHaveAttribute(
+      'data-highlighted',
+      'true',
+    );
+    expect(screen.getByTestId('node-naval_bomber1')).toHaveAttribute(
+      'data-highlighted',
+      'false',
+    );
+  });
+
+  // ZMT-54 gate 2: selecting a category DIMS what is outside it and hides nothing;
+  // deselecting everything un-dims. Options come from the `technologyCategory`
+  // index, matching runs against each node's own slim-row categories.
+  it('dims technologies outside the selected categories and un-dims on deselect (ZMT-54)', () => {
+    mockUseAirTechTree.mockReturnValue(readyWithCategorised());
+    mockUseTechnologyCategories.mockReturnValue([
+      'air_equipment',
+      'naval_equipment',
+    ]);
+    render(<TechTreeCanvas />, { wrapper });
+
+    fireEvent.mouseDown(screen.getByLabelText('Categories'));
+    fireEvent.click(screen.getByRole('option', { name: 'air_equipment' }));
+
+    expect(screen.getByTestId('node-early_fighter')).toHaveAttribute(
+      'data-dimmed',
+      'false',
+    );
+    // Dimmed, still rendered: hiding it would leave its edges dangling.
+    expect(screen.getByTestId('node-naval_bomber1')).toBeInTheDocument();
+    expect(screen.getByTestId('node-naval_bomber1')).toHaveAttribute(
+      'data-dimmed',
+      'true',
+    );
+
+    fireEvent.click(screen.getByRole('option', { name: 'air_equipment' }));
+
+    expect(screen.getByTestId('node-naval_bomber1')).toHaveAttribute(
+      'data-dimmed',
+      'false',
+    );
+  });
+
+  // ZMT-54 gate 3: the two compose — a node the filter would dim but the search
+  // matched resolves to highlighted and undimmed. Search wins.
+  it('resolves a filter-dimmed but search-matched node to highlighted (ZMT-54)', () => {
+    mockUseAirTechTree.mockReturnValue(readyWithCategorised());
+    mockUseTechnologyCategories.mockReturnValue([
+      'air_equipment',
+      'naval_equipment',
+    ]);
+    render(<TechTreeCanvas />, { wrapper });
+
+    fireEvent.mouseDown(screen.getByLabelText('Categories'));
+    fireEvent.click(screen.getByRole('option', { name: 'air_equipment' }));
+    fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' });
+    fireEvent.change(screen.getByLabelText('Search technologies'), {
+      target: { value: 'naval' },
+    });
+
+    const bomber = screen.getByTestId('node-naval_bomber1');
+    expect(bomber).toHaveAttribute('data-highlighted', 'true');
+    expect(bomber).toHaveAttribute('data-dimmed', 'false');
+  });
+
+  // ZMT-54 gate 4: one action source. The panel row and the context menu render
+  // the same verbs, in the same order, with the same labels, for the same context —
+  // and the panel button dispatches the action, not a hook of its own.
+  it('drives the panel AED buttons from the same canvasActions as the menu (ZMT-54)', () => {
+    mockUseAirTechTree.mockReturnValue(readyWith('fighter1'));
+    render(<TechTreeCanvas />, { wrapper });
+
+    fireEvent.click(screen.getByText('fighter1'));
+
+    fireEvent.contextMenu(screen.getByText('fighter1'));
+    const menuLabels = screen
+      .getAllByRole('menuitem')
+      .map((item) => item.textContent);
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+
+    // Same set, same order — the menu renders `canvasActions`, and so does the panel.
+    expect(menuLabels).toEqual(['Edit', 'Add prerequisite', 'Delete']);
+    for (const label of menuLabels) {
+      expect(screen.getByRole('button', { name: label ?? '' })).toBeEnabled();
+    }
+
+    // And the panel button dispatches the action, reaching the same flow.
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(deleteOpen).toHaveBeenCalledWith('fighter1');
   });
 });

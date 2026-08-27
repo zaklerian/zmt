@@ -40,7 +40,9 @@ describe('TechNode', () => {
       status: 'ok',
     });
     render(
-      <TechNode {...nodeProps({ nodeKind: 'wide', token: 'fighter1' })} />,
+      <TechNode
+        {...nodeProps({ categories: [], nodeKind: 'wide', token: 'fighter1' })}
+      />,
       {
         wrapper,
       },
@@ -59,7 +61,13 @@ describe('TechNode', () => {
       status: 'unresolved',
     });
     render(
-      <TechNode {...nodeProps({ nodeKind: 'sub', token: 'cv_fighter1' })} />,
+      <TechNode
+        {...nodeProps({
+          categories: [],
+          nodeKind: 'sub',
+          token: 'cv_fighter1',
+        })}
+      />,
       { wrapper },
     );
 
@@ -78,7 +86,9 @@ describe('TechNode', () => {
 
     for (const kind of ['wide', 'simple', 'sub'] as const) {
       const { unmount } = render(
-        <TechNode {...nodeProps({ nodeKind: kind, token: `t_${kind}` })} />,
+        <TechNode
+          {...nodeProps({ categories: [], nodeKind: kind, token: `t_${kind}` })}
+        />,
         { wrapper },
       );
       await waitFor(() =>
@@ -98,7 +108,10 @@ describe('TechNode', () => {
 
     const { rerender } = render(
       <TechNode
-        {...nodeProps({ nodeKind: 'wide', token: 'fighter1' }, false)}
+        {...nodeProps(
+          { categories: [], nodeKind: 'wide', token: 'fighter1' },
+          false,
+        )}
       />,
       { wrapper },
     );
@@ -111,12 +124,61 @@ describe('TechNode', () => {
 
     rerender(
       <TechNode
-        {...nodeProps({ nodeKind: 'wide', token: 'fighter1' }, true)}
+        {...nodeProps(
+          { categories: [], nodeKind: 'wide', token: 'fighter1' },
+          true,
+        )}
       />,
     );
     expect(screen.getByTestId('tech-node')).toHaveAttribute(
       'data-selected',
       'true',
+    );
+  });
+
+  // ZMT-54: the node renders the emphasis it is handed and never removes itself —
+  // a dimmed node is still in the document, still labeled, still edge-anchored.
+  it('renders the search/filter emphasis without removing the node (ZMT-54)', async () => {
+    vi.spyOn(assetImageClient, 'getImage').mockResolvedValue({
+      status: 'unresolved',
+    });
+
+    const { rerender } = render(
+      <TechNode
+        {...nodeProps({
+          categories: ['air_equipment'],
+          dimmed: true,
+          nodeKind: 'wide',
+          token: 'naval_bomber1',
+        })}
+      />,
+      { wrapper },
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('tech-node')).toHaveAttribute(
+        'data-dimmed',
+        'true',
+      ),
+    );
+    expect(screen.getByText('naval_bomber1')).toBeInTheDocument();
+
+    rerender(
+      <TechNode
+        {...nodeProps({
+          categories: ['air_equipment'],
+          highlighted: true,
+          nodeKind: 'wide',
+          token: 'naval_bomber1',
+        })}
+      />,
+    );
+    expect(screen.getByTestId('tech-node')).toHaveAttribute(
+      'data-highlighted',
+      'true',
+    );
+    expect(screen.getByTestId('tech-node')).toHaveAttribute(
+      'data-dimmed',
+      'false',
     );
   });
 });

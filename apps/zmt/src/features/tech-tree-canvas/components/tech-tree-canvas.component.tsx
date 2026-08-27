@@ -19,20 +19,30 @@ import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { EntityFormShell } from '../../../shared/entity-form';
-import { canvasActions } from '../canvas-actions';
+import { CanvasActionContext, canvasActions } from '../canvas-actions';
+import { resolveNodeEmphasis } from '../canvas-node-emphasis.util';
 import {
   useAirTechTree,
   useTechnologyAdd,
+  useTechnologyCategories,
   useTechnologyDelete,
   useTechnologyEdit,
+  useTechnologyNames,
 } from '../hooks';
 import { CanvasContextMenu } from './canvas-context-menu.component';
+import { CanvasToolbar } from './canvas-toolbar.component';
 import { TechNode } from './tech-node.component';
 import { TechnologyDeleteDialog } from './technology-delete-dialog.component';
 
 import '@xyflow/react/dist/style.css';
 
 const nodeTypes = { tech: TechNode };
+
+// The panel buttons act on the SELECTION, never on a click point, so they never
+// dispatch in the zone shape and this point is never read. It exists because the
+// shared action context carries the click the MENU's free-placement path needs
+// (ZMT-51) — one context type, two surfaces, and only one of them has a click.
+const PANEL_NO_CLICK_POINT: TechTreePoint = { x: 0, y: 0 };
 
 // One right-click, held until the menu closes: where to draw the menu (screen
 // pixels), where a free-placed technology would land (flow pixels), and what was
@@ -67,7 +77,12 @@ export function TechTreeCanvas() {
 // commit through the same atomic insert batch and reload the tree on save.
 // Context menu (ZMT-53, ADR 015): right-clicking a node or the empty zone opens
 // the same three verbs as availability-driven business actions — the canvas
-// builds the context, `canvas-actions.ts` decides what applies to it.
+// builds the context, `canvas-actions.ts` decides what applies to it. The panel
+// buttons dispatch through that SAME action set (ZMT-54), so there is one action
+// source and the two surfaces cannot drift in availability or labelling.
+// Toolbar (ZMT-54): search highlights matching nodes and the category filter dims
+// non-matching ones — both EMPHASIS over the already-fetched set, never removal;
+// hiding would leave edges dangling into empty space and break the tree.
 //
 // Rendered INSIDE `ReactFlowProvider` (the exported wrapper above) so the
 // screen→flow projection both right-click paths need comes off `useReactFlow`,
@@ -86,6 +101,10 @@ function TechTreeCanvasFlow() {
     status,
   } = useAirTechTree();
   const [menuTarget, setMenuTarget] = useState<CanvasMenuTarget | null>(null);
+  const [search, setSearch] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<
+    readonly string[]
+  >([]);
   const [selectedId, setSelectedId] = useState<null | string>(null);
   const [showDependencies, setShowDependencies] = useState(false);
   // A right-click arrives in SCREEN pixels; free placement is measured in FLOW
@@ -142,13 +161,78 @@ function TechTreeCanvasFlow() {
 
   const closeMenu = useCallback(() => setMenuTarget(null), []);
 
+  // The toolbar's two inputs (ZMT-54). Both are views over the fetched set, so
+  // both are plain `useState`: the query and the category set never transition
+  // together, which is the condition A-REACT-3 reserves `useReducer` for.
+  const categoryOptions = useTechnologyCategories();
+  const nodeTokens = useMemo(
+    () => nodes.map((node) => node.data.token),
+    [nodes],
+  );
+  // Search matches the public name as well as the token, and a slim row carries no
+  // public name — this is the one lookup that resolves them, over the tokens
+  // already on screen.
+  const names = useTechnologyNames(nodeTokens);
+  const selectedCategorySet = useMemo(
+    () => new Set(selectedCategories),
+    [selectedCategories],
+  );
+
+  // The panel surface's action context (ZMT-54): the SELECTION, which is what the
+  // panel acts on. With nothing selected the context is empty and the row renders
+  // disabled — the panel does not fall through to the zone verbs, because a panel
+  // button carries no click point a free placement could land at; the pane
+  // right-click is that route.
+  const panelContext = useMemo<CanvasActionContext>(
+    () => ({
+      openAddChild: add.openChild,
+      openAddFree: add.openFree,
+      openDelete: del.open,
+      openEdit: edit.open,
+      position: PANEL_NO_CLICK_POINT,
+      technologyId: selectedId,
+    }),
+    [add.openChild, add.openFree, del.open, edit.open, selectedId],
+  );
+
+  // One flow at a time reaches the user, so the row disables as a whole while any
+  // of the three is resolving — the alternative is a per-action status lookup in
+  // the panel, which is exactly the divergent per-button wiring this ticket removes.
+  const busy =
+    add.status === 'loading' ||
+    del.status === 'loading' ||
+    edit.status === 'loading';
+
+  // Action labels are runtime keys owned by the actions, not literals the typed
+  // t() knows — the same seam the context menu resolves through.
+  const translateLabel = t as (key: string) => string;
+
   // react-flow's props are mutable arrays; our hook holds readonly ones (R-TS-5).
   // Copy at the boundary. Selection is parent-owned (ADR 026 D2, no store): the
   // `selected` flag is mapped onto the controlled nodes, so a click re-seeds only
   // the selection, and the dependency overlay is concatenated only when toggled on.
+  //
+  // The ZMT-54 emphasis rides the same mapping: every node keeps its identity and
+  // its position, and gains only the two flags the search and the filter resolve
+  // to. Nothing is removed from `nodes` — the set react-flow renders is the set
+  // the tree was built with, matched or not, filtered or not.
   const flowNodes = useMemo(
-    () => nodes.map((node) => ({ ...node, selected: node.id === selectedId })),
-    [nodes, selectedId],
+    () =>
+      nodes.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          ...resolveNodeEmphasis({
+            categories: node.data.categories,
+            name: names.get(node.data.token) ?? null,
+            search,
+            selectedCategories: selectedCategorySet,
+            token: node.data.token,
+          }),
+        },
+        selected: node.id === selectedId,
+      })),
+    [names, nodes, search, selectedCategorySet, selectedId],
   );
   const flowEdges = useMemo(
     () => (showDependencies ? [...edges, ...dependencyEdges] : [...edges]),
@@ -207,40 +291,24 @@ function TechTreeCanvasFlow() {
         <Background />
         <Controls showInteractive={false} />
         <Panel position="top-left">
-          <Button
-            disabled={selectedId === null || edit.status === 'loading'}
-            size="small"
-            sx={{ bgcolor: 'background.paper' }}
-            variant="outlined"
-            onClick={() => {
-              if (selectedId !== null) edit.open(selectedId);
-            }}
-          >
-            {t('feature.techTreeCanvas:edit')}
-          </Button>
-          <Button
-            disabled={selectedId === null || add.status === 'loading'}
-            size="small"
-            sx={{ bgcolor: 'background.paper', ml: 1 }}
-            variant="outlined"
-            onClick={() => {
-              if (selectedId !== null) add.openChild(selectedId);
-            }}
-          >
-            {t('feature.techTreeCanvas:addChild')}
-          </Button>
-          <Button
-            color="error"
-            disabled={selectedId === null || del.status === 'loading'}
-            size="small"
-            sx={{ bgcolor: 'background.paper', ml: 1 }}
-            variant="outlined"
-            onClick={() => {
-              if (selectedId !== null) del.open(selectedId);
-            }}
-          >
-            {t('feature.techTreeCanvas:delete')}
-          </Button>
+          {/* ZMT-54: the SAME `canvasActions` the context menu dispatches, over
+              the panel's selection context. Availability is the actions' own — a
+              verb that drops out of the menu drops out here — and the selection is
+              the enablement gate, since the panel carries no click point. */}
+          {canvasActions.map((action) => (
+            <Button
+              key={action.id}
+              disabled={
+                selectedId === null || busy || !action.isAvailable(panelContext)
+              }
+              size="small"
+              sx={{ bgcolor: 'background.paper', mr: 1 }}
+              variant="outlined"
+              onClick={() => void action.execute(panelContext)}
+            >
+              {translateLabel(action.label(panelContext))}
+            </Button>
+          ))}
           {del.status !== 'idle' &&
             del.status !== 'loading' &&
             del.status !== 'deleting' && (
@@ -261,6 +329,15 @@ function TechTreeCanvasFlow() {
           <Typography color="text.secondary" component="p" variant="caption">
             {t('feature.techTreeCanvas:addFreeHint')}
           </Typography>
+        </Panel>
+        <Panel position="top-center">
+          <CanvasToolbar
+            categories={categoryOptions}
+            search={search}
+            selectedCategories={selectedCategories}
+            onCategoriesChange={setSelectedCategories}
+            onSearchChange={setSearch}
+          />
         </Panel>
         <Panel position="top-right">
           <FormControlLabel
