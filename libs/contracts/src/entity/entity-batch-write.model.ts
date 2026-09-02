@@ -9,7 +9,9 @@ import type { EntityBlockDelta } from './entity-write.model';
 // main side resolves and path-guards it unchanged.
 export type EntityBatchOperation =
   | EntityLocBatchOperation
+  | EntityLocCreateBatchOperation
   | EntityScriptBatchOperation
+  | EntityScriptCreateBatchOperation
   | EntityScriptDeleteBatchOperation;
 
 // `entity:writeBatch` — the ADR 027 cross-file batch surfaced over IPC, so a
@@ -28,6 +30,18 @@ export interface EntityBatchWriteRequest {
 export interface EntityLocBatchOperation {
   readonly deltas: readonly LocDelta[];
   readonly format: 'loc';
+  readonly modId: ModId;
+  readonly relativePath: string;
+}
+
+// CREATE the localisation `.yml` this addresses, seeded with the UTF-8 BOM and the
+// `l_<language>:` header (ZMT-56, the amendment ADR 029 decision 6 requires of ADR
+// 027 decision 3). `language` is the header's language and matches the target's
+// own `_l_<language>` filename suffix; the caller owns that consistency, exactly as
+// it does for every existing loc write.
+export interface EntityLocCreateBatchOperation {
+  readonly format: 'locCreate';
+  readonly language: string;
   readonly modId: ModId;
   readonly relativePath: string;
 }
@@ -56,6 +70,28 @@ export interface EntityScriptBatchOperation {
   // ADR) leaves dangling references. The technology edit form freezes the token
   // precisely so it can never reach this field.
   readonly renameTo?: string;
+}
+
+// CREATE the Clausewitz `.txt` this addresses (ZMT-56, the amendment ADR 029
+// decision 6 requires of ADR 027 decision 3). `rootBlocks` are the wrapper blocks
+// the seed carries — `['technologies']` for a technology file — because the AST
+// insert addresses a PARENT BLOCK and not a file position (ADR 027 decision 4), and
+// an empty file, though perfectly parseable, gives it nothing to find. It is
+// therefore per WRITE-KIND, which is the second thing a kind registers after its
+// folder (ADR 029 decision 3).
+//
+// Both create operations are create-IF-ABSENT: a target that already exists is
+// read and patched exactly as any other operation's is, and only a file the batch
+// genuinely brought into being rolls back by UNLINK. Like `scriptDelete`, they are
+// SEPARATE union members discriminated on `format` rather than a flag on the
+// content operations: a create carries a seed and no deltas, and folding it in
+// would make every field of both optional. `format` still names the routing key of
+// the strategy that owns the seed's byte shape.
+export interface EntityScriptCreateBatchOperation {
+  readonly format: 'scriptCreate';
+  readonly modId: ModId;
+  readonly relativePath: string;
+  readonly rootBlocks: readonly string[];
 }
 
 // N block DELETIONS against ONE `.txt`, applied in the listed order (ZMT-52).

@@ -1,4 +1,5 @@
 import {
+  EntityBatchWriteRequest,
   EntityDeleteRequest,
   EntityWriteRequest,
   IncludedMod,
@@ -78,6 +79,13 @@ const FIXTURE = `equipments = {
 
 let modRoot: string;
 let filePath: string;
+
+function batchVia(request: EntityBatchWriteRequest): Promise<unknown> {
+  return getCapturedHandler(IPC_CHANNELS.entity.writeBatch)(
+    makeInvokeEvent(),
+    request,
+  );
+}
 
 function deleteVia(request: EntityDeleteRequest): Promise<unknown> {
   return getCapturedHandler(IPC_CHANNELS.entity.delete)(
@@ -1597,5 +1605,99 @@ describe('registerEntityHandlers — keyed-object-map editing (ideology types)',
     expect(monarchism).toBeDefined();
     expect(monarchism?.children).toHaveLength(0);
     expect(written).toContain('color = { 80 80 80 }');
+  });
+});
+
+// ZMT-56 — the two `create` operation kinds crossing the SAME untrusted boundary
+// as every other batch operation. The behavior they drive is specced against a
+// real tree in `apps/electron/src/main/fs/entity-mutation.create.spec.ts`; what is
+// asserted here is the coercion: a create reaches the write path with its seed
+// parameters intact, and a malformed one is a 400 rather than a silent default.
+describe('registerEntityHandlers — writeBatch create coercion (ZMT-56)', () => {
+  beforeEach(async () => {
+    vi.mocked(ipcMain.handle).mockReset();
+
+    modRoot = await mkdtemp(path.join(tmpdir(), 'zmt-create-'));
+    filePath = path.join(modRoot, RELATIVE_PATH);
+    await writeFile(filePath, FIXTURE);
+
+    state.sources = [{ path: modRoot, permission: 'editable' }];
+    state.workspace = {
+      includedMods: [
+        { id: MOD_ID, name: 'mod', path: modRoot, permission: 'editable' },
+      ],
+    };
+
+    registerEntityHandlers();
+  });
+
+  afterEach(async () => {
+    await rm(modRoot, { force: true, recursive: true });
+  });
+
+  it('carries a locCreate through to a seeded BOM + header file', async () => {
+    await batchVia({
+      operations: [
+        {
+          format: 'locCreate',
+          language: 'english',
+          modId: MOD_ID,
+          relativePath: 'localisation/english/new_l_english.yml',
+        },
+      ],
+    });
+
+    expect(
+      await readFile(
+        path.join(modRoot, 'localisation/english/new_l_english.yml'),
+        'utf8',
+      ),
+    ).toBe('﻿l_english:\n');
+  });
+
+  it('carries a scriptCreate through to a seeded wrapper block', async () => {
+    await batchVia({
+      operations: [
+        {
+          format: 'scriptCreate',
+          modId: MOD_ID,
+          relativePath: 'common/technologies/new.txt',
+          rootBlocks: ['technologies'],
+        },
+      ],
+    });
+
+    expect(
+      await readFile(path.join(modRoot, 'common/technologies/new.txt'), 'utf8'),
+    ).toBe('technologies = {\n}\n');
+  });
+
+  it('rejects with 400 a scriptCreate with no rootBlocks — a bare file no insert can address', async () => {
+    await expect(
+      batchVia({
+        operations: [
+          {
+            format: 'scriptCreate',
+            modId: MOD_ID,
+            relativePath: 'common/technologies/new.txt',
+            rootBlocks: [],
+          },
+        ],
+      }),
+    ).rejects.toSatisfy((error) => extractIpcError(error).code === 400);
+  });
+
+  it('rejects with 400 a locCreate with no language', async () => {
+    await expect(
+      batchVia({
+        operations: [
+          {
+            format: 'locCreate',
+            modId: MOD_ID,
+            relativePath: 'localisation/english/new_l_english.yml',
+          },
+        ],
+      } as unknown as EntityBatchWriteRequest),
+    ).rejects.toSatisfy((error) => extractIpcError(error).code === 400);
   });
 });
