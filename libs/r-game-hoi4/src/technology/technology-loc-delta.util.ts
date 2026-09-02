@@ -1,4 +1,7 @@
-import { EntityLocBatchOperation } from '@contracts';
+import {
+  EntityLocBatchOperation,
+  EntityLocCreateBatchOperation,
+} from '@contracts';
 import { EntityFormLocalisationContext } from '@r-core';
 
 import { technologyNameLocKey } from './technology-loc-keys.util';
@@ -9,11 +12,17 @@ const INSERT_VERSION = '0';
 
 // What a save must do to localisation for one public-name edit (ADR 028 D3).
 export interface TechnologyLocPlan {
-  // Loc operations, one per target file, each carrying its file's ordered deltas.
-  // There is deliberately NO `renameTo` on this type: the edit path issues zero
-  // block renames (see below), and making that structurally impossible is a
-  // stronger guarantee than a convention the next edit could quietly break.
-  readonly operations: readonly EntityLocBatchOperation[];
+  // Loc operations, one per target file, each carrying its file's ordered deltas —
+  // optionally preceded by that file's create-if-absent seed when the target is the
+  // user's chosen save target (ADR 029 decision 3). There is deliberately NO
+  // `renameTo` anywhere on this path: the edit path issues zero block renames (see
+  // below), and making that structurally impossible is a stronger guarantee than a
+  // convention the next edit could quietly break — which is why the operation type
+  // widens only to the two loc members, not to the whole batch union.
+  readonly operations: readonly (
+    | EntityLocBatchOperation
+    | EntityLocCreateBatchOperation
+  )[];
 }
 
 // The open-time localisation state of one technology, projected from the host's
@@ -69,14 +78,29 @@ export function computeTechnologyLocPlan(
     };
   }
 
-  // ADR 028 decision 6: the insert target is a passed-in default, not a hardcoded
-  // path — `resolveWriteTarget` / save-target settings replace it on a later
-  // ticket. Null means the workspace has no editable loc file, and the edit is
-  // dropped rather than guessed at.
+  // ADR 028 decision 6, closed by ZMT-57: the insert target is what
+  // `resolveWriteTarget('locKey', …)` returned upstream — the user's chosen save
+  // target when set, the derived default otherwise. Null still means the workspace
+  // has no editable loc file, and the edit is dropped rather than guessed at.
   if (context.defaultTarget === null) return { operations: [] };
+  const { defaultTarget, defaultTargetSeedLanguage } = context;
   return {
     operations: [
-      operation(context.defaultTarget, [
+      // A chosen target may be a file the user named and never created, so its
+      // create-if-absent seed leads the file's sequence (ADR 029 decisions 3 and 6).
+      // Absent for the derived default, which keeps the unset path's batch exactly
+      // the shape ZMT-50 shipped.
+      ...(defaultTargetSeedLanguage === null
+        ? []
+        : [
+            {
+              format: 'locCreate' as const,
+              language: defaultTargetSeedLanguage,
+              modId: defaultTarget.modId,
+              relativePath: defaultTarget.relativePath,
+            },
+          ]),
+      operation(defaultTarget, [
         { key: nameKey, kind: 'insert', value: next, version: INSERT_VERSION },
       ]),
     ],

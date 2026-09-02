@@ -7,16 +7,18 @@ import type {
   TechTreeFolderGeometry,
   TechTreeGridbox,
   TechTreePoint,
+  WriteTargets,
 } from '@contracts';
 import type { EntityFormModel, TranslateFn } from '@r-core';
 import type { TechnologyAddTarget } from '@r-game-hoi4';
 
-import { GAME_IDS } from '@contracts';
+import { GAME_IDS, resolveWriteTarget, WRITE_KINDS } from '@contracts';
 import { TECHNOLOGY_ENTITY_ID } from '@r-game-hoi4';
 import { useCallback, useState } from 'react';
 
 import { entityFormRegistry } from '../../../shared/entity-form';
 import { lookupLocalisation } from '../../../shared/localisation';
+import { writeTargetsService } from '../../../shared/write-target';
 import {
   anchorGridbox,
   cellFromPixel,
@@ -49,6 +51,14 @@ export interface TechnologyAddContext {
 }
 
 export type TechnologyAddStatus = 'error' | 'idle' | 'loading' | 'readonly';
+
+// The file the insert lands in, after the save-target preference has had its say,
+// plus whether it must be seeded — true exactly when the preference moved the write
+// off the derived default, since a chosen file may not exist yet (ADR 029 D3).
+interface ResolvedAddTarget {
+  readonly seedTarget: boolean;
+  readonly target: TechnologyAddTarget;
+}
 
 // Opens the SAME technology form the canvas edits with, in add mode (ADR 028
 // decision 5) — no second descriptor, no second delta builder. The two entry
@@ -85,7 +95,7 @@ export function useTechnologyAdd({
       geometry: TechTreeFolderGeometry,
       gridbox: TechTreeGridbox,
       cell: TechnologyPosition,
-      target: TechnologyAddTarget,
+      fallback: TechnologyAddTarget,
       parentId: null | string,
     ) => {
       const descriptor = entityFormRegistry.resolve(
@@ -98,9 +108,16 @@ export function useTechnologyAdd({
 
       void (async () => {
         try {
+          // The save-target preference is read at OPEN, never held: the settings
+          // panel writes it from another component tree, and a cached copy here
+          // would apply the previous choice to the next add.
+          const resolved = resolveAddTarget(
+            fallback,
+            await writeTargetsService.get(),
+          );
           // An empty key set: a token that does not exist yet owns no loc key, so
-          // the only thing this resolves is the ADR 028 decision 6 default insert
-          // target the new name key lands in.
+          // the only thing this resolves is the loc kind's own target — the ADR 029
+          // consult point for `locKey` lives inside the lookup, main-side.
           const localisation = await lookupLocalisation([]);
           setModel(
             descriptor.project(
@@ -113,12 +130,19 @@ export function useTechnologyAdd({
               {
                 localisation: {
                   defaultTarget: localisation.defaultTarget,
+                  // Resolved main-side through the same `resolveWriteTarget` this
+                  // hook consults for the script half — the loc kind's consult
+                  // point lives in `lookupLocalisation` because its derived
+                  // default does (ADR 029 decision 5).
+                  defaultTargetSeedLanguage:
+                    localisation.defaultTargetSeedLanguage,
                   entries: [],
                   takenIds: allTechnologyIds,
                 },
                 mode: 'add',
-                modId: target.modId,
-                relativePath: target.relativePath,
+                modId: resolved.target.modId,
+                relativePath: resolved.target.relativePath,
+                seedRelativePath: resolved.seedTarget,
                 translate,
               },
             ),
@@ -144,8 +168,13 @@ export function useTechnologyAdd({
         setStatus('error');
         return;
       }
-      const target = targetOf(parent, sources);
-      if (target === null) {
+      // ADR 029 decision 2: the ZMT-51 default — the invoking technology's own
+      // file — is now the FALLBACK the consult point degrades to. The refusal is
+      // still decided HERE and on the fallback alone: no editable owner means no
+      // mod for the preference to be read under, so a stored target cannot rescue
+      // an all-vanilla add (ADR 029 decision 2's "fallback carries the mod").
+      const fallback = targetOf(parent, sources);
+      if (fallback === null) {
         setStatus('readonly');
         return;
       }
@@ -166,7 +195,7 @@ export function useTechnologyAdd({
         gridbox,
         occupiedPixelsOf(rows, folder),
       );
-      openAt(folder, gridbox, cell, target, parentId);
+      openAt(folder, gridbox, cell, fallback, parentId);
     },
     [folder, openAt, rows, sources],
   );
@@ -178,8 +207,10 @@ export function useTechnologyAdd({
         setStatus('error');
         return;
       }
-      const target = defaultTargetOf(rows, sources);
-      if (target === null) {
+      // The same consult point over free placement's own default — the editable
+      // file owning the most of this folder's technologies (ZMT-51).
+      const fallback = defaultTargetOf(rows, sources);
+      if (fallback === null) {
         setStatus('readonly');
         return;
       }
@@ -188,7 +219,7 @@ export function useTechnologyAdd({
         gridbox,
         occupiedPixelsOf(rows, folder),
       );
-      openAt(folder, gridbox, cell, target, null);
+      openAt(folder, gridbox, cell, fallback, null);
     },
     [folder, openAt, rows, sources],
   );
@@ -255,6 +286,28 @@ function occupiedPixelsOf(
     occupied.add(pixelKey(techNodePixel(slim.position, gridbox)));
   }
   return occupied;
+}
+
+// The technology kind's consult point (ADR 029 decision 2). Both ZMT-51 defaults
+// reach it as the `fallback`; the stored preference for the mod THAT fallback
+// resolved to wins when it is set, which is what keeps a save target from ever
+// moving a write into a different mod.
+//
+// `seedTarget` is true exactly when the preference moved the write off the derived
+// default, and it is what pairs the ZMT-56 create-if-absent seed with the insert: a
+// chosen file may be one the user named and never created. The unset path stays
+// byte-identical to ZMT-51 — same file, same single-operation script batch.
+function resolveAddTarget(
+  fallback: TechnologyAddTarget,
+  writeTargets: WriteTargets,
+): ResolvedAddTarget {
+  const target =
+    resolveWriteTarget(WRITE_KINDS.technology, fallback, writeTargets) ??
+    fallback;
+  return {
+    seedTarget: target.relativePath !== fallback.relativePath,
+    target,
+  };
 }
 
 // The blank technology the add form is projected over: empty everywhere except

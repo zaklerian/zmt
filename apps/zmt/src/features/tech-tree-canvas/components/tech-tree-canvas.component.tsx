@@ -19,7 +19,11 @@ import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { EntityFormShell } from '../../../shared/entity-form';
-import { CanvasActionContext, canvasActions } from '../canvas-actions';
+import {
+  CANVAS_DELETE_ACTION_ID,
+  CanvasActionContext,
+  canvasActions,
+} from '../canvas-actions';
 import { resolveNodeEmphasis } from '../canvas-node-emphasis.util';
 import {
   useAirTechTree,
@@ -298,6 +302,9 @@ function TechTreeCanvasFlow() {
           {canvasActions.map((action) => (
             <Button
               key={action.id}
+              color={
+                action.id === CANVAS_DELETE_ACTION_ID ? 'error' : 'primary'
+              }
               disabled={
                 selectedId === null || busy || !action.isAvailable(panelContext)
               }

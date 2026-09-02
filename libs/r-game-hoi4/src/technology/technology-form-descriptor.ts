@@ -108,6 +108,7 @@ function project(
     mode,
     modId,
     relativePath,
+    seedRelativePath,
     translate,
   }: EntityFormProjectContext,
 ): EntityFormModel {
@@ -298,6 +299,11 @@ function project(
       body: computeTechnologyDeltas(snapshot, values),
       localisation,
       publicName,
+      // ZMT-57: the add target is `resolveWriteTarget('technology', …)`'s answer,
+      // and when that is the user's chosen file the insert carries its
+      // create-if-absent seed. The EDIT path never seeds — it patches a block whose
+      // file, by definition, already owns it (ADR 029 decision 2).
+      seedTarget: seedRelativePath === true,
       target: { modId, relativePath },
       token: resolveTechnologyAddToken(
         stringAt(values, TOKEN_FIELD),

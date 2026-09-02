@@ -20,6 +20,7 @@ import { useTechnologyAdd } from './use-technology-add.hook';
 // `libs/r-game-hoi4/src/technology/technology-form-descriptor.add.spec.ts`.
 
 const lookup = vi.fn();
+const preferencesGet = vi.fn();
 const project = vi.fn();
 
 const SOURCES: SourcesTable = {
@@ -52,7 +53,10 @@ beforeEach(() => {
   vi.clearAllMocks();
   Object.defineProperty(window, 'api', {
     configurable: true,
-    value: { localisation: { lookup } } as unknown as AppApiModel,
+    value: {
+      localisation: { lookup },
+      preferences: { get: preferencesGet },
+    } as unknown as AppApiModel,
     writable: true,
   });
   lookup.mockResolvedValue({
@@ -60,8 +64,12 @@ beforeEach(() => {
       modId: 'bice',
       relativePath: 'localisation/english/bice_l_english.yml',
     },
+    defaultTargetSeedLanguage: null,
     entries: [],
   });
+  // No save target set: every ZMT-51 gate below therefore asserts the UNCHANGED
+  // ZMT-51 behaviour, which is gate 3's "with no target set" half and gate 7.
+  preferencesGet.mockResolvedValue(null);
   project.mockReturnValue({
     blocks: [],
     errorMessage: () => '',
@@ -169,6 +177,111 @@ describe('useTechnologyAdd — add as child (gate 1)', () => {
 
     act(() => {
       view.result.current.openChild('fighter1');
+    });
+
+    expect(view.result.current.status).toBe('readonly');
+    expect(project).not.toHaveBeenCalled();
+  });
+});
+
+// ZMT-57 regression gate 3 — the technology seam. Both ZMT-51 defaults are now the
+// FALLBACK handed to `resolveWriteTarget('technology', …)`; the cases above, with no
+// stored target, are the unchanged half.
+describe('useTechnologyAdd — the save target (ZMT-57 gate 3)', () => {
+  it('writes add-as-child into the chosen file instead of the parent’s own', async () => {
+    preferencesGet.mockResolvedValue({
+      bice: { technology: 'common/technologies/zmt_new.txt' },
+    });
+    const view = mount();
+
+    act(() => {
+      view.result.current.openChild('fighter1');
+    });
+
+    await waitFor(() => {
+      expect(project).toHaveBeenCalled();
+    });
+    expect(project.mock.calls[0][1]).toMatchObject({
+      modId: 'bice',
+      relativePath: 'common/technologies/zmt_new.txt',
+      // A chosen file may not exist yet, so the insert carries its seed (gate 4).
+      seedRelativePath: true,
+    });
+  });
+
+  it('writes free placement into the chosen file instead of the plurality owner', async () => {
+    preferencesGet.mockResolvedValue({
+      bice: { technology: 'common/technologies/zmt_new.txt' },
+    });
+    const view = mount();
+
+    act(() => {
+      view.result.current.openFree({ x: 400, y: 312 });
+    });
+
+    await waitFor(() => {
+      expect(project).toHaveBeenCalled();
+    });
+    expect(project.mock.calls[0][1]).toMatchObject({
+      relativePath: 'common/technologies/zmt_new.txt',
+      seedRelativePath: true,
+    });
+  });
+
+  // Gate 5's scoping, at the seam: the mod comes from the write's own fallback, so a
+  // target stored under another mod is never read.
+  it('keeps the derived default when the stored target belongs to another mod', async () => {
+    preferencesGet.mockResolvedValue({
+      other: { technology: 'common/technologies/other.txt' },
+    });
+    const view = mount();
+
+    act(() => {
+      view.result.current.openChild('fighter1');
+    });
+
+    await waitFor(() => {
+      expect(project).toHaveBeenCalled();
+    });
+    expect(project.mock.calls[0][1]).toMatchObject({
+      relativePath: 'common/technologies/air_techs.txt',
+      seedRelativePath: false,
+    });
+  });
+
+  it('does not seed when the chosen file IS the derived default', async () => {
+    preferencesGet.mockResolvedValue({
+      bice: { technology: 'common/technologies/air_techs.txt' },
+    });
+    const view = mount();
+
+    act(() => {
+      view.result.current.openChild('fighter1');
+    });
+
+    await waitFor(() => {
+      expect(project).toHaveBeenCalled();
+    });
+    expect(project.mock.calls[0][1]).toMatchObject({
+      seedRelativePath: false,
+    });
+  });
+
+  // The preference chooses the FILE inside the mod the write resolved to; it can
+  // never rescue an add that has no editable owner at all (ADR 029 decision 2).
+  it('still refuses an all-vanilla folder even with a target set', async () => {
+    preferencesGet.mockResolvedValue({
+      bice: { technology: 'common/technologies/zmt_new.txt' },
+    });
+    const view = mount(
+      ROWS.map((entry) => ({
+        ...entry,
+        provenance: { ...entry.provenance, sourceId: '/steam/hoi4' },
+      })),
+    );
+
+    act(() => {
+      view.result.current.openFree({ x: 400, y: 312 });
     });
 
     expect(view.result.current.status).toBe('readonly');

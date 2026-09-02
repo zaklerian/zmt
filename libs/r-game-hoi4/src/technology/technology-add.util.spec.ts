@@ -29,8 +29,14 @@ const TARGET = {
 
 function localisation(
   defaultTarget: EntityFormLocalisationContext['defaultTarget'],
+  defaultTargetSeedLanguage: null | string = null,
 ): EntityFormLocalisationContext {
-  return { defaultTarget, entries: [], takenIds: [] };
+  return {
+    defaultTarget,
+    defaultTargetSeedLanguage,
+    entries: [],
+    takenIds: [],
+  };
 }
 
 describe('resolveTechnologyAddToken', () => {
@@ -80,6 +86,7 @@ describe('buildTechnologyAddOperations', () => {
         relativePath: 'localisation/english/research_l_english.yml',
       }),
       publicName: 'Interceptor IV',
+      seedTarget: false,
       target: TARGET,
       token: 'interceptor_iv',
     });
@@ -117,6 +124,7 @@ describe('buildTechnologyAddOperations', () => {
         relativePath: 'localisation/english/research_l_english.yml',
       }),
       publicName: 'Interceptor IV',
+      seedTarget: false,
       target: TARGET,
       token: 'interceptor_iv',
     });
@@ -129,12 +137,76 @@ describe('buildTechnologyAddOperations', () => {
       body: BODY,
       localisation: localisation(null),
       publicName: 'Interceptor IV',
+      seedTarget: false,
       target: TARGET,
       token: 'interceptor_iv',
     });
 
     expect(operations).toHaveLength(1);
     expect(operations[0]).toMatchObject({ format: 'script' });
+  });
+
+  // ZMT-57 regression gates 3 and 4 — the SHAPE a save-target-resolved add commits.
+  // That the shape really lands both files or neither, and that a created file
+  // rolls back by UNLINK, is `apps/electron/src/main/fs/entity-mutation.create.spec.ts`.
+  it('leads with the script CREATE when the target is the user’s chosen file (gate 4)', () => {
+    const operations = buildTechnologyAddOperations({
+      body: BODY,
+      localisation: localisation(null),
+      publicName: 'Interceptor IV',
+      seedTarget: true,
+      target: {
+        modId: 'bice',
+        relativePath: 'common/technologies/zmt_new.txt',
+      },
+      token: 'interceptor_iv',
+    });
+
+    expect(operations).toEqual([
+      {
+        format: 'scriptCreate',
+        modId: 'bice',
+        relativePath: 'common/technologies/zmt_new.txt',
+        rootBlocks: [TECHNOLOGY_PARENT_BLOCK],
+      },
+      {
+        deltas: BODY,
+        entityName: 'interceptor_iv',
+        format: 'script',
+        insertUnder: TECHNOLOGY_PARENT_BLOCK,
+        modId: 'bice',
+        relativePath: 'common/technologies/zmt_new.txt',
+      },
+    ]);
+  });
+
+  it('leads the loc half with its own create when the loc target is chosen (gate 4)', () => {
+    const operations = buildTechnologyAddOperations({
+      body: BODY,
+      localisation: localisation(
+        {
+          modId: 'bice',
+          relativePath: 'localisation/english/zmt_new_l_english.yml',
+        },
+        'english',
+      ),
+      publicName: 'Interceptor IV',
+      seedTarget: false,
+      target: TARGET,
+      token: 'interceptor_iv',
+    });
+
+    expect(operations.map((operation) => operation.format)).toEqual([
+      'script',
+      'locCreate',
+      'loc',
+    ]);
+    expect(operations[1]).toEqual({
+      format: 'locCreate',
+      language: 'english',
+      modId: 'bice',
+      relativePath: 'localisation/english/zmt_new_l_english.yml',
+    });
   });
 
   it('writes the script alone when no public name was typed — no empty key', () => {
@@ -145,6 +217,7 @@ describe('buildTechnologyAddOperations', () => {
         relativePath: 'localisation/english/research_l_english.yml',
       }),
       publicName: '   ',
+      seedTarget: false,
       target: TARGET,
       token: 'interceptor_iv',
     });

@@ -17,3 +17,4 @@ export * from './tech-tree-geometry';
 export * from './technology';
 export * from './technology-category';
 export * from './workspace';
+export * from './write-target';
