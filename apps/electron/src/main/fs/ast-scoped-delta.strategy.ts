@@ -101,6 +101,23 @@ export function applyAstDelta(
   }
 }
 
+// The format-minimum valid Clausewitz file, for a target the batch CREATES (ADR
+// 027 decision 3 as amended by ZMT-56; ADR 029 decision 3).
+//
+// The empty string IS the format minimum — verified: `parse('')` returns zero
+// errors. What an empty file cannot serve is an INSERT, because `applyInsertDelta`
+// locates its `parentName` block and throws `NOT_FOUND` when it is absent. So the
+// seed's content is that parent, not a format requirement: `rootBlocks` names the
+// wrappers the file's own inserts address (`technologies` for a technology `.txt`,
+// `spriteTypes` for a `.gfx`), which is why the seed is per WRITE-KIND and the kind
+// supplies it. An empty list seeds a bare parseable file — legal, and useless to an
+// insert. Emitted at column 0 with an LF terminator, matching BICE's own
+// `technologies = {` (`common/technologies/air_techs.txt:19`); the insert supplies
+// the tab indent of the children it adds.
+export function seedAstBytes(rootBlocks: readonly string[]): string {
+  return rootBlocks.map((name) => `${name} = {\n}\n`).join('');
+}
+
 // The strategy's serialize-back check (ADR 027 decision 3, phase 1): the patched
 // bytes must re-parse without a parse error, so a delta that would corrupt the
 // file's structure is caught before anything is renamed. Throws `INTERNAL` on the

@@ -12,8 +12,16 @@ import path from 'node:path';
 
 import type { AstDelta } from './ast-scoped-delta.strategy';
 
-import { applyAstDelta, validateAstBytes } from './ast-scoped-delta.strategy';
-import { applyLocDelta, validateLocBytes } from './loc-lines.strategy';
+import {
+  applyAstDelta,
+  seedAstBytes,
+  validateAstBytes,
+} from './ast-scoped-delta.strategy';
+import {
+  applyLocDelta,
+  seedLocBytes,
+  validateLocBytes,
+} from './loc-lines.strategy';
 import { assertWritable } from './path-guard.util';
 
 // The cross-file two-phase atomic batch (ADR 027 decision 3). It generalizes
@@ -31,6 +39,16 @@ import { assertWritable } from './path-guard.util';
 // construction — all writes, validation, and serialize-back checks live in phase 1,
 // so phase 2 is nothing but fast renames — and it is DOCUMENTED here, not hidden.
 // This is not ACID.
+//
+// CREATE (ZMT-56, the amendment ADR 029 decision 6 requires of ADR 027 decision 3).
+// A third operation kind stands alongside the two content kinds: it declares its
+// target create-if-absent with its format's minimum valid seed, so a write can
+// target a file that does not exist yet without ever leaving a stray file behind on
+// a failed batch. It changes the two phases in exactly two places — phase 1 stages
+// from the SEED instead of from a disk read, and a file the batch actually created
+// rolls back by UNLINK rather than backup-restore, because there is no original to
+// restore. Everything else, the guarantee and its residual window included, is
+// unchanged.
 
 // An ORDERED list of AST deltas against one `.txt`, for the same reason the loc
 // operation below carries one: one operation owns one file, and a delete-tree
@@ -38,10 +56,44 @@ import { assertWritable } from './path-guard.util';
 // to the PREVIOUS delta's output, so a later delta locates its block in the
 // already-edited buffer rather than at a stale offset. A single-delta list is the
 // pre-ZMT-52 shape and produces byte-identical output.
+// CREATE for a Clausewitz-family file. `rootBlocks` are the wrapper blocks the
+// seed carries — the parent an AST insert on this file addresses (`technologies`
+// for a technology `.txt`). See `seedAstBytes` for why the seed is per write-kind
+// rather than per format: the empty file IS format-valid and is still useless to
+// an insert.
+export interface AstCreateOperation {
+  readonly absolutePath: string;
+  readonly create: true;
+  readonly format: 'ast';
+  readonly rootBlocks: readonly string[];
+}
+
 export interface AstWriteOperation {
   readonly absolutePath: string;
   readonly deltas: readonly AstDelta[];
   readonly format: 'ast';
+}
+
+// The two operation kinds that carry deltas, as against the create kind that
+// carries a seed. A file's plan is at most one of each (`assertOneOperationPerFile`).
+export type ContentWriteOperation = AstWriteOperation | LocWriteOperation;
+
+// CREATE-IF-ABSENT with the format's minimum valid seed (ADR 027 decision 3 as
+// amended by ZMT-56). A target that already exists is read and patched exactly as
+// any other operation's is — the operation asserts the file's existence, it does
+// not assert its absence — and, having existed before the batch, it rolls back by
+// RESTORE. Only a file this batch genuinely brought into being is unlinked.
+export type CreateWriteOperation = AstCreateOperation | LocCreateOperation;
+
+// CREATE for a localisation `.yml`. `language` is the `l_<language>:` header the
+// seed writes, which BICE also encodes in the filename's `_l_<language>` suffix;
+// they are the caller's to keep consistent, as they are for every existing loc
+// write (the strategy indexes lines, never filenames).
+export interface LocCreateOperation {
+  readonly absolutePath: string;
+  readonly create: true;
+  readonly format: 'loc';
+  readonly language: string;
 }
 
 // loc-lines (`.yml` localisation) is the second format strategy (ADR 027 decision
@@ -63,11 +115,25 @@ export interface WriteBatchConfig {
   readonly sources: readonly ProjectedSource[];
 }
 
-export type WriteOperation = AstWriteOperation | LocWriteOperation;
+export type WriteOperation = ContentWriteOperation | CreateWriteOperation;
+
+// Everything one FILE receives from the batch, in order: the optional create that
+// seeds it, then the optional content operation that fills it. Grouping by file is
+// what lets create-then-content be an ordered sequence rather than two independent
+// stagings — the content op applies to the seed in memory, never to a second read
+// of the disk, which is the hazard `assertOneOperationPerFile` exists to prevent.
+interface FileWritePlan {
+  readonly absolutePath: string;
+  readonly content: ContentWriteOperation | null;
+  readonly create: CreateWriteOperation | null;
+}
 
 interface StagedWrite {
   readonly absolutePath: string;
   readonly backupPath: string;
+  // The batch brought this file into being, so its rollback verb is UNLINK: there
+  // is no original to restore, and `backupPath` is never written for it.
+  readonly created: boolean;
   readonly tempPath: string;
 }
 
@@ -81,33 +147,57 @@ export async function applyWriteBatch(
   config: WriteBatchConfig,
 ): Promise<void> {
   assertOneOperationPerFile(operations);
-  const staged = await stageAll(operations, config);
+  const staged = await stageAll(planByFile(operations), config);
   await commitAll(staged);
 }
 
-// One operation owns one file. Two operations naming the same path would each
-// stage from the ON-DISK original, so the second temp-write would silently drop
-// the first's edit and phase 2 would commit a lie. A file needing several changes
-// carries them in one operation's delta (loc) or one delta's field set (ast).
+// One operation owns one file — the invariant, unchanged. Two CONTENT operations
+// naming the same path would each stage from the ON-DISK original, so the second
+// temp-write would silently drop the first's edit and phase 2 would commit a lie.
+// A file needing several changes carries them in one operation's ordered delta
+// list (loc, ast) or one delta's field set.
+//
+// The one pairing ZMT-56 permits is create-then-content on the same file, because
+// it is not two stagings: the create supplies the seed IN MEMORY and the content
+// operation applies to it, so nothing is read from disk twice and the hazard above
+// never arises. It is the ordered-per-file sequence ZMT-52 established, one level
+// up. The create must come FIRST — a create after the content operation that
+// depends on it is a caller bug, and reordering it silently would hide one.
 function assertOneOperationPerFile(
   operations: readonly WriteOperation[],
 ): void {
-  const seen = new Set<string>();
+  const created = new Set<string>();
+  const written = new Set<string>();
   for (const operation of operations) {
-    if (seen.has(operation.absolutePath)) {
-      throw {
-        code: IPC_ERROR_CODES.BAD_REQUEST,
-        message: `Write batch names the same file twice: ${operation.absolutePath}`,
-      } satisfies IpcError;
+    const target = operation.absolutePath;
+    if (isCreateOperation(operation)) {
+      if (created.has(target)) throw sameFileTwice(target);
+      if (written.has(target)) {
+        throw {
+          code: IPC_ERROR_CODES.BAD_REQUEST,
+          message: `Write batch creates a file after writing it: ${target}`,
+        } satisfies IpcError;
+      }
+      created.add(target);
+      continue;
     }
-    seen.add(operation.absolutePath);
+    if (written.has(target)) throw sameFileTwice(target);
+    written.add(target);
   }
 }
 
 async function commitAll(staged: readonly StagedWrite[]): Promise<void> {
-  const renamed: { backup: string; target: string }[] = [];
+  const renamed: StagedWrite[] = [];
   try {
     for (const s of staged) {
+      // A created file has no original, so step (A) has nothing to back up: the
+      // single temp -> target rename IS the commit, and a failure here leaves the
+      // target still absent with nothing to restore.
+      if (s.created) {
+        await fs.rename(s.tempPath, s.absolutePath);
+        renamed.push(s);
+        continue;
+      }
       await fs.rename(s.absolutePath, s.backupPath); // (A) original -> backup
       try {
         await fs.rename(s.tempPath, s.absolutePath); // (B) temp -> target
@@ -122,16 +212,21 @@ async function commitAll(staged: readonly StagedWrite[]): Promise<void> {
         }
         throw error;
       }
-      renamed.push({ backup: s.backupPath, target: s.absolutePath });
+      renamed.push(s);
     }
   } catch (error: unknown) {
-    // Phase-2 failure: roll every already-committed target back from its backup,
-    // newest-first, leaving the tree as it began. A restore rename that itself
-    // fails is the irreducible residual window (see file header) — swallowed,
-    // documented, and minimized by keeping phase 2 renames-only.
+    // Phase-2 failure: undo every already-committed target, newest-first, leaving
+    // the tree as it began. The verb BRANCHES on how the file got there (ZMT-56):
+    // a pre-existing file is restored from its backup; a file this batch created
+    // is UNLINKED, because "as it began" means the file was not there at all and
+    // restoring a backup that was never taken would leave the seeded husk behind.
+    // A rollback step that itself fails is the irreducible residual window (see
+    // file header) — swallowed, documented, and minimized by keeping phase 2
+    // renames-only.
     for (const r of [...renamed].reverse()) {
       try {
-        await fs.rename(r.backup, r.target);
+        if (r.created) await fs.unlink(r.absolutePath);
+        else await fs.rename(r.backupPath, r.absolutePath);
       } catch {
         /* irreducible residual window — see file header */
       }
@@ -153,14 +248,90 @@ async function commitAll(staged: readonly StagedWrite[]): Promise<void> {
         } satisfies IpcError);
   }
 
-  // Success: every target now holds its new bytes; drop the backups.
+  // Success: every target now holds its new bytes; drop the backups. A created
+  // file has none — nothing was moved aside for it.
   for (const r of renamed) {
+    if (r.created) continue;
     try {
-      await fs.unlink(r.backup);
+      await fs.unlink(r.backupPath);
     } catch {
       /* best-effort; a lingering backup does not affect the committed tree */
     }
   }
+}
+
+function isCreateOperation(
+  operation: WriteOperation,
+): operation is CreateWriteOperation {
+  return 'create' in operation;
+}
+
+// Groups the flat operation list into one plan per file, preserving first-mention
+// order so the batch still commits files in the order the caller listed them.
+// `assertOneOperationPerFile` has already ruled out a second create or a second
+// content operation on any path, so each slot is filled at most once here.
+function planByFile(
+  operations: readonly WriteOperation[],
+): readonly FileWritePlan[] {
+  const plans = new Map<string, FileWritePlan>();
+  for (const operation of operations) {
+    const existing = plans.get(operation.absolutePath) ?? {
+      absolutePath: operation.absolutePath,
+      content: null,
+      create: null,
+    };
+    plans.set(
+      operation.absolutePath,
+      isCreateOperation(operation)
+        ? { ...existing, create: operation }
+        : { ...existing, content: operation },
+    );
+  }
+  for (const plan of plans.values()) {
+    // A create and the content operation filling the file it seeds must agree on
+    // the format, or the seed and the delta would speak different languages —
+    // a `l_english:` header patched by an AST insert, say. Rejected rather than
+    // resolved in favor of either.
+    if (
+      plan.create !== null &&
+      plan.content !== null &&
+      plan.create.format !== plan.content.format
+    ) {
+      throw {
+        code: IPC_ERROR_CODES.BAD_REQUEST,
+        message: `Write batch creates and writes ${plan.absolutePath} in different formats`,
+      } satisfies IpcError;
+    }
+  }
+  return [...plans.values()];
+}
+
+// The source bytes a file's plan starts from. A plan with no create reads the file
+// and turns its absence into `NOT_FOUND` — unchanged. A plan WITH one is
+// create-if-absent: the seed stands in only when the file is genuinely not there,
+// and a target that exists anyway (a stale preference, a file that appeared
+// between resolution and write) is read and patched like any other, which is also
+// what keeps its rollback a restore rather than an unlink.
+async function readOrSeed(
+  plan: FileWritePlan,
+): Promise<{ readonly created: boolean; readonly source: string }> {
+  if (plan.create === null) {
+    return { created: false, source: await readSource(plan.absolutePath) };
+  }
+  try {
+    return {
+      created: false,
+      source: await fs.readFile(plan.absolutePath, 'utf8'),
+    };
+  } catch (error: unknown) {
+    if ((error as NodeJS.ErrnoException | undefined)?.code !== 'ENOENT') {
+      throw {
+        code: IPC_ERROR_CODES.INTERNAL,
+        message: `Failed to read file: ${String(error)}`,
+      } satisfies IpcError;
+    }
+  }
+  return { created: true, source: seedFor(plan.create) };
 }
 
 async function readSource(absolutePath: string): Promise<string> {
@@ -181,14 +352,27 @@ async function readSource(absolutePath: string): Promise<string> {
   }
 }
 
+function sameFileTwice(absolutePath: string): IpcError {
+  return {
+    code: IPC_ERROR_CODES.BAD_REQUEST,
+    message: `Write batch names the same file twice: ${absolutePath}`,
+  };
+}
+
+function seedFor(operation: CreateWriteOperation): string {
+  return operation.format === 'ast'
+    ? seedAstBytes(operation.rootBlocks)
+    : seedLocBytes(operation.language);
+}
+
 async function stageAll(
-  operations: readonly WriteOperation[],
+  plans: readonly FileWritePlan[],
   config: WriteBatchConfig,
 ): Promise<readonly StagedWrite[]> {
   const staged: StagedWrite[] = [];
   try {
-    for (const operation of operations) {
-      staged.push(await stageOne(operation, config));
+    for (const plan of plans) {
+      staged.push(await stageOne(plan, config));
     }
   } catch (error: unknown) {
     // Phase-1 failure: nothing has been renamed, so aborting is only deleting
@@ -205,33 +389,39 @@ async function stageAll(
   return staged;
 }
 
-// Phase 1 for one operation: route to the format strategy, apply the delta in
+// Phase 1 for one FILE's plan: take the source bytes (a disk read, or the create's
+// seed), route the content operation to its format strategy, apply its deltas in
 // memory, validate (path-guard/readonly, byte-length ceiling, serialize-back), and
-// temp-write the target to a sibling temp file. All fallible content and path work
+// temp-write the result to a sibling temp file. All fallible content and path work
 // happens here; nothing is renamed. Throws before writing any temp on a strategy,
 // guard, or validation failure.
 async function stageOne(
-  operation: WriteOperation,
+  plan: FileWritePlan,
   config: WriteBatchConfig,
 ): Promise<StagedWrite> {
-  await assertWritable(operation.absolutePath, config.sources);
-  const source = await readSource(operation.absolutePath);
+  await assertWritable(plan.absolutePath, config.sources);
+  const { created, source } = await readOrSeed(plan);
 
   // Route to the format strategy (ADR 027 decision 1): `ast` for the
   // Clausewitz-family AST strategy, `loc` for the lossless loc-lines strategy.
   // Each applies its delta in memory and self-checks via its serialize-back gate
   // (AST re-parse / loc round-trip) — all fallible content work here, before any
-  // temp is written.
-  const patched =
-    operation.format === 'ast'
-      ? operation.deltas.reduce(
-          (bytes, delta) => applyAstDelta(bytes, delta, config.dialects),
-          source,
-        )
-      : operation.deltas.reduce(
-          (bytes, delta) => applyLocDelta(bytes, delta),
-          source,
-        );
+  // temp is written. A create with no content operation stages its bare seed,
+  // which the same gates still validate.
+  const content = plan.content;
+  let patched = source;
+  if (content !== null) {
+    patched =
+      content.format === 'ast'
+        ? content.deltas.reduce(
+            (bytes, delta) => applyAstDelta(bytes, delta, config.dialects),
+            source,
+          )
+        : content.deltas.reduce(
+            (bytes, delta) => applyLocDelta(bytes, delta),
+            source,
+          );
+  }
 
   const byteLength = Buffer.byteLength(patched, 'utf8');
   if (byteLength > MAX_PAYLOAD_BYTES) {
@@ -240,11 +430,27 @@ async function stageOne(
       message: `Payload exceeds ${String(MAX_PAYLOAD_BYTES)} bytes`,
     } satisfies IpcError;
   }
-  if (operation.format === 'ast') validateAstBytes(patched, config.dialects);
+  const format = content?.format ?? plan.create?.format;
+  if (format === 'ast') validateAstBytes(patched, config.dialects);
   else validateLocBytes(patched);
 
-  const parent = path.dirname(operation.absolutePath);
-  const base = path.basename(operation.absolutePath);
+  const parent = path.dirname(plan.absolutePath);
+  const base = path.basename(plan.absolutePath);
+  // The temp is a sibling of the target, so a created file's directory has to
+  // exist before phase 1 can stage it — a new loc target in a mod with no
+  // `localisation/english/` yet is the real case. The directory is NOT removed on
+  // rollback: an empty directory is not the "no partial file" the guarantee is
+  // about, and unwinding it would race any other operation writing beside it.
+  if (created) {
+    try {
+      await fs.mkdir(parent, { recursive: true });
+    } catch (error: unknown) {
+      throw {
+        code: IPC_ERROR_CODES.INTERNAL,
+        message: `Failed to create directory: ${String(error)}`,
+      } satisfies IpcError;
+    }
+  }
   // One suffix per op keys the temp and its backup together; the dot prefix and
   // sibling directory keep the later rename same-filesystem and atomic.
   const suffix = randomBytes(8).toString('hex');
@@ -265,5 +471,5 @@ async function stageOne(
     } satisfies IpcError;
   }
 
-  return { absolutePath: operation.absolutePath, backupPath, tempPath };
+  return { absolutePath: plan.absolutePath, backupPath, created, tempPath };
 }

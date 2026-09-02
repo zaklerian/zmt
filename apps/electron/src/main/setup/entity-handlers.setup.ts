@@ -83,6 +83,28 @@ function coerceBatchOperation(
       relativePath,
     };
   }
+  if (format === 'locCreate') {
+    return {
+      format: 'locCreate',
+      language: requireString(record.language, `${field}.language`),
+      modId,
+      relativePath,
+    };
+  }
+  if (format === 'scriptCreate') {
+    // An empty `rootBlocks` seeds a bare (empty) `.txt`. It parses, but nothing
+    // can be inserted into it — `applyInsertDelta` locates a parent block by name
+    // — so a create with no wrapper is a caller bug, not a minimal request.
+    if (!Array.isArray(record.rootBlocks) || record.rootBlocks.length === 0) {
+      throw badRequest(`${field}.rootBlocks must be a non-empty array`);
+    }
+    return {
+      format: 'scriptCreate',
+      modId,
+      relativePath,
+      rootBlocks: requireStrings(record.rootBlocks, `${field}.rootBlocks`),
+    };
+  }
   if (format === 'scriptDelete') {
     if (!Array.isArray(record.entityNames) || record.entityNames.length === 0) {
       throw badRequest(`${field}.entityNames must be a non-empty array`);
@@ -131,7 +153,9 @@ function coerceBatchOperation(
       ...(renameTo === undefined ? {} : { renameTo }),
     };
   }
-  throw badRequest(`${field}.format must be "loc", "script" or "scriptDelete"`);
+  throw badRequest(
+    `${field}.format must be "loc", "locCreate", "script", "scriptCreate" or "scriptDelete"`,
+  );
 }
 
 function coerceBatchWriteRequest(value: unknown): EntityBatchWriteRequest {

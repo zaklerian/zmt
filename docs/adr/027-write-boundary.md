@@ -15,6 +15,68 @@ Electron-free so the write logic is verifiable in a CC session — the earlier "
 Electron" framing was the harness's service-graph construction and full-corpus perf ceiling, not
 the write logic, and this ADR corrects it. It is additive to ADR 013, 014, 016, 020, 022, and 024._
 
+## Update (2026-09-02) — `create` is a batch operation kind, and its rollback is unlink (ZMT-56)
+
+This is the amendment [ADR 029](029-write-target-resolution.md) decision 6 names and requires of
+decision 3. It lands here, against the shipped strategy code, rather than as prose written ahead
+of it.
+
+**Why it is needed.** ADR 029 makes a save-target possibly a **new file**, and "created empty on
+first write" does not survive the code: there are three throw sites, and an empty file trips all
+of them. The batch reads every target first and turns `ENOENT` into `NOT_FOUND` (`readSource`,
+`write-batch.service.ts`); the AST insert throws `NOT_FOUND` when the parent block it inserts under
+is absent (`applyInsertDelta`, `ast-scoped-delta.strategy.ts`), and the technology insert names
+`technologies` as that parent; the loc insert **appends** a key line and synthesizes neither the
+UTF-8 BOM nor the `l_<language>:` header, producing a file the engine will not read. Creating the
+file **before** the batch is worse, not better — every failed batch then leaves a stray file behind,
+and the file's own creation escapes the path-guard and the rollback the batch already provides.
+
+**The amendment.** Decision 3's two-phase model gains a **third operation kind** alongside the two
+content kinds of decision 4 (patch / insert / delete):
+
+- **`create`** — an operation declares its target **create-if-absent**, seeded with its format's
+  minimum valid content. Phase 1 stages the seeded-then-patched bytes exactly as it stages any other
+  target, through the same path guard, byte ceiling, and serialize-back gate; phase 2 renames.
+  Create-**if-absent**: a target that already exists is read and patched like any other, so a stale
+  target that reappeared is an ordinary edit and never an overwrite of the user's file.
+- **The rollback verb branches on how the file got there.** A pre-existing file is restored from its
+  backup, unchanged. A file the batch **created** is **unlinked** — there is no original to restore,
+  and a backup was never taken, so "leave the tree as it began" means the file is not there at all.
+  This is the one behavioral change to decision 3; the guarantee and its residual window are
+  otherwise identical.
+- **`assertOneOperationPerFile` admits create-then-content on one file.** The invariant it enforces
+  is unchanged — two **content** operations on a path would each stage from the on-disk original and
+  the second temp-write would silently drop the first's edit. A create paired with the content
+  operation that fills the file it seeds is not two stagings: the seed is supplied in memory and the
+  content operation applies **to it**, so the file is never read twice. It is the ordered-per-file
+  sequence ZMT-52 established, one level up: a file's plan is at most one create followed by at most
+  one content operation, and a create listed **after** its content operation is rejected rather than
+  silently reordered.
+
+**What the seed is, and whose it is.** The seed is the **format strategy's** to render, for the same
+reason reading and serializing are — it is that format's byte shape:
+
+- **loc-lines** → the UTF-8 BOM plus the `l_<language>:` header, terminated. Grounded on BICE, not
+  assumed: all 190 `localisation/english/*.yml` files open with `ef bb bf`, and 170 of them follow it
+  with exactly `l_english:` (`docs/grounding/ZMT-48-loc-format-grounding.md`).
+- **AST** → **the empty string is the format minimum** — `parse('')` returns zero errors, verified.
+  The seed's actual content is therefore **not** a format requirement but the **parent block** the
+  insert addresses, which is per **write-kind**, not per format (`technologies` for a technology
+  `.txt`, `spriteTypes` for a `.gfx`). The create operation carries it, which is the shape ADR 029
+  decision 3 predicts when it calls the seed "the second thing a kind registers after its folder".
+
+  This is a divergence from ADR 029 decision 3's wording, which reads as though `technologies = { }`
+  were the format's minimum. It is not; the empty file is. Recorded here rather than resolved
+  silently — the decision is unchanged, its reason is.
+
+**Accepted, and stated because it is a real edge.** A created file's parent directory is created
+recursively in phase 1 (the temp file is a sibling of the target, so it must exist), and it is **not**
+removed on rollback. An empty directory is not the partial file the guarantee is about, and unwinding
+it would race any other operation writing beside it.
+
+Sprite and geometry create paths inherit this kind by registering a seed; `create` is format-generic
+and needs no per-kind mechanism.
+
 ## Context
 
 `entity-mutation.service` is the single write path today (ADR 019, project map: "the **only** write
@@ -117,7 +179,7 @@ it touches. It runs in two phases:
 tool does not own — there is no cross-file transaction primitive on a POSIX/NTFS mod directory. What
 this batch guarantees is: either every file lands, or (on a phase-1 failure) none is touched, or (on a
 phase-2 failure) the already-committed files are rolled back from backups. The **residual window** is a
-phase-2 rename failing *after* an earlier rename in the same batch already succeeded; recovery is
+phase-2 rename failing _after_ an earlier rename in the same batch already succeeded; recovery is
 backup-restore, and the window is **minimized by construction** — all writes, validation, and
 serialize-back checks live in phase 1, so phase 2 is nothing but fast renames, the operation least
 likely to fail partway. This supersedes ADR 019's **per-file** atomicity with **per-batch** atomicity,
@@ -208,6 +270,19 @@ before it is relied on:
    the `KEY:VERSION` suffix survive a set/insert/delete-and-write.
 6. **Insert** produces a **byte-identical** result to a hand-authored block.
 
+Added by the 2026-09-02 amendment (ZMT-56), on the same standing:
+
+7. A **created** loc file carries the exact BICE BOM + `l_english:` header bytes, and a loc insert in
+   the same batch adds its first key as a valid `KEY:VERSION "value"` line.
+8. A **created** `.txt` is parseable, and an AST insert in the same batch adds its first block.
+9. A batch that creates a file and then fails **leaves no file** — unlinked, no orphan — whether the
+   failure lands in phase 1 or phase 2.
+10. A **mixed** batch (create a new file, edit an existing one) induced to fail **unlinks** the new
+    file and **restores** the existing one to its original bytes. This is the branch the amendment
+    introduces and it is specced, not asserted.
+11. `create` + first-write on one new file commits as an ordered sequence rather than being rejected
+    by `assertOneOperationPerFile`, and the resulting file is byte-correct.
+
 ## Consequences
 
 **Positive**
@@ -265,7 +340,7 @@ before it is relied on:
 - **Error on edit-of-vanilla** instead of create-override. Rejected — it leaves a visible tree node
   uneditable with no path; create-override is the modding convention and the designed route (decision 5).
 - **Keep ADR 019's per-file atomicity and issue N single-file writes for a cross-file operation.**
-  Rejected — this is the exact partial-write hazard ADR 019 removed *within* a file, reintroduced
-  *across* files: a failed write mid-sequence leaves some files updated and others not, with no rollback.
+  Rejected — this is the exact partial-write hazard ADR 019 removed _within_ a file, reintroduced
+  _across_ files: a failed write mid-sequence leaves some files updated and others not, with no rollback.
   Per-batch atomicity (decision 3) is the cross-file analogue of the decision ADR 019 already made
   per-file.

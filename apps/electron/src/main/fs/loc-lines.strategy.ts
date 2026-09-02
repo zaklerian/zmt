@@ -104,6 +104,23 @@ export function parseLoc(source: string): LocDocument {
   return { hasBom, lines };
 }
 
+// The format-minimum valid loc file, for a target the batch CREATES (ADR 027
+// decision 3 as amended by ZMT-56; ADR 029 decision 3). It is the strategy's to
+// own for the same reason reading and serializing are: this is the loc format's
+// byte shape, not the batch's.
+//
+// Grounded, not guessed (`docs/grounding/ZMT-48-loc-format-grounding.md`, re-run
+// against `test-mod-bice/localisation/english/`): all 190 files open with the
+// UTF-8 BOM `ef bb bf`, and 170 of them follow it with exactly `l_english:`. It is
+// the MINIMUM because `applyInsert` appends beneath what is already there and
+// synthesizes neither the BOM nor the header — and a headerless loc file is one
+// the engine will not read at all. LF is the seeded terminator (the BICE majority;
+// `equipment_l_english.yml` is the CRLF exception), and an insert into the seeded
+// file picks it up through `dominantEol`.
+export function seedLocBytes(language: string): string {
+  return `${BOM}l_${language}:\n`;
+}
+
 // The writer. Reassembles the ordered entries into bytes; exact inverse of the
 // reader `parseLoc`.
 export function serializeLoc(doc: LocDocument): string {

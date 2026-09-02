@@ -19,37 +19,37 @@ Each ADR follows a consistent structure:
 
 ## Index
 
-| ADR | Title                                                                                                         | Status   |
-| --- | ------------------------------------------------------------------------------------------------------------- | -------- |
-| 001 | [Shared contracts library](adr/001-shared-contracts-library.md)                                               | Accepted |
-| 002 | [Renderer process isolation](adr/002-renderer-process-isolation.md)                                           | Accepted |
-| 003 | [IPC channel constants](adr/003-ipc-channel-constants.md)                                                     | Accepted |
-| 004 | [Barrel exports as passive aggregation](adr/004-barrel-exports-and-naming.md)                                 | Accepted |
-| 005 | [File naming and suffix conventions](adr/005-file-naming-and-suffix-conventions.md)                           | Accepted |
-| 006 | [Branching and commit conventions](adr/006-branching-and-commit-conventions.md)                               | Accepted |
-| 007 | [File classification model](adr/007-file-classification.md)                                                   | Accepted |
-| 008 | [IPC error model](adr/008-ipc-error-model.md)                                                                 | Accepted |
-| 009 | [Library taxonomy and extraction rule](adr/009-library-taxonomy.md)                                           | Accepted |
-| 010 | [Paired-library architecture per game](adr/010-plugin-architecture.md)                                        | Accepted |
-| 011 | [Form library: React Hook Form + Zod](adr/011-form-library.md)                                                | Accepted |
-| 012 | [Code editor: CodeMirror 6](adr/012-editor-choice.md)                                                         | Accepted |
-| 013 | [Multi-mod workspace model](adr/013-multi-mod-workspace-model.md)                                             | Accepted |
-| 014 | [Reference / read-only sources](adr/014-reference-readonly-sources.md)                                        | Accepted |
-| 015 | [Business actions: availability-driven interaction pattern](adr/015-business-actions.md)                      | Accepted |
-| 016 | [Load-order file resolution and provenance](adr/016-load-order-resolution.md)                                 | Accepted |
-| 017 | [Derive equipment domain from interface category](adr/017-derive-equipment-domain-from-interface-category.md) | Accepted |
-| 018 | [Entity form shell and per-entity descriptors](adr/018-entity-form-shell-and-descriptors.md)                  | Accepted |
+| ADR | Title                                                                                                         | Status            |
+| --- | ------------------------------------------------------------------------------------------------------------- | ----------------- |
+| 001 | [Shared contracts library](adr/001-shared-contracts-library.md)                                               | Accepted          |
+| 002 | [Renderer process isolation](adr/002-renderer-process-isolation.md)                                           | Accepted          |
+| 003 | [IPC channel constants](adr/003-ipc-channel-constants.md)                                                     | Accepted          |
+| 004 | [Barrel exports as passive aggregation](adr/004-barrel-exports-and-naming.md)                                 | Accepted          |
+| 005 | [File naming and suffix conventions](adr/005-file-naming-and-suffix-conventions.md)                           | Accepted          |
+| 006 | [Branching and commit conventions](adr/006-branching-and-commit-conventions.md)                               | Accepted          |
+| 007 | [File classification model](adr/007-file-classification.md)                                                   | Accepted          |
+| 008 | [IPC error model](adr/008-ipc-error-model.md)                                                                 | Accepted          |
+| 009 | [Library taxonomy and extraction rule](adr/009-library-taxonomy.md)                                           | Accepted          |
+| 010 | [Paired-library architecture per game](adr/010-plugin-architecture.md)                                        | Accepted          |
+| 011 | [Form library: React Hook Form + Zod](adr/011-form-library.md)                                                | Accepted          |
+| 012 | [Code editor: CodeMirror 6](adr/012-editor-choice.md)                                                         | Accepted          |
+| 013 | [Multi-mod workspace model](adr/013-multi-mod-workspace-model.md)                                             | Accepted          |
+| 014 | [Reference / read-only sources](adr/014-reference-readonly-sources.md)                                        | Accepted          |
+| 015 | [Business actions: availability-driven interaction pattern](adr/015-business-actions.md)                      | Accepted          |
+| 016 | [Load-order file resolution and provenance](adr/016-load-order-resolution.md)                                 | Accepted          |
+| 017 | [Derive equipment domain from interface category](adr/017-derive-equipment-domain-from-interface-category.md) | Accepted          |
+| 018 | [Entity form shell and per-entity descriptors](adr/018-entity-form-shell-and-descriptors.md)                  | Accepted          |
 | 019 | [Atomic batched scoped deltas for entity writes](adr/019-atomic-batched-entity-writes.md)                     | Superseded by 027 |
-| 020 | [Read-side recognizer registry](adr/020-read-side-recognizer-registry.md)                                     | Accepted |
-| 021 | [Technology's intentionally thin editable surface](adr/021-technology-thin-editable-surface.md)               | Accepted |
-| 022 | [Paradox `@` substitution-symbol model](adr/022-paradox-symbol-model.md)                                      | Accepted |
-| 023 | [Data-grounding harness and coverage baseline](adr/023-data-grounding-harness.md)                             | Accepted |
-| 024 | [Source-scoped entity read layer](adr/024-source-scoped-read-layer.md)                                        | Accepted |
-| 025 | [Tech-tree geometry from the tree-view `.gui`](adr/025-tech-tree-geometry.md)                                 | Accepted |
-| 026 | [Tech-tree canvas](adr/026-tech-tree-canvas.md)                                                               | Accepted |
-| 027 | [Write boundary: format strategies and cross-file atomic batch](adr/027-write-boundary.md)                    | Accepted |
-| 028 | [Technology edit model](adr/028-technology-edit-model.md)                                                     | Accepted |
-| 029 | [Write-target resolution](adr/029-write-target-resolution.md)                                                 | Accepted |
+| 020 | [Read-side recognizer registry](adr/020-read-side-recognizer-registry.md)                                     | Accepted          |
+| 021 | [Technology's intentionally thin editable surface](adr/021-technology-thin-editable-surface.md)               | Accepted          |
+| 022 | [Paradox `@` substitution-symbol model](adr/022-paradox-symbol-model.md)                                      | Accepted          |
+| 023 | [Data-grounding harness and coverage baseline](adr/023-data-grounding-harness.md)                             | Accepted          |
+| 024 | [Source-scoped entity read layer](adr/024-source-scoped-read-layer.md)                                        | Accepted          |
+| 025 | [Tech-tree geometry from the tree-view `.gui`](adr/025-tech-tree-geometry.md)                                 | Accepted          |
+| 026 | [Tech-tree canvas](adr/026-tech-tree-canvas.md)                                                               | Accepted          |
+| 027 | [Write boundary: format strategies and cross-file atomic batch](adr/027-write-boundary.md)                    | Accepted          |
+| 028 | [Technology edit model](adr/028-technology-edit-model.md)                                                     | Accepted          |
+| 029 | [Write-target resolution](adr/029-write-target-resolution.md)                                                 | Accepted          |
 
 ## Amendments
 
@@ -69,6 +69,7 @@ discoverable from the index.
 | 019 | Numeric assignment keys in the parser grammar (unquoted province-id keys)               |
 | 019 | Batch-coordinated (coalesced) intermediate materialization                              |
 | 024 | Resolution is two-stage: file resolution (stage 1) then entity-name last-wins (stage 2) |
+| 027 | `create` batch operation kind — seeded create-if-absent, with unlink-on-rollback        |
 
 ## When to write an ADR
 

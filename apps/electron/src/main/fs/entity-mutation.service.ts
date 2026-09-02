@@ -91,6 +91,25 @@ function toWriteOperation(
   if (operation.format === 'loc') {
     return { absolutePath, deltas: operation.deltas, format: 'loc' };
   }
+  // The two CREATE kinds (ZMT-56) carry a seed, not deltas: they declare their
+  // target create-if-absent inside the same all-or-nothing batch that fills it, so
+  // a batch that fails leaves no stray file behind (ADR 029 decision 6).
+  if (operation.format === 'locCreate') {
+    return {
+      absolutePath,
+      create: true,
+      format: 'loc',
+      language: operation.language,
+    };
+  }
+  if (operation.format === 'scriptCreate') {
+    return {
+      absolutePath,
+      create: true,
+      format: 'ast',
+      rootBlocks: operation.rootBlocks,
+    };
+  }
   // A delete names N blocks in one file (ZMT-52) and compiles to that file's
   // ORDERED delta list — the same shape loc has always used, and the reason a
   // delete-tree spanning one file is one operation rather than N that
