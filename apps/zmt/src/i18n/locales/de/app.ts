@@ -63,4 +63,19 @@ export const de: typeof en = {
       label: 'Panel-Aktionen',
     },
   },
+  saveTargets: {
+    createNew: 'Neue Datei anlegen…',
+    description:
+      'Wohin neue Inhalte jeder Art im ausgewählten Mod geschrieben werden. Ohne Auswahl gilt der vom Schreibvorgang berechnete Standard.',
+    kind: {
+      locKey: 'Neue Lokalisierungsschlüssel',
+      technology: 'Neue Technologien',
+    },
+    mod: 'Mod',
+    newFile: 'Name der neuen Datei',
+    newFileHelp: 'Wird beim ersten Schreibvorgang unter {{folder}}/ angelegt.',
+    noMods: 'Im Arbeitsbereich ist kein bearbeitbarer Mod enthalten.',
+    title: 'Speicherziele',
+    useDefault: 'Standard (pro Schreibvorgang berechnet)',
+  },
 };

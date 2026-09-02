@@ -59,4 +59,19 @@ export const en = {
       label: 'Panel actions',
     },
   },
+  saveTargets: {
+    createNew: 'Create a new file…',
+    description:
+      'Where new content of each kind is written in the selected mod. Unset kinds keep the default the write computes for itself.',
+    kind: {
+      locKey: 'New localisation keys',
+      technology: 'New technologies',
+    },
+    mod: 'Mod',
+    newFile: 'New file name',
+    newFileHelp: 'Created on the first write, under {{folder}}/.',
+    noMods: 'No editable mod is included in the workspace.',
+    title: 'Save targets',
+    useDefault: 'Default (computed per write)',
+  },
 };

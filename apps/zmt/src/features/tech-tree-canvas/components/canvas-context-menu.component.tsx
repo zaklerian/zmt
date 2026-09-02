@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next';
 
 import type { CanvasActionContext } from '../canvas-actions';
 
+import { CANVAS_DELETE_ACTION_ID } from '../canvas-actions';
+
 interface CanvasContextMenuProps {
   readonly actions: readonly Action<CanvasActionContext>[];
   // SCREEN pixels — where the menu is drawn. Distinct from the context's flow
@@ -43,6 +45,13 @@ export function CanvasContextMenu({
       {available.map((action) => (
         <MenuItem
           key={action.id}
+          // Delete keeps its destructive affordance by ID LOOKUP at the surface
+          // (ZMT-57, Q99 = A1) — `Action` gains no `destructive` field.
+          sx={
+            action.id === CANVAS_DELETE_ACTION_ID
+              ? { color: 'error.main' }
+              : undefined
+          }
           onClick={() => {
             onClose();
             void action.execute(context);

@@ -33,6 +33,9 @@ interface TechnologyAddInput {
   readonly body: readonly EntityBlockDelta[];
   readonly localisation: EntityFormLocalisationContext | undefined;
   readonly publicName: string;
+  // The target `.txt` is the user's chosen save target (ADR 029 decision 4) and may
+  // not exist yet, so the batch leads with the create-if-absent seed.
+  readonly seedTarget: boolean;
   readonly target: TechnologyAddTarget;
   readonly token: string;
 }
@@ -50,21 +53,52 @@ interface TechnologyAddInput {
 export function buildTechnologyAddOperations(
   input: TechnologyAddInput,
 ): readonly EntityBatchOperation[] {
-  const { body, localisation, publicName, target, token } = input;
-  const script: EntityBatchOperation = {
-    deltas: body,
-    entityName: token,
-    format: 'script',
-    insertUnder: TECHNOLOGY_PARENT_BLOCK,
-    modId: target.modId,
-    relativePath: target.relativePath,
-  };
+  const { body, localisation, publicName, seedTarget, target, token } = input;
+  const script: readonly EntityBatchOperation[] = [
+    // ZMT-56's create operation, emitted ONLY for a user-chosen save target (ADR
+    // 029 decisions 3 and 6). It is create-IF-ABSENT, so a chosen file that already
+    // exists is read and patched like any other; it leads the file's sequence
+    // because a create after its content operation is a caller bug the batch
+    // rejects rather than reorders.
+    ...(seedTarget
+      ? ([
+          {
+            format: 'scriptCreate',
+            modId: target.modId,
+            relativePath: target.relativePath,
+            rootBlocks: [TECHNOLOGY_PARENT_BLOCK],
+          },
+        ] as const)
+      : []),
+    {
+      deltas: body,
+      entityName: token,
+      format: 'script',
+      insertUnder: TECHNOLOGY_PARENT_BLOCK,
+      modId: target.modId,
+      relativePath: target.relativePath,
+    },
+  ];
 
   const name = publicName.trim();
   const locTarget = localisation?.defaultTarget ?? null;
-  if (name === '' || locTarget === null) return [script];
+  if (name === '' || locTarget === null) return script;
+  const seedLanguage = localisation?.defaultTargetSeedLanguage ?? null;
   return [
-    script,
+    ...script,
+    // The loc half's own create, on the same rule and for the same reason as the
+    // script half's: the loc target the lookup resolved may be one the user named
+    // in the settings panel, and the language is the one its seed header carries.
+    ...(seedLanguage === null
+      ? []
+      : ([
+          {
+            format: 'locCreate',
+            language: seedLanguage,
+            modId: locTarget.modId,
+            relativePath: locTarget.relativePath,
+          },
+        ] as const)),
     {
       deltas: [
         {

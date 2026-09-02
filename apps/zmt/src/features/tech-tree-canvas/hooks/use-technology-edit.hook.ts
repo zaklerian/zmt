@@ -80,6 +80,12 @@ export function useTechnologyEdit(
             descriptor.project(detail.entity, {
               localisation: {
                 defaultTarget: localisation.defaultTarget,
+                // The loc INSERT target may be the user's chosen save target and
+                // may not exist yet (ADR 029 D3); the SCRIPT half is untouched by
+                // this ticket — an edit patches the file provenance already names
+                // (ADR 029 decision 2's creation-only scope line).
+                defaultTargetSeedLanguage:
+                  localisation.defaultTargetSeedLanguage,
                 entries: localisation.entries,
                 takenIds: allTechnologyIds,
               },

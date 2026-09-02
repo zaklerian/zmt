@@ -106,6 +106,23 @@ describe('CanvasContextMenu', () => {
     expect(itemLabels()).toEqual(['Delete']);
   });
 
+  // ZMT-57 regression gate 6 (Q99 = A1): Delete keeps its destructive affordance,
+  // and it comes from a SURFACE-LEVEL id lookup — `Action` has no `destructive`
+  // field, which is exactly what the second assertion pins.
+  it('renders Delete in the error colour, by id lookup and not by a field on Action', () => {
+    renderMenu(canvasActions, contextFor('fighter1'));
+
+    expect(screen.getByRole('menuitem', { name: 'Delete' })).toHaveStyle({
+      color: theme.palette.error.main,
+    });
+    expect(screen.getByRole('menuitem', { name: 'Edit' })).not.toHaveStyle({
+      color: theme.palette.error.main,
+    });
+    for (const action of canvasActions) {
+      expect(action).not.toHaveProperty('destructive');
+    }
+  });
+
   it('executes the clicked action against the context it was given', () => {
     const context = contextFor('fighter1');
     renderMenu(canvasActions, context);

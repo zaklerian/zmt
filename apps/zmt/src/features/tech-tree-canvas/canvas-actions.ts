@@ -15,6 +15,14 @@ export interface CanvasActionContext {
   technologyId: null | string;
 }
 
+// The id of the destructive verb, exported so BOTH surfaces can render it
+// distinctly (ZMT-57, Q99 = A1). This is a SURFACE-LEVEL LOOKUP on purpose: the
+// alternative — a `destructive` field on `Action` — would put a presentation
+// concern in the ADR 015 business-action contract, where every action of every
+// entity would have to answer it. The action set is unchanged by this; only the two
+// surfaces that draw it know the id means "error colour".
+export const CANVAS_DELETE_ACTION_ID = 'tech-tree-canvas-delete';
+
 // The AED verbs of the tech-tree canvas as business actions (ADR 015), wrapping
 // the ZMT-50/51/52 flows rather than reimplementing them: every `execute` calls
 // the hook the canvas already owns. Order is menu display order, not alphabetical
@@ -50,7 +58,7 @@ export const canvasActions: readonly Action<CanvasActionContext>[] = [
       if (context.technologyId === null) return;
       context.openDelete(context.technologyId);
     },
-    id: 'tech-tree-canvas-delete',
+    id: CANVAS_DELETE_ACTION_ID,
     isAvailable: (context) => context.technologyId !== null,
     label: () => 'feature.techTreeCanvas:delete',
   },

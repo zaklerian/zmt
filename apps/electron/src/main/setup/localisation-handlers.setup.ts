@@ -8,6 +8,7 @@ import {
 import { resolveIndexSources } from '../entity-index';
 import { ipcHandle } from '../ipc';
 import { DEFAULT_LOC_LANGUAGE, lookupLocalisation } from '../localisation';
+import { preferencesService } from '../preferences';
 import { activeGameFolderPath, workspaceStoreService } from '../workspace';
 
 export function registerLocalisationHandlers(): void {
@@ -17,11 +18,14 @@ export function registerLocalisationHandlers(): void {
       lookupLocalisation(coerceKeys(rawKeys), {
         language: DEFAULT_LOC_LANGUAGE,
         // The store reach lives here, above the pure lookup — the same
-        // composition boundary the write path uses (ADR 027 decision 6).
+        // composition boundary the write path uses (ADR 027 decision 6). The
+        // save-target preference is read at LOOKUP time, not cached, so a target
+        // changed in the settings panel applies to the next form that opens.
         sources: resolveIndexSources(
           workspaceStoreService.get(),
           await activeGameFolderPath(),
         ),
+        writeTargets: (await preferencesService.get('writeTargets')) ?? {},
       }),
   );
 }

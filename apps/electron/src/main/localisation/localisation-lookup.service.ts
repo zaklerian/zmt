@@ -2,8 +2,10 @@ import type {
   LocalisationEntry,
   LocalisationLookupResult,
   LocWriteTarget,
+  WriteTargets,
 } from '@contracts';
 
+import { resolveWriteTarget, WRITE_KINDS } from '@contracts';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
@@ -35,6 +37,10 @@ export interface LocalisationLookupConfig {
   readonly language: string;
   // Lowest → highest precedence, exactly as the entity index resolves them.
   readonly sources: readonly IndexSource[];
+  // The `writeTargets` preference, passed in for the same reason `sources` is: the
+  // store reach lives in the handler above this pure lookup (ADR 027 decision 6).
+  // Absent is the same as empty — every path falls back (ADR 029 decision 5).
+  readonly writeTargets?: WriteTargets;
 }
 
 export async function lookupLocalisation(
@@ -43,15 +49,15 @@ export async function lookupLocalisation(
 ): Promise<LocalisationLookupResult> {
   const wanted = new Set(keys);
   const resolved = new Map<string, LocalisationEntry>();
-  let defaultTarget: LocWriteTarget | null = null;
+  let derivedTarget: LocWriteTarget | null = null;
 
   for (const source of config.sources) {
     const files = await enumerateLocFiles(source.path, config.language);
     const target = writeTargetOf(source, files);
     // Later sources outrank earlier ones, so the last editable source that owns a
-    // loc file wins the default-insert target — the same precedence the value
-    // resolution below uses (ADR 028 decision 6 seam).
-    if (target !== null) defaultTarget = target;
+    // loc file wins the derived default-insert target — the same precedence the
+    // value resolution below uses.
+    if (target !== null) derivedTarget = target;
 
     for (const relativePath of files) {
       if (wanted.size === 0) break;
@@ -78,8 +84,27 @@ export async function lookupLocalisation(
     }
   }
 
+  // ADR 029 decision 2, the loc consult point: the derived default above becomes the
+  // FALLBACK, and the user's stored `locKey` target for the mod that fallback
+  // resolved to wins when there is one. Unset → `derivedTarget` unchanged, which is
+  // ZMT-50's behavior byte for byte.
+  const defaultTarget = resolveWriteTarget(
+    WRITE_KINDS.locKey,
+    derivedTarget,
+    config.writeTargets ?? {},
+  );
+
   return {
     defaultTarget,
+    // The chosen target may be a file the user named and never created, and only
+    // this side knows the language its seed header carries (`config.language`, the
+    // same filter that enumerated the candidates). The derived default is a file
+    // that was just enumerated off disk, so it needs no seed.
+    defaultTargetSeedLanguage:
+      defaultTarget !== null &&
+      defaultTarget.relativePath !== derivedTarget?.relativePath
+        ? config.language
+        : null,
     entries: [...resolved.values()].sort((a, b) => a.key.localeCompare(b.key)),
   };
 }

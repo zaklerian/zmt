@@ -1,5 +1,6 @@
 import {
   Box,
+  Button,
   Checkbox,
   FormControl,
   InputLabel,
@@ -8,7 +9,10 @@ import {
   Select,
   TextField,
 } from '@mui/material';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import { WriteTargetSettings } from '../../../shared/write-target';
 
 interface CanvasToolbarProps {
   // The declared category vocabulary the filter offers (ZMT-35's index).
@@ -32,7 +36,12 @@ export function CanvasToolbar({
   search,
   selectedCategories,
 }: CanvasToolbarProps) {
-  const { t } = useTranslation(['feature.techTreeCanvas']);
+  const { t } = useTranslation(['app', 'feature.techTreeCanvas']);
+  // The ONE piece of state this component owns, and it is presentational: whether
+  // the save-target dialog is mounted. The targets themselves live in the
+  // preference the dialog writes, not here (req 10, ADR 029 decision 3 — the choice
+  // is made in settings, never prompted at write time).
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
     <Box
@@ -80,6 +89,12 @@ export function CanvasToolbar({
           ))}
         </Select>
       </FormControl>
+      <Button size="small" onClick={() => setSettingsOpen(true)}>
+        {t('app:saveTargets.title')}
+      </Button>
+      {settingsOpen && (
+        <WriteTargetSettings onClose={() => setSettingsOpen(false)} />
+      )}
     </Box>
   );
 }

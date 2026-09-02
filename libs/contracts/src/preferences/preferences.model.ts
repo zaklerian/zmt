@@ -1,4 +1,5 @@
 import { Locale } from '../plugin';
+import { WriteTargets } from '../write-target';
 
 export interface PluginFeatureSettings {
   readonly features: Readonly<Record<string, boolean>>;
@@ -14,6 +15,11 @@ export interface Preferences {
   readonly pluginSettings: Readonly<
     Partial<Record<string, PluginFeatureSettings>>
   >;
+  // The user's chosen save target per (mod, write-kind) — ADR 029 decision 4. A
+  // keyed record inside one global key, which is the shape `pluginSettings` already
+  // has: no new store, no new channel, and the `PreferenceKey` guard covers it by
+  // the same list below.
+  readonly writeTargets: WriteTargets;
 }
 
 export const PREFERENCE_KEYS: readonly PreferenceKey[] = [
@@ -21,6 +27,7 @@ export const PREFERENCE_KEYS: readonly PreferenceKey[] = [
   'hideVanilla',
   'locale',
   'pluginSettings',
+  'writeTargets',
 ];
 
 export function isPreferenceKey(value: unknown): value is PreferenceKey {

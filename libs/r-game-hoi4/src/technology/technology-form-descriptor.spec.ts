@@ -57,6 +57,7 @@ function localisation(
 ): EntityFormLocalisationContext {
   return {
     defaultTarget: LOC_TARGET,
+    defaultTargetSeedLanguage: null,
     entries: [
       {
         key: 'air_superiority',

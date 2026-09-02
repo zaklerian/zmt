@@ -31,6 +31,7 @@ export const preferencesService = {
       hideVanilla: current.hideVanilla ?? false,
       locale: current.locale ?? null,
       pluginSettings: current.pluginSettings ?? {},
+      writeTargets: current.writeTargets ?? {},
     };
   },
   async set<K extends PreferenceKey>(

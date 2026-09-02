@@ -22,12 +22,19 @@ export interface LocalisationEntry {
 // resolved; an absent key means no source defines it (the common case for a base
 // air technology, whose name lives in vanilla — ZMT-50 grounding §4).
 export interface LocalisationLookupResult {
-  // The loc file an INSERT lands in when a key has no existing owner. This is the
-  // ADR 028 decision 6 seam: a `resolveWriteTarget` / save-target preference
-  // replaces it later, which is why it is resolved here and passed through as a
-  // value rather than hardcoded at the composer. Null when the workspace has no
+  // The loc file an INSERT lands in when a key has no existing owner. The ADR 028
+  // decision 6 seam, now CLOSED (ZMT-57): it is `resolveWriteTarget('locKey', …)`
+  // over the derived default below, so a user-chosen save target replaces it and an
+  // unset one leaves it byte-identical to ZMT-50. Null when the workspace has no
   // editable localisation file at all.
   readonly defaultTarget: LocWriteTarget | null;
+  // Non-null exactly when `defaultTarget` is the USER'S chosen save target rather
+  // than the derived default: the write must pair a create-if-absent `locCreate`
+  // seeded in this language with its content operation, because a target the user
+  // named may not exist yet (ADR 029 decision 3). Null for the derived default,
+  // which is by construction a file that already exists — which is what keeps the
+  // unset path's batch shape unchanged (ADR 029 decision 5).
+  readonly defaultTargetSeedLanguage: null | string;
   readonly entries: readonly LocalisationEntry[];
 }
 

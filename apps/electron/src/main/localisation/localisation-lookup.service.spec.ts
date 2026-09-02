@@ -1,3 +1,4 @@
+import { WRITE_KIND_LOCATIONS } from '@contracts';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -140,5 +141,73 @@ describe('lookupLocalisation', () => {
     );
 
     expect((await lookup(['german_only'])).entries).toEqual([]);
+  });
+
+  // ZMT-57 regression gate 2 — the loc seam is now the ADR 029 consult point.
+  describe('the save-target preference (ZMT-57 gate 2)', () => {
+    it('keeps the derived default, and no seed, when no target is set', async () => {
+      const result = await lookupLocalisation([], {
+        language: 'english',
+        sources: sources(),
+        writeTargets: { bice: { technology: 'common/technologies/x.txt' } },
+      });
+
+      expect(result.defaultTarget).toEqual({
+        modId: 'bice',
+        relativePath: 'localisation/english/equipment_l_english.yml',
+      });
+      expect(result.defaultTargetSeedLanguage).toBeNull();
+    });
+
+    it('returns the chosen file, and its seed language, when one is set', async () => {
+      const result = await lookupLocalisation([], {
+        language: 'english',
+        sources: sources(),
+        writeTargets: {
+          bice: { locKey: 'localisation/english/zmt_new_l_english.yml' },
+        },
+      });
+
+      expect(result.defaultTarget).toEqual({
+        modId: 'bice',
+        relativePath: 'localisation/english/zmt_new_l_english.yml',
+      });
+      expect(result.defaultTargetSeedLanguage).toBe('english');
+    });
+
+    // The preference chooses the FILE inside the mod the write already resolved to
+    // and never moves the write to another mod (ADR 029 decision 4).
+    it('ignores a target stored under a different mod', async () => {
+      const result = await lookupLocalisation([], {
+        language: 'english',
+        sources: sources(),
+        writeTargets: {
+          other: { locKey: 'localisation/english/other_l_english.yml' },
+        },
+      });
+
+      expect(result.defaultTarget).toEqual({
+        modId: 'bice',
+        relativePath: 'localisation/english/equipment_l_english.yml',
+      });
+      expect(result.defaultTargetSeedLanguage).toBeNull();
+    });
+
+    // The enumerator's own folder rule is private to `enumerate-loc-files.util.ts`;
+    // building the scratch tree from the CONTRACT's folder is what pins the picker's
+    // notion of "where loc lives" to the one the lookup actually walks.
+    it('enumerates the folder the locKey write-kind declares', async () => {
+      const declared = path.join(
+        modRoot,
+        WRITE_KIND_LOCATIONS.locKey.folder,
+        `zmt_declared_l_english${WRITE_KIND_LOCATIONS.locKey.extension}`,
+      );
+      await fs.writeFile(
+        declared,
+        BOM + l('l_english:', ' declared_key:0 "Declared"', ''),
+      );
+
+      expect((await lookup(['declared_key'])).entries).toHaveLength(1);
+    });
   });
 });

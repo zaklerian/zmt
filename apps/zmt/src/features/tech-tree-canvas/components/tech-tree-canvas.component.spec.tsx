@@ -389,6 +389,25 @@ describe('TechTreeCanvas', () => {
     expect(screen.queryByRole('button', { name: /Delete tree/ })).toBeNull();
   });
 
+  // ZMT-57 regression gate 6, the panel half (Q99 = A1). The context-menu half is
+  // `canvas-context-menu.component.spec.tsx`; both read the SAME exported id, and
+  // neither reads a field on `Action`.
+  it('renders the panel’s Delete button in the error colour (ZMT-57)', () => {
+    mockUseAirTechTree.mockReturnValue(readyWith('fighter1'));
+    render(<TechTreeCanvas />, { wrapper });
+    fireEvent.click(screen.getByText('fighter1'));
+
+    // The button takes MUI's semantic `color="error"`, which paints text AND
+    // border; the class is what that resolves to (the computed colour is a CSS
+    // variable jsdom does not resolve).
+    expect(screen.getByRole('button', { name: 'Delete' })).toHaveClass(
+      'MuiButton-colorError',
+    );
+    expect(screen.getByRole('button', { name: 'Edit' })).not.toHaveClass(
+      'MuiButton-colorError',
+    );
+  });
+
   // ZMT-53 gate 1: the node context menu carries all three verbs, and choosing
   // one runs the existing flow for the right-clicked technology.
   it('opens the AED context menu on a node right-click (ZMT-53)', () => {

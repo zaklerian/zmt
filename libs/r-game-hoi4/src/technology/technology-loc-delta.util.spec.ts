@@ -27,7 +27,12 @@ function context(
   entries: EntityFormLocalisationContext['entries'],
   takenIds: readonly string[] = [],
 ): EntityFormLocalisationContext {
-  return { defaultTarget: DEFAULT_TARGET, entries, takenIds };
+  return {
+    defaultTarget: DEFAULT_TARGET,
+    defaultTargetSeedLanguage: null,
+    entries,
+    takenIds,
+  };
 }
 
 const AUTOGEN_ENTRIES = [
@@ -227,10 +232,92 @@ describe('computeTechnologyLocPlan — no existing key (grounding §4, gate 2)',
     );
   });
 
+  // ZMT-57 gate 2, the write half: the insert target is whatever
+  // `resolveWriteTarget('locKey', …)` returned upstream, and a CHOSEN one is paired
+  // with its create-if-absent seed inside the same batch (ADR 029 decisions 3, 6).
+  it('leads the insert with a locCreate when the target is the user’s chosen file', () => {
+    const plan = computeTechnologyLocPlan(
+      {
+        context: {
+          defaultTarget: {
+            modId: 'bice',
+            relativePath: 'localisation/english/zmt_new_l_english.yml',
+          },
+          defaultTargetSeedLanguage: 'english',
+          entries: [],
+          takenIds: [],
+        },
+        token: 'fighter1',
+      },
+      'Interwar Fighter',
+      '',
+    );
+
+    expect(plan.operations).toEqual([
+      {
+        format: 'locCreate',
+        language: 'english',
+        modId: 'bice',
+        relativePath: 'localisation/english/zmt_new_l_english.yml',
+      },
+      {
+        deltas: [
+          {
+            key: 'fighter1',
+            kind: 'insert',
+            value: 'Interwar Fighter',
+            version: '0',
+          },
+        ],
+        format: 'loc',
+        modId: 'bice',
+        relativePath: 'localisation/english/zmt_new_l_english.yml',
+      },
+    ]);
+  });
+
+  // The scope line of ADR 029 decision 2: an existing editable key is a `set` on the
+  // file that OWNS it — provenance-routed, never save-target-routed — so a chosen
+  // target does not pull it out of its own file.
+  it('still writes an existing editable key to its owning file, never to the chosen target', () => {
+    const plan = computeTechnologyLocPlan(
+      {
+        context: {
+          defaultTarget: {
+            modId: 'bice',
+            relativePath: 'localisation/english/zmt_new_l_english.yml',
+          },
+          defaultTargetSeedLanguage: 'english',
+          entries: AUTOGEN_ENTRIES,
+          takenIds: [],
+        },
+        token: 'air_superiority',
+      },
+      'Air Supremacy',
+      'Air Superiority',
+    );
+
+    expect(plan.operations).toEqual([
+      {
+        deltas: [
+          { key: 'air_superiority', kind: 'set', value: 'Air Supremacy' },
+        ],
+        format: 'loc',
+        modId: BICE.modId,
+        relativePath: BICE.relativePath,
+      },
+    ]);
+  });
+
   it('drops the edit rather than guessing when there is no editable loc file', () => {
     const plan = computeTechnologyLocPlan(
       {
-        context: { defaultTarget: null, entries: [], takenIds: [] },
+        context: {
+          defaultTarget: null,
+          defaultTargetSeedLanguage: null,
+          entries: [],
+          takenIds: [],
+        },
         token: 'fighter1',
       },
       'Interwar Fighter',

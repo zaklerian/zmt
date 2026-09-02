@@ -33,6 +33,7 @@ function localisation(
 ): EntityFormLocalisationContext {
   return {
     defaultTarget: LOC_TARGET,
+    defaultTargetSeedLanguage: null,
     entries: [],
     takenIds: ['air_superiority'],
     ...overrides,
