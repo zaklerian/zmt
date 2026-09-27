@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../../dist/out-tsc",
+    "types": [],
+    "noEmit": true
+  },
+  "include": ["fixtures/**/*.ts"]
+}

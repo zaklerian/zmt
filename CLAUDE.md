@@ -8,46 +8,38 @@ Electron · Nx · TypeScript (strict+, ARCH-4) · Angular 22 (standalone, zonele
 
 ## Repo map
 
-Planned Nx layout; projects land in ZMT-A-2. Every project has one `type:` and one `scope:` tag (ARCH-1).
+Every Nx project has one `type:` and one `scope:` tag (ARCH-1); the governance check fails when a `project.json` root is missing here (AI-12). Planned entries arrive with the Electron shell in ZMT-A-3.
 
 ```
-apps/
-  main/                        Electron main process          type:app  scope:main
-  preload/                     contextBridge API              type:app  scope:preload
-  renderer/                    Angular shell and routes       type:app  scope:renderer
-  renderer-e2e/                Playwright _electron smokes
-libs/
-  contracts/                   Valibot schemas, channels, error codes   type:contracts scope:shared
-  shared/<name>/               cross-process utils, i18n dictionaries   type:util      scope:shared
-  main/<domain>/data-access    main-side services (fs, stores)          type:data-access scope:main
-  main/<domain>/util           main-side pure helpers                   type:util      scope:main
-  renderer/<domain>/feature    containers, routes                        type:feature   scope:renderer
-  renderer/<domain>/ui         presentational components                 type:ui        scope:renderer
-  renderer/<domain>/data-access  *.service.ts (IPC facade), *.store.ts   type:data-access scope:renderer
-  renderer/<domain>/util       renderer pure helpers                     type:util      scope:renderer
-tools/eslint-rules/            workspace lint rules
-.claude/                       rules, hooks, skills, agents, settings
-docs/                          adr/, rationale/, ledger.md, sprint-protocol.md
+apps/renderer/                        Angular shell bootstrap, routes     type:app          scope:renderer
+apps/renderer-e2e/                    Playwright smokes + axe             type:app          scope:renderer
+libs/shared/i18n/                     locale dictionaries, loaders        type:util         scope:shared
+libs/renderer/i18n/data-access/       I18nStore                           type:data-access  scope:renderer
+libs/renderer/app-info/data-access/   APP_VERSION token                   type:data-access  scope:renderer
+libs/renderer/shell/feature/          toolbar, rail, locale switcher      type:feature      scope:renderer
+libs/renderer/home/feature/           lazy home route                     type:feature      scope:renderer
+tools/eslint-rules/                   workspace lint rules                type:util         scope:shared
+tools/commitlint-plugin/              commit grammar, pre-push check      type:util         scope:shared
+tools/scripts/                        negative-typecheck, pin and push scripts
+planned: apps/main/ (type:app scope:main) · apps/preload/ (type:app scope:preload) · libs/contracts/ (type:contracts scope:shared)
+layout: libs/<scope>/<domain>/{feature,ui,data-access,util}; renderer data-access holds *.service.ts (IPC facade) and *.store.ts
+.claude/                              rules, hooks, skills, settings
+docs/                                 adr/, rationale/, ledger.md
 ```
 
 ## Commands
 
-Available after ZMT-A-2:
-
 ```
-npm ci                                   install
-npx nx serve renderer                    dev renderer
-npx nx run main:serve                    dev Electron
-npx nx affected -t lint typecheck test   the Stop-hook gate
-npx nx e2e renderer-e2e                  Playwright smokes
-npx nx run contracts:mutation            Stryker on contracts
-```
-
-Available now:
-
-```
-bash .claude/hooks/governance.sh         rule, rationale, ADR, ledger and retro checks
-bash .claude/hooks/verify.sh             governance + nx gate (nx skipped without node_modules)
+pnpm install --frozen-lockfile                 install (Node 24 via .nvmrc, pnpm via corepack)
+pnpm nx serve renderer                         dev renderer
+pnpm nx affected -t lint typecheck test        the Stop-hook gate
+pnpm nx run-many -t lint typecheck test build  full gate
+pnpm nx e2e renderer-e2e                       Playwright smokes with axe
+pnpm nx run shared-i18n:typecheck-negative     dictionary parity fixtures must fail typecheck
+pnpm nx run shared-i18n:mutation               Stryker smoke (gate lands on contracts and main in ZMT-A-3)
+pnpm commitlint                                commit grammar (reads stdin or --edit)
+bash .claude/hooks/governance.sh               rule, rationale, ADR, ledger, repo-map and retro checks
+bash .claude/hooks/verify.sh                   governance + nx gate
 ```
 
 ## Tickets, branches, commits
@@ -55,7 +47,7 @@ bash .claude/hooks/verify.sh             governance + nx gate (nx skipped withou
 - Ticket IDs: `ZMT-A-<N>`; subtasks `ZMT-A-<N>.<M>` ship as their own PR before the parent (PROC-3).
 - Branches: `dev/ZMT-A-<N>` or `hotfix/ZMT-A-<N>`, from updated `main`. File edits on any other branch are blocked by a hook (PROC-1).
 - Commits: first line is the ticket ID; body lines use `+` added, `-` removed, `*` changed, `~` fixed, `!` breaking (PROC-2). Use the `commit` skill; Option B body when the change spans more than one project or more than five files (PROC-10).
-- Claude Code commits but does not push. Push and PR (`ZMT-A-<N> — <title>`) are owner steps. Squash-merge to `main`.
+- Claude Code commits, pushes its ticket branch and opens the PR (`ZMT-A-<N> — <title>`); pushing to `main` and force-pushing are denied (settings and lefthook pre-push). Squash-merge to `main`.
 
 ## Rules
 
@@ -72,7 +64,7 @@ Rules live in `.claude/rules/<domain>.md`, one per line: `ID — rule. Why: … 
 | AI | how Claude Code works here | repo-wide |
 | I18N | runtime localisation | renderer, shared, main |
 
-- Enforcement is one of lint, hook, type, test or review; status is `active` or `planned` (toolchain lands in ZMT-A-2).
+- Enforcement is one of lint, hook, type, test or review; status is `active` or `planned` (planned items name the ticket that ships them).
 - `DEBT:` marks a review-only rule and names the mechanism it lacks.
 - The reasoning behind each rule is in `docs/rationale/<DOMAIN>.md` under the same ID; read it when a rule's edge case is unclear.
 - Cite rules by ID in prompts, reviews and lint override names (`ZMT-A-<N>: <reason>`).
@@ -93,6 +85,7 @@ Working posture:
   - PreToolUse: branch check and no-new-comments.
   - PostToolUse: prettier + eslint on the edited file.
   - Stop: `verify.sh`.
+- Git hooks (lefthook): pre-commit prettier, eslint and the exact-pin scan; commit-msg commitlint; pre-push ticket-branch check.
 
 ## References
 

@@ -64,6 +64,16 @@ if [ -f docs/ledger.md ]; then
   done < <(grep -oE 'finding:[a-z0-9-]+' docs/ledger.md | sed 's/^finding://' | sort | uniq -c)
 fi
 
+# Nx projects: listed in the CLAUDE.md repo map (AI-12); a test target unless e2e (TEST-1).
+while IFS= read -r project; do
+  root=$(dirname "$project")
+  grep -qF "$root/" CLAUDE.md || err "CLAUDE.md repo map lacks Nx project $root/ (AI-12)"
+  case "$root" in
+    apps/*-e2e) ;;
+    *) grep -q '"test"' "$project" || err "$project has no test target (TEST-1)" ;;
+  esac
+done < <(find apps libs tools -name project.json -not -path '*/node_modules/*' 2>/dev/null | sort)
+
 # Retros: five sections; action items name owner and trigger (PROC-8).
 for f in docs/retro/*.md; do
   for s in 'Went Wrong' 'Could Be Better' 'Good' 'Keep Doing' 'Action Items'; do

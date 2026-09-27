@@ -12,13 +12,35 @@
       "Bash(git diff*)",
       "Bash(git log*)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(pnpm nx *)",
+      "Bash(pnpm install*)",
+      "Bash(pnpm exec *)",
+      "Bash(pnpm commitlint*)",
+      "Bash(git push -u origin dev/ZMT-A-*)",
+      "Bash(git push origin dev/ZMT-A-*)",
+      "Bash(git push -u origin hotfix/ZMT-A-*)",
+      "Bash(git push origin hotfix/ZMT-A-*)",
+      "Bash(gh pr create*)"
     ],
     "deny": [
       "Read(.env*)",
       "Read(**/.env*)",
-      "Bash(git push*)",
-      "Bash(rm -rf*)"
+      "Bash(rm -rf*)",
+      "Bash(git push * main)",
+      "Bash(git push * main:*)",
+      "Bash(git push * *:main)",
+      "Bash(git push * HEAD:main*)",
+      "Bash(git push * refs/heads/main*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push * --force*)",
+      "Bash(git push * -f*)",
+      "Bash(git push * +*)",
+      "Bash(git push --mirror*)",
+      "Bash(git push --all*)",
+      "Bash(git push * --delete*)",
+      "Bash(git push --delete*)"
     ]
   },
   "hooks": {
@@ -26,8 +48,14 @@
       {
         "matcher": "Edit|Write|MultiEdit",
         "hooks": [
-          { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-branch.sh\"" },
-          { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/no-new-comments.sh\"" }
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-branch.sh\""
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/no-new-comments.sh\""
+          }
         ]
       }
     ],
@@ -35,14 +63,21 @@
       {
         "matcher": "Edit|Write|MultiEdit",
         "hooks": [
-          { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/format-lint.sh\"" }
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/format-lint.sh\""
+          }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/verify.sh\"", "timeout": 600 }
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/verify.sh\"",
+            "timeout": 600
+          }
         ]
       }
     ]

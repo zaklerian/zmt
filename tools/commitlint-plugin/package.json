@@ -1,0 +1,5 @@
+{
+  "name": "@zmt/commitlint-plugin",
+  "private": true,
+  "type": "module"
+}

@@ -18,11 +18,11 @@ if ! bash .claude/hooks/governance.sh; then
 fi
 
 if [ ! -d node_modules ]; then
-  echo "verify: governance checks passed; node_modules/ absent, nx checks skipped (available after ZMT-A-2)."
+  echo "verify: governance checks passed; node_modules/ absent, nx checks skipped (run pnpm install --frozen-lockfile)."
   exit 0
 fi
 
-if ! OUT=$(npx nx affected -t lint typecheck test 2>&1); then
+if ! OUT=$(pnpm exec nx affected -t lint typecheck test 2>&1); then
   printf '%s\n' "$OUT" | tail -n 60 >&2
   echo "verify: nx affected -t lint typecheck test failed." >&2
   exit 2

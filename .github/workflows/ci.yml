@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Locate pnpm store
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - uses: actions/cache@v4
+        with:
+          path: .nx/cache
+          key: nx-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: nx-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - uses: nrwl/nx-set-shas@v4
+
+      - name: Governance checks
+        run: bash .claude/hooks/governance.sh
+
+      - name: Exact dependency pins (SEC-5)
+        run: node tools/scripts/check-exact-pins.mjs
+
+      - name: Format
+        run: pnpm exec prettier --check .
+
+      - name: Lint, typecheck, test, build (affected)
+        run: pnpm nx affected -t lint typecheck test build
+
+      - name: Custom ESLint rules and commitlint plugin tests
+        run: pnpm nx run-many -p eslint-rules commitlint-plugin -t test
+
+      - name: Dictionary parity negative fixtures must fail typecheck (I18N-1)
+        run: pnpm nx run shared-i18n:typecheck-negative
+
+      - name: Commit grammar rejects a malformed message (PROC-2)
+        run: |
+          if echo "bad message" | pnpm exec commitlint --config commitlint.config.mjs; then
+            echo "commitlint accepted a malformed message" >&2
+            exit 1
+          fi
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E smoke with axe (NG-12)
+        run: pnpm nx e2e renderer-e2e
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-output
+          path: dist/.playwright
+          retention-days: 7

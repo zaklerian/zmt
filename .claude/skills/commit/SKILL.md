@@ -24,4 +24,4 @@ Rules: PROC-1, PROC-2, PROC-3, PROC-10.
    First line is the ticket ID alone. One body line per logical change, present tense, no trailing period.
 5. Append the commit trailers the session requires after a blank line.
 6. Commit with a heredoc so symbols survive the shell: `git commit -F - <<'MSG' … MSG`.
-7. Do not push; push and PR are owner steps (ADR 005). End with the status line from `docs/sprint-protocol.md`.
+7. Do not push from this skill; pushing the ticket branch and opening the PR are the task's finish steps, and `main` is never pushed (ADR 005). End with the status line from `docs/sprint-protocol.md`.

@@ -1,0 +1,25 @@
+pre-commit:
+  parallel: false
+  jobs:
+    - name: prettier
+      glob: '*.{ts,mts,js,mjs,json,html,scss,md,yml,yaml}'
+      run: pnpm exec prettier --write --ignore-unknown {staged_files}
+      stage_fixed: true
+    - name: eslint
+      glob: '*.{ts,mts,js,mjs,html}'
+      run: pnpm exec eslint --fix {staged_files}
+      stage_fixed: true
+    - name: exact-pins
+      glob: '**/package.json'
+      run: node tools/scripts/check-exact-pins.mjs {staged_files}
+
+commit-msg:
+  jobs:
+    - name: commitlint
+      run: pnpm exec commitlint --edit {1}
+
+pre-push:
+  jobs:
+    - name: ticket-branch
+      run: node tools/scripts/check-push-branch.mjs
+      use_stdin: true

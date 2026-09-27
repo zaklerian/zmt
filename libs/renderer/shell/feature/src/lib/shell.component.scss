@@ -1,0 +1,37 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.toolbar {
+  gap: 0.5rem;
+}
+
+.navigation-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: currentColor;
+}
+
+.title {
+  margin: 0;
+  font: var(--mat-sys-title-large);
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.container {
+  flex: 1 1 auto;
+}
+
+.rail {
+  width: 4.5rem;
+  transition: width 150ms ease-out;
+}
+
+.rail.expanded {
+  width: 15rem;
+}

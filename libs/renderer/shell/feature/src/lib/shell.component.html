@@ -1,0 +1,49 @@
+<header>
+  <mat-toolbar class="toolbar">
+    <button
+      matIconButton
+      type="button"
+      class="navigation-toggle"
+      [attr.aria-label]="messages().shell.toggleNavigation"
+      [attr.aria-expanded]="expanded()"
+      aria-controls="zmt-navigation"
+      (click)="toggleNavigation()"
+    >
+      <svg class="navigation-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+      </svg>
+    </button>
+    <h1 class="title">{{ messages().app.title }}</h1>
+    <span class="spacer"></span>
+    <mat-button-toggle-group
+      class="locale-switcher"
+      hideSingleSelectionIndicator
+      [attr.aria-label]="messages().shell.language"
+      [value]="locale()"
+      (change)="selectLocale($event)"
+    >
+      @for (option of locales; track option) {
+        <mat-button-toggle [value]="option" [attr.lang]="option">{{
+          messages().locale[option]
+        }}</mat-button-toggle>
+      }
+    </mat-button-toggle-group>
+  </mat-toolbar>
+</header>
+<mat-sidenav-container class="container" autosize>
+  <mat-sidenav
+    id="zmt-navigation"
+    class="rail"
+    mode="side"
+    opened
+    disableClose
+    [class.expanded]="expanded()"
+  >
+    <mat-nav-list [attr.aria-label]="messages().shell.navigation"></mat-nav-list>
+  </mat-sidenav>
+  <mat-sidenav-content class="content">
+    <main>
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>
