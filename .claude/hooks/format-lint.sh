@@ -7,7 +7,7 @@ ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}
 cd "$ROOT" || exit 0
 
 if [ ! -d node_modules ]; then
-  echo "format-lint: node_modules/ absent, skipped (available after ZMT-A-2)."
+  echo "format-lint: node_modules/ absent, skipped (run pnpm install --frozen-lockfile)."
   exit 0
 fi
 

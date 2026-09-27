@@ -1,0 +1,22 @@
+export default {
+  $schema: '../../../node_modules/@stryker-mutator/core/schema/stryker-schema.json',
+  coverageAnalysis: 'perTest',
+  htmlReporter: { fileName: 'reports/mutation/shared-i18n/index.html' },
+  ignorePatterns: [
+    '/*',
+    '!/libs',
+    '/libs/*',
+    '!/libs/shared',
+    '/libs/shared/*',
+    '!/libs/shared/i18n',
+    '!/tsconfig.base.json',
+    '!/package.json',
+  ],
+  mutate: ['libs/shared/i18n/src/lib/**/*.ts', '!libs/shared/i18n/src/lib/**/*.spec.ts'],
+  plugins: ['@stryker-mutator/vitest-runner'],
+  reporters: ['clear-text', 'progress', 'html'],
+  tempDirName: '.stryker-tmp',
+  testRunner: 'vitest',
+  thresholds: { break: null, high: 80, low: 60 },
+  vitest: { configFile: 'libs/shared/i18n/vitest.config.mts' },
+};

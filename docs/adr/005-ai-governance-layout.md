@@ -16,7 +16,7 @@ Claude Code reads `CLAUDE.md` on every turn, so a long file dilutes attention. R
   - Stop: governance checks plus `nx affected`.
 - A read-only `rule-reviewer` subagent audits diffs; MCP servers for the Angular CLI and Nx.
 - Every rule declares its enforcement, and review-only rules carry a DEBT note (AI-1).
-- Claude Code commits but never pushes; push and PR are owner steps.
+- Claude Code commits, pushes only `dev|hotfix/ZMT-A-*` branches and opens the PR; push to `main` and force push are denied (ledger 2026-09-27).
 
 ## Consequences
 - Always-loaded context stays small; domain rules load only for matching paths.

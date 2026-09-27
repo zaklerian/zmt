@@ -1,0 +1,106 @@
+{
+  "name": "renderer",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "zmt",
+  "sourceRoot": "apps/renderer/src",
+  "tags": ["type:app", "scope:renderer"],
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/apps/renderer",
+        "browser": "apps/renderer/src/main.ts",
+        "tsConfig": "apps/renderer/tsconfig.app.json",
+        "inlineStyleLanguage": "scss",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/renderer/public"
+          }
+        ],
+        "styles": ["apps/renderer/src/styles.scss"]
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kb",
+              "maximumError": "1mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "4kb",
+              "maximumError": "8kb"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      }
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@angular/build:dev-server",
+      "defaultConfiguration": "development",
+      "configurations": {
+        "production": {
+          "buildTarget": "renderer:build:production"
+        },
+        "development": {
+          "buildTarget": "renderer:build:development"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@angular/build:unit-test",
+      "options": {
+        "buildTarget": "renderer:build:development",
+        "tsConfig": "apps/renderer/tsconfig.spec.json",
+        "runner": "vitest",
+        "watch": false,
+        "coverage": true,
+        "coverageReporters": ["text-summary"],
+        "coverageThresholds": {
+          "branches": 80,
+          "functions": 80,
+          "lines": 80,
+          "statements": 80
+        },
+        "coverageInclude": ["apps/renderer/src/**/*.ts"],
+        "coverageExclude": ["apps/renderer/src/**/*.spec.ts", "apps/renderer/src/main.ts"]
+      },
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"]
+    },
+    "serve-static": {
+      "continuous": true,
+      "executor": "@nx/web:file-server",
+      "options": {
+        "buildTarget": "renderer:build",
+        "port": 4200,
+        "staticFilePath": "dist/apps/renderer/browser",
+        "spa": true
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "ngc -p apps/renderer/tsconfig.app.json --noEmit",
+          "tsc -p apps/renderer/tsconfig.spec.json --noEmit"
+        ],
+        "parallel": false
+      }
+    }
+  }
+}

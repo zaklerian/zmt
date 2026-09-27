@@ -1,0 +1,12 @@
+/dist
+/coverage
+/reports
+/.nx/cache
+/.nx/workspace-data
+/.angular
+/.stryker-tmp
+pnpm-lock.yaml
+/.claude
+/docs
+/CLAUDE.md
+/.idea
