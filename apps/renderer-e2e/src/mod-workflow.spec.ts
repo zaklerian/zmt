@@ -18,6 +18,10 @@ async function expectNoAxeViolations(page: Page): Promise<void> {
   expect(results.violations).toEqual([]);
 }
 
+function snackbar(page: Page, text: string) {
+  return page.locator('[aria-live="polite"]').filter({ hasText: text });
+}
+
 function tree(page: Page) {
   return page.getByRole('tree', { name: 'Files' });
 }
@@ -92,7 +96,7 @@ test.describe('mod workflow', () => {
     await expect(save).toBeEnabled();
     await expectNoAxeViolations(page);
     await save.click();
-    await expect(page.getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
+    await expect(snackbar(page, 'Saved')).toBeVisible();
     expect(await readFixtureFile(fixture.readmePath)).toBe('Edited readme\n');
     await expect(save).toBeDisabled();
 
@@ -178,7 +182,7 @@ test.describe('mod workflow', () => {
     await page.getByRole('textbox', { name: 'Add tag…' }).press('Enter');
     await expectNoAxeViolations(page);
     await page.getByRole('button', { exact: true, name: 'Save' }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Descriptor saved' })).toBeVisible();
+    await expect(snackbar(page, 'Descriptor saved')).toBeVisible();
     expect(await readFixtureFile(fixture.descriptorPath)).toBe(
       FIXTURE_DESCRIPTOR.replace('version="0.1"', 'version="0.2"').replace(
         '\t"Gameplay"\n',
@@ -211,7 +215,7 @@ test.describe('mod workflow', () => {
     await expect(save).toBeEnabled();
     await expectNoAxeViolations(page);
     await save.click();
-    await expect(page.getByRole('status').filter({ hasText: 'Settings saved' })).toBeVisible();
+    await expect(snackbar(page, 'Settings saved')).toBeVisible();
     await expect(save).toBeDisabled();
 
     await page.getByRole('link', { exact: true, name: 'Mod content' }).click();
