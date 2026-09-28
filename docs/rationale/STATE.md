@@ -18,7 +18,7 @@ Independent `loading` and `error` booleans allow four combinations, and one of t
 
 ## STATE-4 — SignalStore ownership
 
-State shared across components needs one owner with named transitions, or it gets mutated from several places. SignalStore gives that owner a typed state, computed selectors and methods. Confining `@ngrx/signals` to `type:data-access` projects keeps stores out of UI components and features, which consume them.
+State shared across components needs one owner with named transitions, or it gets mutated from several places. SignalStore gives that owner a typed state, computed selectors and methods. Confining `@ngrx/signals` to `data-access` layer folders keeps stores out of UI components and features, which consume them.
 
 ## STATE-5 — Service as IPC facade
 

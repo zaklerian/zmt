@@ -4,11 +4,11 @@ Long-form reasoning for the rules in `.claude/rules/arch.md`, keyed by rule ID. 
 
 ## ARCH-1 — Nx tag matrix
 
-The tag pair answers two independent questions: which process the code runs in (`scope:`) and which layer it belongs to (`type:`). `@nx/enforce-module-boundaries` checks both on every import, so a renderer feature importing a main-process library, or a UI library importing a store, fails lint instead of review. The project graph also drives `nx affected`, which keeps the Stop hook fast. See ADR 002.
+The tag pair answers two independent questions: which process the code runs in (`scope:`) and which kind of library it is (`type:`). `@nx/enforce-module-boundaries` checks both on every import, so a renderer project importing a main-process library, or a util library importing a domain, fails lint instead of review. Until ZMT-A-D2 the `type:` tag also carried the layer, with one project per layer per domain; the ZMT-A-1 survey showed that multiplied projects and Angular test builds without adding cohesion, so layers became folders inside one project per domain and their constraints moved to ARCH-2. The project graph also drives `nx affected`, which keeps the Stop hook fast. See ADR 002.
 
 ## ARCH-2 — Presentational layer
 
-A `type:ui` component that injects a store is coupled to one feature and can only be tested with that store mocked. Restricting UI projects to `input()`, `output()` and `model()` keeps them pure functions of their inputs, testable through CDK harnesses alone. The tag constraint makes the split structural: a UI project cannot import a `type:data-access` project at all.
+A `ui` component that injects a store is coupled to one feature and can only be tested with that store mocked. Restricting the ui layer to `input()`, `output()` and `model()` keeps components pure functions of their inputs, testable through CDK harnesses alone. The split is structural: `no-restricted-imports` blocks scoped to `libs/renderer/*/src/<layer>/**` ban the relative paths and the `@zmt/renderer/*/<layer>` entry points a layer may not reach, so a ui file cannot import a data-access folder or a store at all. The same blocks keep data-access away from ui and feature, util away from all three, and features away from other features, which is the order the Nx tag matrix enforced before ZMT-A-D2. `tools/eslint-rules/src/layer-boundaries.spec.ts` resolves the workspace config for each layer path and asserts the bans fire, so a regression in the config fails the test gate.
 
 ## ARCH-3 — Renderer isolation
 
@@ -52,7 +52,7 @@ macOS and Windows filesystems are case-insensitive by default, and Linux CI is n
 
 ## ARCH-12 — Domain grouping
 
-Files that change together should sit together. A feature split into `components/`, `services/` and `models/` scatters one change across three folders. Nx projects already separate layers by `type:` tag, so artifact-kind folders inside a project duplicate that split at a worse granularity.
+Files that change together should sit together. A feature split into `components/`, `services/` and `models/` scatters one change across three folders. The layer folders `feature`, `ui`, `data-access` and `util` are the one sanctioned split inside a domain project, so artifact-kind folders below them would duplicate it at a worse granularity.
 
 ## ARCH-13 — Rule of three
 

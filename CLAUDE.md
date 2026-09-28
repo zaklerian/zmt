@@ -17,41 +17,17 @@ apps/renderer/                        Angular shell bootstrap, routes, window.ap
 apps/renderer-e2e/                    Playwright _electron smokes + axe   type:app          scope:renderer
 libs/contracts/                       Valibot IPC schemas, channels, Result envelope   type:contracts  scope:shared
 libs/shared/i18n/                     locale dictionaries, loaders        type:util         scope:shared
-libs/renderer/i18n/data-access/       I18nStore                           type:data-access  scope:renderer
-libs/renderer/app-info/data-access/   APP_VERSION token                   type:data-access  scope:renderer
-libs/renderer/shell/feature/          app chrome container, router outlet type:feature      scope:renderer
-libs/renderer/shell/ui/               toolbar, nav rail, footer, nav entries token, route paths   type:ui  scope:renderer
-libs/renderer/shell/data-access/      unsaved-changes route guard         type:data-access  scope:renderer
-libs/renderer/home/feature/           lazy home route                     type:feature      scope:renderer
-libs/renderer/workspace/data-access/  WorkspaceService (folder dialog), WorkspaceStore (root folder)   type:data-access  scope:renderer
-libs/renderer/mod-content/feature/    mod content route: file tree, search, editor                    type:feature      scope:renderer
-libs/renderer/mod-content/ui/         file tree, search, editor, mode toggle, breadcrumbs   type:ui  scope:renderer
-libs/renderer/mod-content/data-access/ ModContentService (fs), ModContent/FileTree/FileSearch/PlainEditor stores   type:data-access  scope:renderer
-libs/renderer/mod-content/util/       file selection, tree item and view mode models                  type:util         scope:renderer
-libs/renderer/mod-info/feature/       mod descriptor route                type:feature      scope:renderer
-libs/renderer/mod-info/ui/            descriptor Signal Form, parser warnings   type:ui       scope:renderer
-libs/renderer/mod-info/data-access/   ModInfoService (fs), ModInfoStore   type:data-access  scope:renderer
-libs/renderer/mod-info/util/          descriptor values model, path helpers, lossless descriptor parser   type:util    scope:renderer
-libs/renderer/feature-nav/feature/    enabled features route              type:feature      scope:renderer
-libs/renderer/feature-nav/ui/         feature list, tree placeholder      type:ui           scope:renderer
-libs/renderer/feature-nav/data-access/ FeatureNavStore                    type:data-access  scope:renderer
-libs/renderer/tech-tree/feature/      air tech tree route                 type:feature      scope:renderer
-libs/renderer/tech-tree/ui/           canvas, toolbar, actions, context menu, delete dialog   type:ui  scope:renderer
-libs/renderer/tech-tree/data-access/  TechTree, TechnologyForm, TechnologyDelete stores      type:data-access  scope:renderer
-libs/renderer/tech-tree/util/         canvas node, edge and delete plan models   type:util    scope:renderer
-libs/renderer/app-settings/feature/   settings route                      type:feature      scope:renderer
-libs/renderer/app-settings/ui/        plugin config and file display forms   type:ui        scope:renderer
-libs/renderer/app-settings/data-access/ AppSettingsStore                  type:data-access  scope:renderer
-libs/renderer/app-settings/util/      settings values model, feature toggle helper   type:util  scope:renderer
-libs/renderer/plugin/data-access/     PluginService (plugins:list)        type:data-access  scope:renderer
-libs/renderer/dialog/util/            DialogService (confirm, info), confirm dialog   type:util  scope:renderer
-libs/renderer/pending/util/           pending('ZMT-A-5') helper, NotImplementedError, unhandled-error capture   type:util  scope:renderer
-libs/renderer/async-status/util/      AsyncStatus union and constructors  type:util         scope:renderer
-libs/renderer/window-api/util/        window.api global declaration       type:util         scope:renderer
+libs/renderer/core/                   domain-free renderer utilities: AsyncStatus, DialogService and confirm dialog, pending('ZMT-A-5') and NotImplementedError, window.api declaration   type:util    scope:renderer
+libs/renderer/shell/                  app chrome: shell container (feature); toolbar, nav rail, footer, nav entries token, route paths (ui); I18nStore, WorkspaceService and WorkspaceStore, APP_VERSION token, unsaved-changes guard (data-access)   type:domain  scope:renderer
+libs/renderer/home/                   lazy home route (feature)           type:domain  scope:renderer
+libs/renderer/mod-content/            mod content route (feature); file tree, search, editor, mode toggle, breadcrumbs (ui); ModContentService and the ModContent, FileTree, FileSearch and PlainEditor stores (data-access); file selection, tree item and view mode models (util)   type:domain  scope:renderer
+libs/renderer/mod-info/               mod descriptor route (feature); descriptor Signal Form, parser warnings (ui); ModInfoService, ModInfoStore (data-access); descriptor values model, path helpers, lossless descriptor parser (util)   type:domain  scope:renderer
+libs/renderer/tech-tree/              air tech tree route (feature); canvas, toolbar, actions, context menu, delete dialog (ui); TechTree, TechnologyForm and TechnologyDelete stores (data-access); canvas node, edge and delete plan models (util)   type:domain  scope:renderer
+libs/renderer/app-settings/           settings and enabled-features routes (feature); plugin config and file display forms, feature list, tree placeholder (ui); AppSettingsStore, FeatureNavStore, PluginService (data-access); settings values model, feature toggle helper (util)   type:domain  scope:renderer
 tools/eslint-rules/                   workspace lint rules                type:util         scope:shared
 tools/commitlint-plugin/              commit grammar, pre-push check      type:util         scope:shared
 tools/scripts/                        negative-typecheck, pin, push, electron-dev and renderer-vitest scripts
-layout: libs/<scope>/<domain>/{feature,ui,data-access,util}; renderer data-access holds *.service.ts (IPC facade) and *.store.ts
+layout: libs/<scope>/<domain>/src/{feature,ui,data-access,util}, one Nx project per domain with one entry point per layer (@zmt/renderer/<domain>/<layer>); data-access holds *.service.ts (IPC facade) and *.store.ts; libs/renderer/core holds the domain-free renderer utilities
 main layout: apps/main/src/<domain>/ (app, fs, ipc, plugin, system, window); handlers register through ipc/ipc-handle.util.ts only
 .claude/                              rules, hooks, skills, settings
 docs/                                 adr/, rationale/, ledger.md
@@ -68,7 +44,7 @@ pnpm nx affected -t lint typecheck test        the Stop-hook gate
 pnpm nx run-many -t lint typecheck test build  full gate
 pnpm nx e2e renderer-e2e                       Playwright _electron smokes with axe (builds first; xvfb-run on headless Linux)
 pnpm nx run-many -t mutation -p contracts main Stryker gate, break 80 (TEST-3)
-pnpm nx run-many -t mutation --projects 'renderer-*-data-access'   Stryker gate on renderer stores and services, break 70 (TEST-3)
+pnpm nx run-many -t mutation --projects 'renderer-*'   Stryker gate on renderer stores and services, break 70 (TEST-3)
 pnpm nx run shared-i18n:typecheck-negative     dictionary parity fixtures must fail typecheck
 pnpm commitlint                                commit grammar (reads stdin or --edit)
 bash .claude/hooks/governance.sh               rule, rationale, ADR, ledger, repo-map and retro checks

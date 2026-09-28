@@ -127,7 +127,7 @@ jobs:
         run: pnpm nx run-many -t mutation -p contracts main
 
       - name: Mutation gate on renderer data-access (TEST-3, break 70)
-        run: pnpm nx run-many -t mutation --projects 'renderer-*-data-access'
+        run: pnpm nx run-many -t mutation --projects 'renderer-*'
 
       - uses: actions/upload-artifact@v4
         if: always()

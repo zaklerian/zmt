@@ -18,7 +18,7 @@ export const APP_ROUTES: Routes = [
   },
   {
     loadChildren: async () =>
-      (await import('@zmt/renderer/feature-nav/feature')).FEATURE_NAV_ROUTES,
+      (await import('@zmt/renderer/app-settings/feature')).FEATURE_NAV_ROUTES,
     path: ROUTE_PATHS.featureNav,
   },
   {

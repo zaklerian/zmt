@@ -1,7 +1,7 @@
 import { provideCheckNoChangesConfig, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { APP_VERSION } from '@zmt/renderer/app-info/data-access';
+import { APP_VERSION } from '@zmt/renderer/shell/data-access';
 import { NAV_ENTRIES } from '@zmt/renderer/shell/ui';
 
 import { version } from '../../../../package.json';
@@ -53,7 +53,7 @@ describe('APP_CONFIG', () => {
       (await import('@zmt/renderer/mod-info/feature')).MOD_INFO_ROUTES,
     );
     await expect(featureNav?.loadChildren?.()).resolves.toBe(
-      (await import('@zmt/renderer/feature-nav/feature')).FEATURE_NAV_ROUTES,
+      (await import('@zmt/renderer/app-settings/feature')).FEATURE_NAV_ROUTES,
     );
     await expect(techTree?.loadChildren?.()).resolves.toBe(
       (await import('@zmt/renderer/tech-tree/feature')).TECH_TREE_ROUTES,
