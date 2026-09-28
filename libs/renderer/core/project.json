@@ -1,0 +1,43 @@
+{
+  "name": "renderer-core",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/renderer/core/src",
+  "prefix": "zmt",
+  "projectType": "library",
+  "tags": ["type:util", "scope:renderer"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@angular/build:unit-test",
+      "options": {
+        "buildTarget": "renderer:build:development",
+        "tsConfig": "libs/renderer/core/tsconfig.spec.json",
+        "runner": "vitest",
+        "watch": false,
+        "coverage": true,
+        "coverageReporters": ["text-summary"],
+        "coverageThresholds": {
+          "branches": 80,
+          "functions": 80,
+          "lines": 80,
+          "statements": 80
+        },
+        "coverageInclude": ["libs/renderer/core/src/**/*.ts"],
+        "coverageExclude": ["libs/renderer/core/src/**/*.spec.ts"]
+      },
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"]
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "ngc -p libs/renderer/core/tsconfig.lib.json --noEmit",
+          "tsc -p libs/renderer/core/tsconfig.spec.json --noEmit"
+        ],
+        "parallel": false
+      }
+    }
+  }
+}

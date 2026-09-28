@@ -8,6 +8,6 @@
   "include": [
     "src/**/*.ts",
     "playwright.config.mts",
-    "../../libs/renderer/window-api/util/src/lib/window-api.model.ts"
+    "../../libs/renderer/core/src/window-api/window-api.model.ts"
   ]
 }

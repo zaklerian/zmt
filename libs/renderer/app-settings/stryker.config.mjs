@@ -1,0 +1,28 @@
+export default {
+  $schema: '../../../node_modules/@stryker-mutator/core/schema/stryker-schema.json',
+  coverageAnalysis: 'perTest',
+  htmlReporter: { fileName: 'reports/mutation/renderer-app-settings/index.html' },
+  ignorePatterns: [
+    '/*',
+    '!/libs',
+    '/libs/*',
+    '!/libs/contracts',
+    '!/libs/renderer',
+    '!/libs/shared',
+    '!/tools',
+    '/tools/*',
+    '!/tools/scripts',
+    '!/tsconfig.base.json',
+    '!/package.json',
+  ],
+  mutate: [
+    'libs/renderer/app-settings/src/data-access/*.store.ts',
+    'libs/renderer/app-settings/src/data-access/*.service.ts',
+  ],
+  plugins: ['@stryker-mutator/vitest-runner'],
+  reporters: ['clear-text', 'progress', 'html'],
+  tempDirName: '.stryker-tmp',
+  testRunner: 'vitest',
+  thresholds: { break: 70, high: 90, low: 70 },
+  vitest: { configFile: 'libs/renderer/app-settings/vitest.config.mts' },
+};

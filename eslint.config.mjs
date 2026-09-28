@@ -144,8 +144,35 @@ const RENDERER_IMPORTS = {
 };
 const SIGNAL_STORE_IMPORT = {
   group: ['@ngrx/signals', '@ngrx/signals/*'],
-  message: 'SignalStores live in *.store.ts inside type:data-access projects (STATE-4).',
+  message: 'SignalStores live in *.store.ts inside data-access layer folders (STATE-4).',
 };
+const LAYER_PATHS = {
+  dataAccess: ['**/data-access', '**/data-access/**', '@zmt/renderer/*/data-access'],
+  feature: ['**/feature', '**/feature/**', '@zmt/renderer/*/feature'],
+  ui: ['**/ui', '**/ui/**', '@zmt/renderer/*/ui'],
+};
+const LAYER_IMPORTS = {
+  dataAccess: {
+    group: [...LAYER_PATHS.ui, ...LAYER_PATHS.feature],
+    message: 'The data-access layer imports no ui or feature code (ARCH-2).',
+  },
+  feature: {
+    group: ['@zmt/renderer/*/feature'],
+    message: 'A feature imports no other domain feature (ARCH-2).',
+  },
+  ui: {
+    group: [...LAYER_PATHS.dataAccess, ...LAYER_PATHS.feature],
+    message: 'The ui layer imports no data-access or feature code and injects no stores (ARCH-2).',
+  },
+  util: {
+    group: [...LAYER_PATHS.dataAccess, ...LAYER_PATHS.feature, ...LAYER_PATHS.ui],
+    message: 'The util layer imports only util and contracts code (ARCH-2).',
+  },
+};
+const rendererImports = (...patterns) => ({
+  paths: RENDERER_IMPORTS.paths,
+  patterns: [...RENDERER_IMPORTS.patterns, ...patterns],
+});
 
 export default tseslint.config(
   {
@@ -268,31 +295,12 @@ export default tseslint.config(
           allow: ['^(\\.\\./)+package\\.json$'],
           depConstraints: [
             {
-              onlyDependOnLibsWithTags: [
-                'type:feature',
-                'type:ui',
-                'type:data-access',
-                'type:util',
-                'type:contracts',
-              ],
+              onlyDependOnLibsWithTags: ['type:domain', 'type:util', 'type:contracts'],
               sourceTag: 'type:app',
             },
             {
-              onlyDependOnLibsWithTags: [
-                'type:ui',
-                'type:data-access',
-                'type:util',
-                'type:contracts',
-              ],
-              sourceTag: 'type:feature',
-            },
-            {
-              onlyDependOnLibsWithTags: ['type:ui', 'type:util', 'type:contracts'],
-              sourceTag: 'type:ui',
-            },
-            {
-              onlyDependOnLibsWithTags: ['type:data-access', 'type:util', 'type:contracts'],
-              sourceTag: 'type:data-access',
+              onlyDependOnLibsWithTags: ['type:domain', 'type:util', 'type:contracts'],
+              sourceTag: 'type:domain',
             },
             { onlyDependOnLibsWithTags: ['type:util', 'type:contracts'], sourceTag: 'type:util' },
             { onlyDependOnLibsWithTags: ['type:contracts'], sourceTag: 'type:contracts' },
@@ -329,18 +337,12 @@ export default tseslint.config(
       '@angular-eslint/prefer-signals': 'error',
       '@angular-eslint/prefer-standalone': 'error',
       '@nx/workspace-effect-no-signal-write': 'error',
-      'no-restricted-imports': [
-        'error',
-        {
-          paths: RENDERER_IMPORTS.paths,
-          patterns: [...RENDERER_IMPORTS.patterns, SIGNAL_STORE_IMPORT],
-        },
-      ],
+      'no-restricted-imports': ['error', rendererImports(SIGNAL_STORE_IMPORT)],
       'no-restricted-properties': [
         'error',
         {
           message:
-            'Only *.service.ts in a type:data-access project calls the preload API (STATE-5).',
+            'Only *.service.ts in a data-access layer folder calls the preload API (STATE-5).',
           object: 'window',
           property: 'api',
         },
@@ -349,13 +351,34 @@ export default tseslint.config(
     },
   },
   {
-    files: ['libs/renderer/*/data-access/**/*.ts'],
+    files: ['libs/renderer/*/src/ui/**/*.ts'],
     rules: {
-      'no-restricted-imports': ['error', RENDERER_IMPORTS],
+      'no-restricted-imports': ['error', rendererImports(SIGNAL_STORE_IMPORT, LAYER_IMPORTS.ui)],
     },
   },
   {
-    files: ['libs/renderer/*/data-access/**/*.store.ts'],
+    files: ['libs/renderer/*/src/util/**/*.ts'],
+    rules: {
+      'no-restricted-imports': ['error', rendererImports(SIGNAL_STORE_IMPORT, LAYER_IMPORTS.util)],
+    },
+  },
+  {
+    files: ['libs/renderer/*/src/feature/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        rendererImports(SIGNAL_STORE_IMPORT, LAYER_IMPORTS.feature),
+      ],
+    },
+  },
+  {
+    files: ['libs/renderer/*/src/data-access/**/*.ts'],
+    rules: {
+      'no-restricted-imports': ['error', rendererImports(LAYER_IMPORTS.dataAccess)],
+    },
+  },
+  {
+    files: ['libs/renderer/*/src/data-access/**/*.store.ts'],
     rules: {
       'no-restricted-syntax': ['error', ...RENDERER_SYNTAX, SYNTAX.storeAsync, SYNTAX.storeAwait],
     },
@@ -367,15 +390,15 @@ export default tseslint.config(
     },
   },
   {
-    files: ['libs/renderer/*/feature/**/*.spec.ts'],
+    files: ['libs/renderer/*/src/feature/**/*.spec.ts'],
     name: 'ZMT-A-4: container specs seed store state through patchState(unprotected(store)) (STATE-4)',
     rules: {
-      'no-restricted-imports': ['error', RENDERER_IMPORTS],
+      'no-restricted-imports': ['error', rendererImports(LAYER_IMPORTS.feature)],
     },
   },
   {
-    files: ['libs/renderer/dialog/util/**/*.ts'],
-    name: 'ZMT-A-4: the dialog util library is the one MatDialog import site (NG-11)',
+    files: ['libs/renderer/core/src/dialog/**/*.ts'],
+    name: 'ZMT-A-4: the core dialog folder is the one MatDialog import site (NG-11)',
     rules: {
       'no-restricted-imports': [
         'error',

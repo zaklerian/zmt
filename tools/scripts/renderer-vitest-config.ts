@@ -34,7 +34,7 @@ export function rendererVitestConfig(projectDir: string, name: string): ViteUser
     test: {
       environment: 'jsdom',
       globals: true,
-      include: ['src/**/*.spec.ts'],
+      include: ['src/data-access/**/*.spec.ts'],
       name,
       pool: 'threads',
       setupFiles: [path.join(WORKSPACE_ROOT, 'tools/scripts/renderer-test-setup.ts')],

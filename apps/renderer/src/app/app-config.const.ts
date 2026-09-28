@@ -7,7 +7,7 @@ import {
   provideZonelessChangeDetection,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { APP_VERSION } from '@zmt/renderer/app-info/data-access';
+import { APP_VERSION } from '@zmt/renderer/shell/data-access';
 import { NAV_ENTRIES } from '@zmt/renderer/shell/ui';
 
 import { version } from '../../../../package.json';
