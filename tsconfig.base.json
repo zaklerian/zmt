@@ -24,6 +24,7 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "paths": {
+      "@zmt/contracts": ["./libs/contracts/src/index.ts"],
       "@zmt/renderer/app-info/data-access": ["./libs/renderer/app-info/data-access/src/index.ts"],
       "@zmt/renderer/home/feature": ["./libs/renderer/home/feature/src/index.ts"],
       "@zmt/renderer/i18n/data-access": ["./libs/renderer/i18n/data-access/src/index.ts"],

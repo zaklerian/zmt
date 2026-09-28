@@ -23,3 +23,11 @@ One line per decision, oldest first: `- date · decision · ADR link` (use `—`
 - 2026-09-27 · The renderer reads its version from the root package.json through a named JSON import, allowed by one enforce-module-boundaries allow entry · —
 - 2026-09-27 · MatPaginatorIntl and DateAdapter locale wiring (I18N-3) is deferred until a paginator or datepicker exists · — · revisit: first paginator or datepicker lands
 - 2026-09-27 · Stryker runs once on libs/shared/i18n as a setup smoke without a gate; the break threshold is deferred to contracts and main (TEST-3) · — · revisit: ZMT-A-3 adds libs/contracts or apps/main
+- 2026-09-28 · IPC uses a Result envelope validated per channel, with a closed HTTP-style code union and no thrown values or sentinels; SEC-4 reworded to match · [ADR 008](adr/008-ipc-result-envelope.md)
+- 2026-09-28 · Contracts are Valibot schemas ending in v.readonly(), collected in one contract map keyed by channel; the preload API type is derived from the channel constants and takes one request object per channel · [ADR 008](adr/008-ipc-result-envelope.md)
+- 2026-09-28 · Plugin contract carries gameId, displayName and features only; plugin contract fields for schemas/classification deferred · — · revisit: when a second game plugin exists
+- 2026-09-28 · Packaging and installer are out of scope; the app runs from dist through the zmt:// protocol; distributable build deferred · — · revisit: first distributable build
+- 2026-09-28 · Main guards every filesystem path against one allowed root, set by the folder dialog or ZMT_DEFAULT_MODS_PATH in dev builds; a persisted multi-root workspace is deferred · — · revisit: first feature that needs more than one root folder open
+- 2026-09-28 · Production renderer loads from dist over the privileged zmt://renderer scheme with a per-load CSP nonce; dev mode loads the Angular dev server with a CSP that allows inline styles but no eval · —
+- 2026-09-28 · Native menu locale labels (I18N-3) deferred; the shell has no native menu yet · — · revisit: first native menu or dialog string
+- 2026-09-28 · ZMT-A-3 makes SEC-1, SEC-2, SEC-3, SEC-4, SEC-7, TEST-3, ARCH-16 and the _electron part of TEST-1 active; the Stryker break threshold on contracts and main resolves the 2026-09-27 TEST-3 deferral · —

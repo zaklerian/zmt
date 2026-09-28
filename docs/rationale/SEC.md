@@ -14,9 +14,9 @@ A TypeScript type describes what the renderer claims to send; a schema checks wh
 
 A path guard that services must remember to call fails the first time someone forgets. A branded `SafePath` that only the guard can produce moves the check to the type system: a filesystem function taking `SafePath` cannot be called with a raw string. Banning `as SafePath` outside the guard closes the cast escape hatch.
 
-## SEC-4 — Structured errors
+## SEC-4 — Result envelope
 
-Electron serialises thrown values across IPC as strings, destroying structure. A contract-defined `{ code, message }` result lets the renderer branch on the failure kind and map codes to localized messages. HTTP-style numeric codes are a widely known taxonomy and range-checkable: 5xx is unexpected. Raw internal messages never reach the UI.
+Electron serialises thrown values across IPC as strings, destroying structure, so a thrown error needs a sentinel and a parser to survive the wire. Returning a Result envelope instead keeps the failure as data: `{ ok: true, data }` or `{ ok: false, error: { code, message } }`, both validated by the channel's contract schema. The renderer branches on `ok` and maps codes to localized messages; an exhaustive switch over the closed code union fails to compile when a code is added. HTTP-style numeric codes are a widely known taxonomy and range-checkable: 5xx is unexpected. Unexpected errors are logged in main and replaced by a generic `500`, so raw internal messages never reach the UI. Decision: ADR 008.
 
 ## SEC-5 — Exact pins
 

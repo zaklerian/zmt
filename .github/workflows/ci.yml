@@ -40,6 +40,11 @@ jobs:
 
       - uses: actions/cache@v4
         with:
+          path: ~/.cache/electron
+          key: electron-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - uses: actions/cache@v4
+        with:
           path: .nx/cache
           key: nx-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
           restore-keys: nx-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
@@ -74,15 +79,53 @@ jobs:
             exit 1
           fi
 
-      - name: Install Playwright Chromium
-        run: pnpm exec playwright install --with-deps chromium
+      - name: Install Electron system dependencies
+        run: pnpm exec playwright install-deps chromium
 
-      - name: E2E smoke with axe (NG-12)
-        run: pnpm nx e2e renderer-e2e
+      - name: Electron e2e smoke with axe (TEST-1, NG-12, SEC-2)
+        run: xvfb-run -a pnpm nx e2e renderer-e2e
 
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: playwright-output
           path: dist/.playwright
+          retention-days: 7
+
+  mutation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Locate pnpm store
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Mutation gate on contracts and main (TEST-3, break 80)
+        run: pnpm nx run-many -t mutation -p contracts main
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mutation-reports
+          path: reports/mutation
           retention-days: 7

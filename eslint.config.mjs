@@ -14,7 +14,7 @@ const SPECS = ['**/*.spec.ts', 'apps/*-e2e/**/*.ts'];
 
 const KEBAB = '+([a-z])*([a-z0-9])*(-+([a-z0-9]))';
 const SUFFIX = '@(component|service|store|schema|model|const|util|guard|routes)';
-const SOURCE_TS = `@(index|main|test-setup|${KEBAB}.spec|${KEBAB}.${SUFFIX}?(.spec))`;
+const SOURCE_TS = `@(index|main|preload|test-setup|${KEBAB}.spec|${KEBAB}.${SUFFIX}?(.spec))`;
 const SOURCE_TEMPLATE = `@(index|styles|${KEBAB}.component)`;
 const TOOL_TS = `@(index|${KEBAB}?(.spec))`;
 const ARTIFACT_FOLDERS =
@@ -56,6 +56,15 @@ const SYNTAX = {
     message: 'Use input(), output() and model() instead of @Input/@Output (NG-4).',
     selector: 'Decorator[expression.callee.name=/^(Input|Output)$/]',
   },
+  ipcMainHandle: {
+    message: 'Register channels through the typed ipcHandle helper, not ipcMain.handle (SEC-1).',
+    selector:
+      "MemberExpression[object.name='ipcMain'][property.name=/^(handle|on|once|handleOnce)$/]",
+  },
+  ipcRendererInvoke: {
+    message: 'Preload calls ipcRenderer only through the typed invoke helper (SEC-1).',
+    selector: "MemberExpression[object.name='ipcRenderer']",
+  },
   mutableArray: {
     message: 'Array types are readonly T[] (ARCH-7).',
     selector: ":not(TSTypeOperator[operator='readonly']) > TSArrayType",
@@ -67,6 +76,10 @@ const SYNTAX = {
   mutableProperty: {
     message: 'Declared properties are readonly (ARCH-7).',
     selector: 'TSPropertySignature[readonly!=true]',
+  },
+  safePathCast: {
+    message: 'Only the path guard mints SafePath (SEC-3).',
+    selector: "TSAsExpression > TSTypeReference[typeName.name='SafePath']",
   },
   storeAsync: {
     message: 'Stores load through resource(), rxResource() or rxMethod() with switchMap (STATE-2).',
@@ -83,6 +96,12 @@ const BASE_SYNTAX = [
   SYNTAX.mutableArray,
   SYNTAX.mutableArrayGeneric,
   SYNTAX.mutableProperty,
+];
+const PROCESS_SYNTAX = [
+  ...BASE_SYNTAX,
+  SYNTAX.ipcMainHandle,
+  SYNTAX.ipcRendererInvoke,
+  SYNTAX.safePathCast,
 ];
 const RENDERER_SYNTAX = [
   ...BASE_SYNTAX,
@@ -376,6 +395,51 @@ export default tseslint.config(
   {
     extends: [playwright.configs['flat/recommended']],
     files: ['apps/*-e2e/**/*.ts'],
+  },
+  {
+    files: ['apps/main/**/*.ts', 'apps/preload/**/*.ts', 'libs/contracts/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': ['error', ...PROCESS_SYNTAX],
+    },
+  },
+  {
+    files: ['apps/main/src/ipc/ipc-handle.util.ts'],
+    name: 'ZMT-A-3: the typed handler helper is the one ipcMain.handle call site (SEC-1)',
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...BASE_SYNTAX,
+        SYNTAX.ipcRendererInvoke,
+        SYNTAX.safePathCast,
+      ],
+    },
+  },
+  {
+    files: ['apps/preload/src/ipc-invoke.util.ts'],
+    name: 'ZMT-A-3: the typed invoke helper is the one ipcRenderer call site (SEC-1)',
+    rules: {
+      'no-restricted-syntax': ['error', ...BASE_SYNTAX, SYNTAX.ipcMainHandle, SYNTAX.safePathCast],
+    },
+  },
+  {
+    files: ['apps/main/src/fs/path-guard.util.ts'],
+    name: 'ZMT-A-3: the path guard is the one place that mints SafePath (SEC-3)',
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...BASE_SYNTAX,
+        SYNTAX.ipcMainHandle,
+        SYNTAX.ipcRendererInvoke,
+      ],
+    },
+  },
+  {
+    files: ['apps/main/src/**/*.spec.ts', 'apps/preload/src/**/*.spec.ts'],
+    name: 'ZMT-A-3: specs reference mocked Electron module methods through vi.mocked without binding',
+    rules: {
+      '@typescript-eslint/unbound-method': 'off',
+      'no-restricted-syntax': ['error', ...BASE_SYNTAX, SYNTAX.safePathCast, SYNTAX.getByText],
+    },
   },
   {
     files: ['tools/eslint-rules/src/workspace-plugin.ts'],
