@@ -52,6 +52,9 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - name: Fetch the Electron binary into the cache
+        run: node node_modules/electron/install.js
+
       - uses: nrwl/nx-set-shas@v4
 
       - name: Governance checks

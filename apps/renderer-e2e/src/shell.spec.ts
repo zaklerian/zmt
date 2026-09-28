@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
 
-import { launchApp, type LaunchedApp } from './electron-app.util';
+import { closeApp, launchApp, type LaunchedApp } from './electron-app.util';
 
 async function expectNoAxeViolations(page: Page): Promise<void> {
   const results = await new AxeBuilder({ page }).setLegacyMode(true).analyze();
@@ -16,7 +16,7 @@ test.describe('electron shell', () => {
   });
 
   test.afterEach(async () => {
-    await launched.app.close();
+    await closeApp(launched);
   });
 
   test('launches from the packaged origin and renders the shell and lazy home page', async () => {
@@ -128,7 +128,7 @@ test.describe('electron shell', () => {
 
   test('blocks navigation and window.open to external urls', async () => {
     const { app, page } = launched;
-    const opened = await page.evaluate(() => window.open('https://example.com/') === null);
+    const opened = await page.evaluate(() => window.open('http://example.com/') === null);
     expect(opened).toBe(true);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('ZMT — Mod Manager');
     const windowCount = await app.evaluate(

@@ -29,3 +29,15 @@ export async function launchApp(): Promise<LaunchedApp> {
   await page.waitForURL(APP_ROUTE_URL);
   return { app, page };
 }
+
+export const CLOSE_TIMEOUT_MS = 10_000;
+
+export async function closeApp(launched: LaunchedApp): Promise<void> {
+  const forceKill = new Promise<void>((done) => {
+    setTimeout(() => {
+      launched.app.process().kill('SIGKILL');
+      done();
+    }, CLOSE_TIMEOUT_MS).unref();
+  });
+  await Promise.race([launched.app.close(), forceKill]);
+}
