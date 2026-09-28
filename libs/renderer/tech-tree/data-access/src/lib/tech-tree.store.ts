@@ -1,7 +1,7 @@
 import type { TechTreeEdge, TechTreeNode, TechTreeNodeView } from '@zmt/renderer/tech-tree/util';
 
 import { computed } from '@angular/core';
-import { signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { ASYNC_IDLE, type AsyncStatus } from '@zmt/renderer/async-status/util';
 import { pending } from '@zmt/renderer/pending/util';
@@ -67,19 +67,25 @@ export const TechTreeStore = signalStore(
       ),
     }),
   ),
-  withMethods(() => {
-    const reload: () => void = () => pending('ZMT-A-5');
-    const select: (id: null | string) => void = () => pending('ZMT-A-5');
-    const setSearch: (query: string) => void = () => pending('ZMT-A-5');
-    const setSelectedCategories: (categories: readonly string[]) => void = () => pending('ZMT-A-5');
-    const setShowDependencies: (show: boolean) => void = () => pending('ZMT-A-5');
-    return {
-      load: rxMethod((source$: Observable<void>) => source$.pipe(tap(() => pending('ZMT-A-5')))),
-      reload,
-      select,
-      setSearch,
-      setSelectedCategories,
-      setShowDependencies,
+  withMethods((store) => {
+    const load = rxMethod((source$: Observable<void>) =>
+      source$.pipe(tap(() => pending('ZMT-A-5'))),
+    );
+    const reload = (): void => {
+      load();
     };
+    const select = (id: null | string): void => {
+      patchState(store, { selectedId: id });
+    };
+    const setSearch = (query: string): void => {
+      patchState(store, { search: query });
+    };
+    const setSelectedCategories = (categories: readonly string[]): void => {
+      patchState(store, { selectedCategories: [...categories] });
+    };
+    const setShowDependencies = (show: boolean): void => {
+      patchState(store, { showDependencies: show });
+    };
+    return { load, reload, select, setSearch, setSelectedCategories, setShowDependencies };
   }),
 );

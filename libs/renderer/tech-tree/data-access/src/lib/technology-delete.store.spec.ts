@@ -48,9 +48,12 @@ describe('TechnologyDeleteStore', () => {
     expect(commitErrors).toEqual([expect.any(NotImplementedError)]);
   });
 
-  it('declares cancel as pending', () => {
-    expect(() => {
-      store.cancel();
-    }).toThrow(NotImplementedError);
+  it('cancels the confirmation and returns to idle', () => {
+    patchState(unprotected(store), { plan: PLAN, status: { kind: 'deleting' }, token: 'fighter1' });
+    store.cancel();
+    expect(store.plan()).toBeNull();
+    expect(store.token()).toBeNull();
+    expect(store.status()).toEqual({ kind: 'idle' });
+    expect(store.isConfirming()).toBe(false);
   });
 });

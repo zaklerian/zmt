@@ -38,7 +38,7 @@ describe('toFileTreeItems', () => {
 
   it('renders an unloaded root as expandable with null children', () => {
     expect(toFileTreeItems('/mod', {})).toEqual([
-      { children: null, expandable: true, id: '/mod', label: 'mod', node: null },
+      { children: null, error: null, expandable: true, id: '/mod', label: 'mod', node: null },
     ]);
   });
 
@@ -55,10 +55,26 @@ describe('toFileTreeItems', () => {
     const [common, gfx, descriptor] = root?.children ?? [];
     expect(common).toMatchObject({ expandable: true, label: 'common', node: COMMON });
     expect(common?.children).toEqual([
-      { children: null, expandable: false, id: TECH.path, label: 'air.txt', node: TECH },
+      {
+        children: null,
+        error: null,
+        expandable: false,
+        id: TECH.path,
+        label: 'air.txt',
+        node: TECH,
+      },
     ]);
     expect(gfx).toMatchObject({ children: null, expandable: false });
     expect(descriptor).toMatchObject({ children: null, expandable: false, node: DESCRIPTOR });
+  });
+});
+
+describe('toFileTreeItems errors', () => {
+  it('attaches the recorded error of a folder to its item', () => {
+    const error = { code: 404, message: 'gone' } as const;
+    const [root] = toFileTreeItems('/mod', { '/mod': [COMMON] }, { '/mod/common': error });
+    expect(root?.error).toBeNull();
+    expect(root?.children?.[0]?.error).toEqual(error);
   });
 });
 

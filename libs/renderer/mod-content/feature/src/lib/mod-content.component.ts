@@ -1,10 +1,17 @@
 import type { FsNode, IpcError } from '@zmt/contracts';
 import type { HasUnsavedChanges } from '@zmt/renderer/dialog/util';
-import type { FileTreeItem, ViewMode } from '@zmt/renderer/mod-content/util';
+import type { EntityTableRequest, LoadRootRequest } from '@zmt/renderer/mod-content/data-access';
+import type { FileSelection, FileTreeItem, ViewMode } from '@zmt/renderer/mod-content/util';
 
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, effect, inject } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { AppSettingsStore } from '@zmt/renderer/app-settings/data-access';
+import { errorOf } from '@zmt/renderer/async-status/util';
+import { DialogService } from '@zmt/renderer/dialog/util';
+import { EntityFormShellComponent } from '@zmt/renderer/entity-form/ui';
 import { I18nStore } from '@zmt/renderer/i18n/data-access';
 import {
   EntityTableStore,
@@ -27,14 +34,23 @@ import { isDescriptorPath } from '@zmt/renderer/mod-info/util';
 import { PluginRegistryStore } from '@zmt/renderer/plugin/data-access';
 import { ROUTE_PATHS } from '@zmt/renderer/shell/ui';
 import { WorkspaceStore } from '@zmt/renderer/workspace/data-access';
+import { distinctUntilChanged, filter, map, type Observable } from 'rxjs';
+
+export const SAVED_SNACKBAR_MS = 3000;
+
+function present<T>(source$: Observable<T | null>): Observable<T> {
+  return source$.pipe(filter((value): value is T => value !== null));
+}
 
 @Component({
   imports: [
     ContentModeToggleComponent,
     ContentPlaceholderComponent,
+    EntityFormShellComponent,
     EntityTableComponent,
     FileSearchComponent,
     FileTreeComponent,
+    MatButtonModule,
     NoFolderStateComponent,
     PanelBreadcrumbsComponent,
     PlainEditorComponent,
@@ -45,8 +61,10 @@ import { WorkspaceStore } from '@zmt/renderer/workspace/data-access';
 })
 export class ModContentComponent implements HasUnsavedChanges {
   private readonly appSettings = inject(AppSettingsStore);
+  private readonly dialog = inject(DialogService);
   private readonly plugins = inject(PluginRegistryStore);
   private readonly router = inject(Router);
+  private readonly snackBar = inject(MatSnackBar);
   protected readonly content = inject(ModContentStore);
   protected readonly editor = inject(PlainEditorStore);
   protected readonly entities = inject(EntityTableStore);
@@ -57,10 +75,13 @@ export class ModContentComponent implements HasUnsavedChanges {
 
   readonly dirty = this.editor.dirty;
 
-  protected readonly saveError = computed<IpcError | null>(() => {
-    const status = this.editor.saveStatus();
-    return status.kind === 'error' ? status.error : null;
-  });
+  protected readonly actionError = computed(() => errorOf(this.entities.actionStatus()));
+  protected readonly editorError = computed(() => errorOf(this.editor.status()));
+  protected readonly entitiesError = computed(() => errorOf(this.entities.status()));
+  protected readonly folderError = computed(() => errorOf(this.workspace.status()));
+  protected readonly saveError = computed<IpcError | null>(() => errorOf(this.editor.saveStatus()));
+  protected readonly searchError = computed(() => errorOf(this.search.status()));
+  protected readonly treeError = computed(() => errorOf(this.tree.status()));
 
   protected readonly segments = computed<readonly string[]>(() => {
     const root = this.workspace.root();
@@ -74,12 +95,71 @@ export class ModContentComponent implements HasUnsavedChanges {
       .filter((segment) => segment.length > 0);
   });
 
+  private readonly rootRequest = computed<LoadRootRequest | null>(() => {
+    const root = this.workspace.root();
+    return root === null
+      ? null
+      : { hideUnsupportedFiles: this.appSettings.hideUnsupportedFiles(), root };
+  });
+
+  private readonly editorPath = computed<null | string>(() =>
+    this.content.contentKind() === 'editor' ? this.content.selectedPath() : null,
+  );
+
+  private readonly tableRequest = computed<EntityTableRequest | null>(() => {
+    const selection = this.content.selection();
+    return this.content.contentKind() === 'entityTable' &&
+      selection !== null &&
+      selection.recognizerId !== null
+      ? { filePath: selection.path, recognizerId: selection.recognizerId }
+      : null;
+  });
+
+  constructor() {
+    this.tree.loadRoot(
+      present(toObservable(this.rootRequest)).pipe(
+        distinctUntilChanged(
+          (previous, next) =>
+            previous.root === next.root &&
+            previous.hideUnsupportedFiles === next.hideUnsupportedFiles,
+        ),
+      ),
+    );
+    this.editor.load(present(toObservable(this.editorPath)).pipe(distinctUntilChanged()));
+    this.entities.load(
+      present(toObservable(this.tableRequest)).pipe(
+        distinctUntilChanged(
+          (previous, next) =>
+            previous.filePath === next.filePath && previous.recognizerId === next.recognizerId,
+        ),
+      ),
+    );
+    this.search.search(
+      toObservable(this.workspace.root).pipe(
+        map((root) => ({
+          hideUnsupportedFiles: this.appSettings.hideUnsupportedFiles(),
+          query: '',
+          root,
+        })),
+      ),
+    );
+    effect(() => {
+      if (this.editor.saveStatus().kind === 'success') {
+        this.snackBar.open(this.messages().modContent.saved, undefined, {
+          duration: SAVED_SNACKBAR_MS,
+        });
+      }
+    });
+  }
+
   protected onModeChange(mode: ViewMode): void {
     if (mode === 'table' && this.content.structuredView() === 'form') {
       void this.router.navigate(['/', ROUTE_PATHS.modInfo]);
       return;
     }
-    this.content.setViewMode(mode);
+    this.confirmLeaveIfDirty(() => {
+      this.content.setViewMode(mode);
+    });
   }
 
   protected onSearch(query: string): void {
@@ -96,19 +176,55 @@ export class ModContentComponent implements HasUnsavedChanges {
 
   protected onTreeSelect(item: FileTreeItem): void {
     if (item.node === null) {
-      this.content.select(null);
+      this.confirmLeaveIfDirty(() => {
+        this.content.select(null);
+        void this.router.navigate(['/', ROUTE_PATHS.modInfo]);
+      });
       return;
     }
     this.selectNode(item.node, item.id === this.workspace.root());
   }
 
+  protected retryEditor(): void {
+    const path = this.editorPath();
+    if (path !== null) {
+      this.editor.load(path);
+    }
+  }
+
+  private confirmLeaveIfDirty(proceed: () => void): void {
+    if (!this.editor.dirty()) {
+      proceed();
+      return;
+    }
+    const texts = this.messages();
+    this.dialog
+      .confirm({
+        cancelLabel: texts.actions.cancel,
+        confirmLabel: texts.actions.discard,
+        message: texts.dialog.unsavedChangesMessage,
+        title: texts.dialog.unsavedChangesTitle,
+      })
+      .pipe(filter((confirmed) => confirmed))
+      .subscribe(() => {
+        proceed();
+      });
+  }
+
   private selectNode(node: FsNode, isModRoot: boolean): void {
-    this.content.select({
+    const selection: FileSelection = {
       isDescriptor: isDescriptorPath(node.path),
       isModRoot,
       path: node.path,
       recognizerId: this.plugins.recognize(node.path)?.id ?? null,
       support: node.support,
+    };
+    if (selection.path === this.content.selectedPath()) {
+      this.content.select(selection);
+      return;
+    }
+    this.confirmLeaveIfDirty(() => {
+      this.content.select(selection);
     });
   }
 }

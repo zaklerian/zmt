@@ -18,4 +18,4 @@ Tests that find elements by visible text break on copy edits and locale switches
 
 ## TEST-3 — Mutation testing at the boundary
 
-Coverage shows code ran, not that a test would notice it breaking. Stryker mutates the code and fails when tests still pass. It is scoped to contracts and main because failures there corrupt files or open the trust boundary. Renderer mutation runs are slow and low-signal. The break threshold turns a drop in test strength into a failing check.
+Coverage shows code ran, not that a test would notice it breaking. Stryker mutates the code and fails when tests still pass. It is scoped to contracts and main at break 80 because failures there corrupt files or open the trust boundary, and to the renderer data-access projects at break 70 because stores and services own every state transition the UI shows; components stay out because harness runs are slow and low-signal. The renderer runs drive plain Vitest configs (jsdom plus a JIT TestBed) since Stryker's Vitest runner cannot start the Angular unit-test builder. The break threshold turns a drop in test strength into a failing check.

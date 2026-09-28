@@ -3,7 +3,6 @@ import type { FileSelection } from '@zmt/renderer/mod-content/util';
 import { TestBed } from '@angular/core/testing';
 import { patchState } from '@ngrx/signals';
 import { unprotected } from '@ngrx/signals/testing';
-import { NotImplementedError } from '@zmt/renderer/pending/util';
 
 import { ModContentStore, resolveContentKind } from './mod-content.store';
 
@@ -67,12 +66,24 @@ describe('ModContentStore', () => {
     expect(resolveContentKind(null, 'code')).toBe('placeholder');
   });
 
-  it('declares select and setViewMode as pending', () => {
-    expect(() => {
-      store.select(ENTITY_FILE);
-    }).toThrow(NotImplementedError);
-    expect(() => {
-      store.setViewMode('code');
-    }).toThrow(NotImplementedError);
+  it('selects a file and switches the view mode', () => {
+    store.select(ENTITY_FILE);
+    expect(store.selection()).toBe(ENTITY_FILE);
+    store.setViewMode('code');
+    expect(store.viewMode()).toBe('code');
+    expect(store.contentKind()).toBe('editor');
+  });
+
+  it('keeps the view mode for the same path and resets it when the path changes', () => {
+    store.select(ENTITY_FILE);
+    store.setViewMode('code');
+    store.select({ ...ENTITY_FILE });
+    expect(store.viewMode()).toBe('code');
+    store.select(PLAIN);
+    expect(store.viewMode()).toBe('table');
+    store.setViewMode('code');
+    store.select(null);
+    expect(store.selection()).toBeNull();
+    expect(store.viewMode()).toBe('table');
   });
 });

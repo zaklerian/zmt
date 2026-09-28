@@ -14,6 +14,7 @@ import { NavIconComponent } from '@zmt/renderer/shell/ui';
 })
 export class FileTreeComponent {
   readonly expand = output<FileTreeItem>();
+  readonly expanded = input<readonly string[]>([]);
   readonly items = input.required<readonly FileTreeItem[]>();
   readonly messages = input.required<Messages>();
   readonly selectItem = output<FileTreeItem>();
@@ -25,4 +26,15 @@ export class FileTreeComponent {
 
   protected readonly isExpandable = (...args: readonly [number, FileTreeItem]): boolean =>
     args[1].expandable;
+
+  protected errorText(item: FileTreeItem): null | string {
+    const texts = this.messages();
+    return item.error === null
+      ? null
+      : `${texts.modContent.fileTreeFailed} ${texts.errors[item.error.code]}`;
+  }
+
+  protected isInitiallyExpanded(item: FileTreeItem): boolean {
+    return this.expanded().includes(item.id);
+  }
 }

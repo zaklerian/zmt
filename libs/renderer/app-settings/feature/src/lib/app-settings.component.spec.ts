@@ -1,18 +1,48 @@
+import type { GamePlugin } from '@zmt/contracts';
+
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { TestBed } from '@angular/core/testing';
 import { MatButtonHarness } from '@angular/material/button/testing';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { By } from '@angular/platform-browser';
-import { patchState } from '@ngrx/signals';
-import { unprotected } from '@ngrx/signals/testing';
+import { fail, ok } from '@zmt/contracts';
 import { AppSettingsStore } from '@zmt/renderer/app-settings/data-access';
 import { FileDisplayFormComponent, PluginConfigFormComponent } from '@zmt/renderer/app-settings/ui';
+import { flushPromises } from '@zmt/renderer/async-status/util';
+import { DialogService } from '@zmt/renderer/dialog/util';
+import { PluginService } from '@zmt/renderer/plugin/data-access';
 import { EN_MESSAGES } from '@zmt/shared/i18n';
+import { of } from 'rxjs';
 
-import { AppSettingsComponent } from './app-settings.component';
+import { AppSettingsComponent, SAVED_SNACKBAR_MS } from './app-settings.component';
+
+const HOI4: GamePlugin = {
+  displayName: 'Hearts of Iron IV',
+  features: [{ enabled: true, featureId: 'aircraft', label: 'Aircraft' }],
+  gameId: 'hoi4',
+};
+
+const STELLARIS: GamePlugin = { displayName: 'Stellaris', features: [], gameId: 'stellaris' };
 
 describe('AppSettingsComponent', () => {
+  const list = vi.fn();
+  const confirm = vi.fn();
+
+  beforeEach(() => {
+    list.mockReset().mockResolvedValue(ok([HOI4, STELLARIS]));
+    confirm.mockReset().mockReturnValue(of(true));
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: PluginService, useValue: { list } },
+        { provide: DialogService, useValue: { confirm } },
+      ],
+    });
+  });
+
   async function setup() {
     const fixture = TestBed.createComponent(AppSettingsComponent);
+    await fixture.whenStable();
+    await flushPromises();
     await fixture.whenStable();
     const host: unknown = fixture.nativeElement;
     if (!(host instanceof HTMLElement)) {
@@ -21,7 +51,8 @@ describe('AppSettingsComponent', () => {
     return { fixture, host, loader: TestbedHarnessEnvironment.loader(fixture) };
   }
 
-  it('shows the no-plugins message until plugins are loaded', async () => {
+  it('shows the no-plugins message when the list comes back empty', async () => {
+    list.mockResolvedValue(ok([]));
     const { fixture, host } = await setup();
     expect(host.querySelector('h2')?.textContent.trim()).toBe(EN_MESSAGES.appSettings.title);
     expect(host.querySelector('.no-plugins')?.textContent.trim()).toBe(
@@ -30,20 +61,21 @@ describe('AppSettingsComponent', () => {
     expect(fixture.componentInstance.dirty()).toBe(false);
   });
 
-  it('tracks draft edits, resets them and saves through the store', async () => {
+  it('shows the load error', async () => {
+    list.mockResolvedValue(fail(500, 'boom'));
+    const { host } = await setup();
+    expect(host.querySelector('.error')?.textContent.trim()).toBe(
+      `${EN_MESSAGES.appSettings.loadFailed} ${EN_MESSAGES.errors[500]}`,
+    );
+    expect(host.querySelector('.no-plugins')).toBeNull();
+  });
+
+  it('loads the plugins, tracks draft edits, resets them and saves through the store', async () => {
     const store = TestBed.inject(AppSettingsStore);
-    patchState(unprotected(store), {
-      activeGameId: 'hoi4',
-      plugins: [
-        {
-          displayName: 'Hearts of Iron IV',
-          features: [{ enabled: true, featureId: 'aircraft', label: 'Aircraft' }],
-          gameId: 'hoi4',
-        },
-      ],
-    });
-    const save = vi.spyOn(store, 'save').mockImplementation(() => ({ destroy: () => undefined }));
+    const open = vi.spyOn(TestBed.inject(MatSnackBar), 'open');
     const { fixture, loader } = await setup();
+    expect(list).toHaveBeenCalledTimes(1);
+    expect(store.activeGameId()).toBe('hoi4');
 
     const pluginForm = fixture.debugElement
       .query(By.directive(PluginConfigFormComponent))
@@ -60,10 +92,46 @@ describe('AppSettingsComponent', () => {
     fileDisplay.hideUnsupportedFiles.set(true);
     await fixture.whenStable();
     await (await loader.getHarness(MatButtonHarness.with({ selector: '.save' }))).click();
-    expect(save).toHaveBeenCalledWith({
+    expect(store.values()).toEqual({
       activeGameId: 'hoi4',
       features: {},
       hideUnsupportedFiles: true,
     });
+    await fixture.whenStable();
+    expect(open).toHaveBeenCalledWith(EN_MESSAGES.appSettings.saved, undefined, {
+      duration: SAVED_SNACKBAR_MS,
+    });
+    expect(fixture.componentInstance.dirty()).toBe(false);
+  });
+
+  it('switches the game directly when clean and asks first when dirty', async () => {
+    const store = TestBed.inject(AppSettingsStore);
+    const { fixture } = await setup();
+    const pluginForm = fixture.debugElement
+      .query(By.directive(PluginConfigFormComponent))
+      .injector.get(PluginConfigFormComponent);
+
+    pluginForm.gameChange.emit('hoi4');
+    pluginForm.gameChange.emit('stellaris');
+    expect(confirm).not.toHaveBeenCalled();
+    expect(store.activeGameId()).toBe('stellaris');
+
+    pluginForm.features.set({ aircraft: false });
+    await fixture.whenStable();
+    confirm.mockReturnValue(of(false));
+    pluginForm.gameChange.emit('hoi4');
+    expect(confirm).toHaveBeenCalledWith({
+      cancelLabel: EN_MESSAGES.actions.cancel,
+      confirmLabel: EN_MESSAGES.actions.discard,
+      message: EN_MESSAGES.appSettings.gameSwitchMessage,
+      title: EN_MESSAGES.dialog.unsavedChangesTitle,
+    });
+    expect(store.activeGameId()).toBe('stellaris');
+    expect(fixture.componentInstance.dirty()).toBe(true);
+
+    confirm.mockReturnValue(of(true));
+    pluginForm.gameChange.emit('hoi4');
+    expect(store.activeGameId()).toBe('hoi4');
+    expect(fixture.componentInstance.dirty()).toBe(false);
   });
 });

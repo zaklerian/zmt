@@ -80,21 +80,23 @@ describe('TechTreeStore', () => {
     expect(errors).toEqual([expect.any(NotImplementedError)]);
   });
 
-  it('declares the synchronous transitions as pending', () => {
-    expect(() => {
+  it('reloads through the loader', async () => {
+    const errors = await collectUnhandledErrors(() => {
       store.reload();
-    }).toThrow(NotImplementedError);
-    expect(() => {
-      store.select('fighter1');
-    }).toThrow(NotImplementedError);
-    expect(() => {
-      store.setSearch('x');
-    }).toThrow(NotImplementedError);
-    expect(() => {
-      store.setSelectedCategories(['air_equipment']);
-    }).toThrow(NotImplementedError);
-    expect(() => {
-      store.setShowDependencies(true);
-    }).toThrow(NotImplementedError);
+    });
+    expect(errors).toEqual([expect.any(NotImplementedError)]);
+  });
+
+  it('applies selection, search, category and dependency transitions', () => {
+    store.select('fighter1');
+    expect(store.selectedId()).toBe('fighter1');
+    store.select(null);
+    expect(store.selectedId()).toBeNull();
+    store.setSearch('inter');
+    expect(store.search()).toBe('inter');
+    store.setSelectedCategories(['air_equipment']);
+    expect(store.selectedCategories()).toEqual(['air_equipment']);
+    store.setShowDependencies(true);
+    expect(store.showDependencies()).toBe(true);
   });
 });
