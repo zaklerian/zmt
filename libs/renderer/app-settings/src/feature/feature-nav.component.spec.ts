@@ -52,7 +52,7 @@ describe('FeatureNavComponent', () => {
     return { fixture, host };
   }
 
-  it('shows the title, loads the enabled features and reloads when toggles change', async () => {
+  it('shows the title, lists the enabled features and follows toggles without refetching', async () => {
     const { fixture, host } = await setup();
     expect(host.querySelector('h2')?.textContent.trim()).toBe(EN_MESSAGES.featureNav.title);
     expect(fixture.debugElement.query(By.css('zmt-feature-tree-placeholder'))).not.toBeNull();
@@ -63,8 +63,10 @@ describe('FeatureNavComponent', () => {
     patchState(unprotected(TestBed.inject(AppSettingsStore)), { featureToggles: { traits: true } });
     await fixture.whenStable();
     await flushPromises();
-    expect(list).toHaveBeenCalledTimes(2);
+    expect(list).toHaveBeenCalledTimes(1);
     expect(store.features().map((feature) => feature.featureId)).toEqual(['aircraft', 'traits']);
+    const buttons = [...host.querySelectorAll('zmt-feature-nav-list button')];
+    expect(buttons.map((button) => button.textContent.trim())).toEqual(['Aircraft', 'Traits']);
   });
 
   it('shows the load error', async () => {

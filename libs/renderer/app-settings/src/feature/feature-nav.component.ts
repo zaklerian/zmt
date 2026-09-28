@@ -1,11 +1,9 @@
 import type { FeatureId } from '@zmt/contracts';
 
 import { Component, computed, inject } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { errorOf } from '@zmt/renderer/core';
 import { I18nStore } from '@zmt/renderer/shell/data-access';
-import { map } from 'rxjs';
 
 import { AppSettingsStore, FeatureNavStore } from '../data-access';
 import { FeatureNavListComponent, FeatureTreePlaceholderComponent } from '../ui';
@@ -54,10 +52,10 @@ export class FeatureNavComponent {
   protected readonly messages = inject(I18nStore).messages;
   protected readonly store = inject(FeatureNavStore);
 
-  protected readonly loadError = computed(() => errorOf(this.store.status()));
+  protected readonly loadError = computed(() => errorOf(this.appSettings.status()));
 
   constructor() {
-    this.store.load(toObservable(this.appSettings.featureToggles).pipe(map(() => undefined)));
+    this.appSettings.load();
   }
 
   protected onSelect(featureId: FeatureId): void {

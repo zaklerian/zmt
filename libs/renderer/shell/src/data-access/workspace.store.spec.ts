@@ -81,6 +81,23 @@ describe('WorkspaceStore', () => {
     expect(store.status()).toEqual({ kind: 'success' });
   });
 
+  it('announces an opened folder once and stays silent on cancel and failure', async () => {
+    const opened = vi.fn<(root: string) => void>();
+    store.folderOpened$.subscribe(opened);
+    openFolderDialog
+      .mockResolvedValueOnce(ok('/mods/my-mod'))
+      .mockResolvedValueOnce(ok(null))
+      .mockResolvedValueOnce(fail(500, 'dialog failed'));
+    store.openFolder();
+    await flushPromises();
+    store.openFolder();
+    await flushPromises();
+    store.openFolder();
+    await flushPromises();
+    expect(opened.mock.calls).toEqual([['/mods/my-mod']]);
+    expect(store.root()).toBe('/mods/my-mod');
+  });
+
   it('closes the folder and returns to idle', () => {
     patchState(unprotected(store), { root: '/mods/my-mod', status: { kind: 'success' } });
     store.closeFolder();

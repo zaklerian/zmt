@@ -11,7 +11,7 @@ import {
   type AsyncStatus,
   settle,
 } from '@zmt/renderer/core';
-import { filter, from, map, merge, mergeMap, Subject, switchMap, tap } from 'rxjs';
+import { filter, from, map, mergeMap, pipe, switchMap, tap } from 'rxjs';
 
 import { type ChildrenByPath, type ErrorsByPath, toFileTreeItems } from './file-tree-item.util';
 import { ModContentService } from './mod-content.service';
@@ -33,6 +33,12 @@ export interface LoadRootRequest {
 interface Listing {
   readonly path: string;
   readonly result: IpcChannelResult<'fs:listDirectory'>;
+  readonly tree: LoadRootRequest;
+}
+
+interface ChildRequest {
+  readonly path: string;
+  readonly tree: LoadRootRequest;
 }
 
 const INITIAL_STATE: FileTreeState = {
@@ -61,14 +67,21 @@ export const FileTreeStore = signalStore(
     };
   }),
   withMethods((store, service = inject(ModContentService)) => {
-    const childRequests = new Subject<string>();
+    const list = (path: string, tree: LoadRootRequest) =>
+      from(
+        service.listDirectory({
+          options: { hideUnsupportedFiles: tree.hideUnsupportedFiles },
+          path,
+        }),
+      ).pipe(map((result): Listing => ({ path, result, tree })));
 
-    const list = (path: string, hideUnsupportedFiles: boolean) =>
-      from(service.listDirectory({ options: { hideUnsupportedFiles }, path })).pipe(
-        map((result): Listing => ({ path, result })),
-      );
+    const isCurrentTree = ({ hideUnsupportedFiles, root }: LoadRootRequest): boolean =>
+      root === store.root() && hideUnsupportedFiles === store.hideUnsupportedFiles();
 
-    const applyListing = ({ path, result }: Listing): void => {
+    const applyListing = ({ path, result, tree }: Listing): void => {
+      if (!isCurrentTree(tree)) {
+        return;
+      }
       settle(result, {
         failure: (error) => {
           patchState(store, (state) => ({
@@ -85,18 +98,30 @@ export const FileTreeStore = signalStore(
       });
     };
 
+    const toChildRequest = (path: string): ChildRequest | null => {
+      const root = store.root();
+      const unlisted =
+        store.childrenByPath()[path] === undefined && store.errorsByPath()[path] === undefined;
+      return root === null || path === root || !unlisted
+        ? null
+        : { path, tree: { hideUnsupportedFiles: store.hideUnsupportedFiles(), root } };
+    };
+
     const setExpanded = (paths: readonly string[]): void => {
       patchState(store, { expanded: [...paths] });
     };
 
     return {
       loadChildren: rxMethod<string>(
-        tap((path) => {
-          childRequests.next(path);
-        }),
+        pipe(
+          map(toChildRequest),
+          filter((request): request is ChildRequest => request !== null),
+          mergeMap(({ path, tree }) => list(path, tree)),
+          tap(applyListing),
+        ),
       ),
-      loadRoot: rxMethod<LoadRootRequest>((source$) =>
-        source$.pipe(
+      loadRoot: rxMethod<LoadRootRequest>(
+        pipe(
           tap(({ hideUnsupportedFiles, root }) => {
             patchState(store, {
               childrenByPath: {},
@@ -107,20 +132,7 @@ export const FileTreeStore = signalStore(
               status: ASYNC_LOADING,
             });
           }),
-          switchMap(({ hideUnsupportedFiles, root }) =>
-            merge(
-              list(root, hideUnsupportedFiles),
-              childRequests.pipe(
-                filter(
-                  (path) =>
-                    path !== root &&
-                    store.childrenByPath()[path] === undefined &&
-                    store.errorsByPath()[path] === undefined,
-                ),
-                mergeMap((path) => list(path, hideUnsupportedFiles)),
-              ),
-            ),
-          ),
+          switchMap((tree) => list(tree.root, tree)),
           tap(applyListing),
         ),
       ),

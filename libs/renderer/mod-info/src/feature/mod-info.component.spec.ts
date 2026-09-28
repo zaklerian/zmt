@@ -116,5 +116,33 @@ describe('ModInfoComponent', () => {
       message: EN_MESSAGES.modInfo.saveFailedMessage,
       title: EN_MESSAGES.modInfo.saveFailedTitle,
     });
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(info).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports neither a past save nor a past failure again when the route is re-entered', async () => {
+    patchState(unprotected(TestBed.inject(WorkspaceStore)), { root: '/mods/my-mod' });
+    const open = vi.spyOn(TestBed.inject(MatSnackBar), 'open');
+    const first = await setup();
+    const store = TestBed.inject(ModInfoStore);
+    const values = store.values();
+    if (values === null) {
+      throw new TypeError('descriptor not loaded');
+    }
+    store.save({ ...values, version: '0.2' });
+    await flushPromises();
+    expect(open).toHaveBeenCalledTimes(1);
+    first.fixture.destroy();
+    await setup();
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(info).not.toHaveBeenCalled();
+
+    writeDescriptor.mockResolvedValueOnce(fail(500, 'boom'));
+    store.save({ ...values, version: '0.3' });
+    await flushPromises();
+    expect(info).toHaveBeenCalledTimes(1);
+    await setup();
+    expect(info).toHaveBeenCalledTimes(1);
+    expect(open).toHaveBeenCalledTimes(1);
   });
 });

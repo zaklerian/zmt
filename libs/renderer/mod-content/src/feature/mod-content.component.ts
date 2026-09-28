@@ -1,8 +1,8 @@
 import type { FsNode, IpcError } from '@zmt/contracts';
 import type { HasUnsavedChanges } from '@zmt/renderer/core';
 
-import { Component, computed, effect, inject } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { Component, computed, inject } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
@@ -111,13 +111,16 @@ export class ModContentComponent implements HasUnsavedChanges {
         })),
       ),
     );
-    effect(() => {
-      if (this.editor.saveStatus().kind === 'success') {
+    this.editor.saveResult$
+      .pipe(
+        filter((result) => result.ok),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => {
         this.snackBar.open(this.messages().modContent.saved, undefined, {
           duration: SAVED_SNACKBAR_MS,
         });
-      }
-    });
+      });
   }
 
   protected onModeChange(mode: ViewMode): void {

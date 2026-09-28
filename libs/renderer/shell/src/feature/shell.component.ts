@@ -1,4 +1,5 @@
-import { Component, effect, inject, signal, untracked } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { Router, RouterOutlet } from '@angular/router';
 import { LOCALES } from '@zmt/shared/i18n';
@@ -35,13 +36,8 @@ export class ShellComponent {
   protected readonly workspace = inject(WorkspaceStore);
 
   constructor() {
-    let previousRoot = untracked(this.workspace.root);
-    effect(() => {
-      const root = this.workspace.root();
-      if (root !== null && root !== previousRoot) {
-        void this.router.navigate(['/', ROUTE_PATHS.modContent]);
-      }
-      previousRoot = root;
+    this.workspace.folderOpened$.pipe(takeUntilDestroyed()).subscribe(() => {
+      void this.router.navigate(['/', ROUTE_PATHS.modContent]);
     });
   }
 

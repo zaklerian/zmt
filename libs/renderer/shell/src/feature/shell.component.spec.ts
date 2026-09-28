@@ -11,11 +11,13 @@ import { MatToolbarHarness } from '@angular/material/toolbar/testing';
 import { provideRouter, Router } from '@angular/router';
 import { patchState } from '@ngrx/signals';
 import { unprotected } from '@ngrx/signals/testing';
+import { ok } from '@zmt/contracts';
+import { flushPromises } from '@zmt/renderer/core';
 import { EN_MESSAGES, LOCALE, LOCALE_LOADERS } from '@zmt/shared/i18n';
 
 import type { NavEntry } from '../ui';
 
-import { APP_VERSION, I18nStore, WorkspaceStore } from '../data-access';
+import { APP_VERSION, I18nStore, WorkspaceService, WorkspaceStore } from '../data-access';
 import { MESSAGES, NAV_ENTRIES } from '../ui';
 import { ShellComponent } from './shell.component';
 
@@ -26,15 +28,18 @@ const ENTRIES: readonly NavEntry[] = [
 
 describe('ShellComponent', () => {
   let deMessages: Messages;
+  const openFolderDialog = vi.fn();
 
   beforeAll(async () => {
     deMessages = await LOCALE_LOADERS.de();
   });
 
   beforeEach(() => {
+    openFolderDialog.mockReset();
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
+        { provide: WorkspaceService, useValue: { openFolderDialog } },
         { provide: APP_VERSION, useValue: '1.2.3' },
         { provide: NAV_ENTRIES, useValue: ENTRIES },
         { provide: MESSAGES, useFactory: () => inject(I18nStore).messages },
@@ -120,14 +125,19 @@ describe('ShellComponent', () => {
     expect(navigate).toHaveBeenCalledWith(['/', 'settings']);
   });
 
-  it('navigates to the mod content page when a root folder opens', async () => {
-    const { fixture } = await setup();
+  it('navigates to the mod content page when the folder dialog returns a folder', async () => {
+    const { fixture, loader } = await setup();
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
-    const workspace = TestBed.inject(WorkspaceStore);
-    patchState(unprotected(workspace), { root: '/mods/my-mod' });
-    await fixture.whenStable();
+    openFolderDialog.mockResolvedValueOnce(ok('/mods/my-mod')).mockResolvedValueOnce(ok(null));
+    const open = await loader.getHarness(MatButtonHarness.with({ selector: '.open-folder' }));
+    await open.click();
+    await flushPromises();
     expect(navigate).toHaveBeenCalledWith(['/', 'mod-content']);
-    patchState(unprotected(workspace), { root: null });
+    await open.click();
+    await flushPromises();
+    expect(navigate).toHaveBeenCalledTimes(1);
+
+    patchState(unprotected(TestBed.inject(WorkspaceStore)), { root: '/mods/other' });
     await fixture.whenStable();
     expect(navigate).toHaveBeenCalledTimes(1);
   });

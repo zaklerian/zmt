@@ -9,7 +9,7 @@ import { deferred, flushPromises } from '@zmt/renderer/core';
 import type { ModDescriptorValues } from '../util';
 
 import { ModInfoService } from './mod-info.service';
-import { ModInfoStore } from './mod-info.store';
+import { type DescriptorSaveResult, ModInfoStore, NO_DESCRIPTOR_LOADED } from './mod-info.store';
 
 type ReadResult = IpcChannelResult<'fs:readTextFile'>;
 type WriteResult = IpcChannelResult<'fs:writeTextFile'>;
@@ -143,22 +143,74 @@ describe('ModInfoStore', () => {
     },
   );
 
-  it('ignores a save without a loaded descriptor and cancels a save when another loads', async () => {
+  it('rejects a save issued before a descriptor is loaded instead of dropping it', async () => {
+    const results = vi.fn<(result: DescriptorSaveResult) => void>();
+    store.saveResult$.subscribe(results);
     store.save(VALUES);
     await flushPromises();
     expect(writeDescriptor).not.toHaveBeenCalled();
+    expect(store.saveStatus()).toEqual({ error: NO_DESCRIPTOR_LOADED.error, kind: 'error' });
+    expect(results.mock.calls).toEqual([[NO_DESCRIPTOR_LOADED]]);
+  });
 
+  it('queues a rapid second save behind the first and serializes it over the saved source', async () => {
+    readDescriptor.mockResolvedValue(ok(SOURCE));
+    store.load(PATH);
+    await flushPromises();
+    const results = vi.fn<(result: DescriptorSaveResult) => void>();
+    store.saveResult$.subscribe(results);
+    const first = deferred<WriteResult>();
+    const second = deferred<WriteResult>();
+    writeDescriptor.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+
+    store.save({ ...VALUES, version: '0.2' });
+    store.save({ ...VALUES, tags: ['Gameplay', 'Historical'], version: '0.3' });
+    expect(writeDescriptor).toHaveBeenCalledTimes(1);
+    expect(writeDescriptor).toHaveBeenLastCalledWith(
+      PATH,
+      SOURCE.replace('version="0.1"', 'version="0.2"'),
+    );
+
+    first.resolve(ok(null));
+    await flushPromises();
+    expect(store.values()?.version).toBe('0.2');
+    const expected = SOURCE.replace('version="0.1"', 'version="0.3"').replace(
+      '\t"Gameplay"\n',
+      '\t"Gameplay"\n\t"Historical"\n',
+    );
+    expect(writeDescriptor).toHaveBeenCalledTimes(2);
+    expect(writeDescriptor).toHaveBeenLastCalledWith(PATH, expected);
+    expect(store.saveStatus()).toEqual({ kind: 'loading' });
+
+    second.resolve(ok(null));
+    await flushPromises();
+    expect(store.source()).toBe(expected);
+    expect(store.values()).toEqual({ ...VALUES, tags: ['Gameplay', 'Historical'], version: '0.3' });
+    expect(store.saveStatus()).toEqual({ kind: 'success' });
+    expect(results.mock.calls).toEqual([[ok(null)], [ok(null)]]);
+  });
+
+  it('lets a write for a descriptor that was left finish without touching the newly loaded one', async () => {
     readDescriptor.mockResolvedValueOnce(ok(SOURCE)).mockResolvedValueOnce(ok('name="other"\n'));
     store.load(PATH);
     await flushPromises();
+    const results = vi.fn<(result: DescriptorSaveResult) => void>();
+    store.saveResult$.subscribe(results);
     const write = deferred<WriteResult>();
     writeDescriptor.mockReturnValue(write.promise);
     store.save({ ...VALUES, version: '9' });
     store.load('/mods/other/descriptor.mod');
     await flushPromises();
+    expect(store.saveStatus()).toEqual({ kind: 'idle' });
     write.resolve(ok(null));
     await flushPromises();
+    expect(writeDescriptor).toHaveBeenCalledWith(
+      PATH,
+      SOURCE.replace('version="0.1"', 'version="9"'),
+    );
+    expect(store.descriptorPath()).toBe('/mods/other/descriptor.mod');
     expect(store.values()?.name).toBe('other');
     expect(store.saveStatus()).toEqual({ kind: 'idle' });
+    expect(results).not.toHaveBeenCalled();
   });
 });
