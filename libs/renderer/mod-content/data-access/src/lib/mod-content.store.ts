@@ -2,11 +2,7 @@ import type { FileSelection } from '@zmt/renderer/mod-content/util';
 
 import { computed } from '@angular/core';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
-import {
-  type ContentKind,
-  type StructuredView,
-  type ViewMode,
-} from '@zmt/renderer/mod-content/util';
+import { type ContentKind, type ViewMode } from '@zmt/renderer/mod-content/util';
 
 export interface ModContentState {
   readonly selection: FileSelection | null;
@@ -25,12 +21,8 @@ export function resolveContentKind(
   if (selection === null) {
     return 'placeholder';
   }
-  const structured = selection.recognizerId !== null || selection.isDescriptor;
   if (viewMode === 'code') {
-    return structured || selection.support === 'editable' ? 'editor' : 'placeholder';
-  }
-  if (selection.recognizerId !== null) {
-    return 'entityTable';
+    return selection.isDescriptor || selection.support === 'editable' ? 'editor' : 'placeholder';
   }
   if (selection.isDescriptor) {
     return 'descriptor';
@@ -48,13 +40,7 @@ export const ModContentStore = signalStore(
   withComputed(({ selection, viewMode }) => ({
     contentKind: computed(() => resolveContentKind(selection(), viewMode())),
     selectedPath: computed(() => selection()?.path ?? null),
-    showsModeToggle: computed(() => {
-      const current = selection();
-      return current !== null && (current.recognizerId !== null || current.isDescriptor);
-    }),
-    structuredView: computed<StructuredView>(() =>
-      selection()?.isDescriptor === true ? 'form' : 'table',
-    ),
+    showsModeToggle: computed(() => selection()?.isDescriptor === true),
   })),
   withMethods((store) => {
     const select = (selection: FileSelection | null): void => {

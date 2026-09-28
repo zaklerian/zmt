@@ -161,8 +161,8 @@ describe('registerFsHandlers', () => {
     });
   });
 
-  describe('fs:writeTextFile and fs:writeBinaryFile', () => {
-    it('writes text and binary under the root', async () => {
+  describe('fs:writeTextFile', () => {
+    it('writes text under the root', async () => {
       await expect(
         listenerFor('fs:writeTextFile')(trusted(), {
           content: 'new',
@@ -170,13 +170,6 @@ describe('registerFsHandlers', () => {
         }),
       ).resolves.toEqual({ data: null, ok: true });
       await expect(fs.readFile(path.join(root, 'new.txt'), 'utf8')).resolves.toBe('new');
-      await expect(
-        listenerFor('fs:writeBinaryFile')(trusted(), {
-          content: new Uint8Array([1, 2]),
-          path: path.join(root, 'new.bin'),
-        }),
-      ).resolves.toEqual({ data: null, ok: true });
-      await expect(fs.readFile(path.join(root, 'new.bin'))).resolves.toEqual(Buffer.from([1, 2]));
     });
 
     it('returns 403 outside the root and 400 for bad content', async () => {
@@ -187,7 +180,7 @@ describe('registerFsHandlers', () => {
         }),
       ).resolves.toMatchObject({ error: { code: 403 }, ok: false });
       await expect(
-        listenerFor('fs:writeBinaryFile')(trusted(), { content: 'x', path: path.join(root, 'a') }),
+        listenerFor('fs:writeTextFile')(trusted(), { content: 42, path: path.join(root, 'a') }),
       ).resolves.toMatchObject({ error: { code: 400 }, ok: false });
     });
   });

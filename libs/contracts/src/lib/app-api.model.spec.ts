@@ -14,12 +14,7 @@ describe('AppApi', () => {
   it('derives one method per channel with the contract request and result types', () => {
     expectTypeOf<keyof AppApi>().toEqualTypeOf<'fs' | 'plugins' | 'system'>();
     expectTypeOf<keyof AppApi['fs']>().toEqualTypeOf<
-      | 'listDirectory'
-      | 'openFolderDialog'
-      | 'readTextFile'
-      | 'searchFiles'
-      | 'writeBinaryFile'
-      | 'writeTextFile'
+      'listDirectory' | 'openFolderDialog' | 'readTextFile' | 'searchFiles' | 'writeTextFile'
     >();
     expectTypeOf<AppApi['system']['ping']>().toEqualTypeOf<() => Promise<IpcResult<'pong'>>>();
     expectTypeOf<AppApi['fs']['openFolderDialog']>().toEqualTypeOf<

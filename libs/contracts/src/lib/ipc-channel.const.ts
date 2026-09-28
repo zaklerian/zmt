@@ -4,7 +4,6 @@ export const IPC_CHANNELS = {
     openFolderDialog: 'fs:openFolderDialog',
     readTextFile: 'fs:readTextFile',
     searchFiles: 'fs:searchFiles',
-    writeBinaryFile: 'fs:writeBinaryFile',
     writeTextFile: 'fs:writeTextFile',
   },
   plugins: {

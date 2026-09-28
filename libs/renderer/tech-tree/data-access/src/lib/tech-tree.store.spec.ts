@@ -5,7 +5,7 @@ import { patchState } from '@ngrx/signals';
 import { unprotected } from '@ngrx/signals/testing';
 import { collectUnhandledErrors, NotImplementedError } from '@zmt/renderer/pending/util';
 
-import { AIR_TECHS_FOLDER, TechTreeStore } from './tech-tree.store';
+import { TechTreeStore } from './tech-tree.store';
 
 const FIGHTER: TechTreeNode = {
   categories: ['air_equipment'],
@@ -46,12 +46,10 @@ describe('TechTreeStore', () => {
     expect(store.status()).toEqual({ kind: 'idle' });
     expect(store.isEmpty()).toBe(false);
     expect(store.nodeViews()).toEqual([]);
-    expect(store.selectedNode()).toBeNull();
     expect(store.visibleEdges()).toEqual([]);
-    expect(AIR_TECHS_FOLDER).toBe('air_techs_folder');
   });
 
-  it('derives node views, the selected node and the visible edges', () => {
+  it('derives node views and the visible edges', () => {
     patchState(unprotected(store), {
       edges: EDGES,
       names: { fighter1: 'Interwar Fighter' },
@@ -61,7 +59,6 @@ describe('TechTreeStore', () => {
       status: { kind: 'success' },
     });
     expect(store.isEmpty()).toBe(false);
-    expect(store.selectedNode()).toBe(FIGHTER2);
     expect(store.nodeViews().map((view) => [view.id, view.highlighted, view.selected])).toEqual([
       ['fighter1', true, false],
       ['fighter2', false, true],

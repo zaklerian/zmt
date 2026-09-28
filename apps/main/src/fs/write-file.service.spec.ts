@@ -10,7 +10,6 @@ import {
   assertNotDirectory,
   assertParentDirectory,
   tempPathFor,
-  writeBinaryFile,
   writeTextFile,
 } from './write-file.service';
 
@@ -47,12 +46,6 @@ describe('write-file service', () => {
     expect(await names()).toEqual(['dir', 'existing.txt']);
   });
 
-  it('writes binary content byte for byte', async () => {
-    const bytes = new Uint8Array([0, 255, 7, 128]);
-    await writeBinaryFile(await safe(path.join(root, 'blob.bin')), bytes);
-    await expect(fs.readFile(path.join(root, 'blob.bin'))).resolves.toEqual(Buffer.from(bytes));
-  });
-
   it('accepts an empty payload', async () => {
     await writeTextFile(await safe(path.join(root, 'empty.txt')), '');
     await expect(fs.readFile(path.join(root, 'empty.txt'), 'utf8')).resolves.toBe('');
@@ -65,11 +58,6 @@ describe('write-file service', () => {
     );
     await expect(promise).rejects.toBeInstanceOf(IpcFailure);
     await expect(promise).rejects.toMatchObject({ code: 413 });
-    const binary = writeBinaryFile(
-      await safe(path.join(root, 'big.bin')),
-      new Uint8Array(MAX_PAYLOAD_BYTES + 1),
-    );
-    await expect(binary).rejects.toMatchObject({ code: 413 });
     expect(await names()).toEqual(['dir', 'existing.txt']);
   });
 

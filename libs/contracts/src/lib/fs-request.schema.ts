@@ -53,16 +53,6 @@ export const WRITE_TEXT_FILE_REQUEST_SCHEMA = v.pipe(
 
 export type WriteTextFileRequest = v.InferOutput<typeof WRITE_TEXT_FILE_REQUEST_SCHEMA>;
 
-export const WRITE_BINARY_FILE_REQUEST_SCHEMA = v.pipe(
-  v.object({
-    content: v.instance(Uint8Array),
-    path: PATH_SCHEMA,
-  }),
-  v.readonly(),
-);
-
-export type WriteBinaryFileRequest = v.InferOutput<typeof WRITE_BINARY_FILE_REQUEST_SCHEMA>;
-
 export const FOLDER_DIALOG_RESPONSE_SCHEMA = v.nullable(PATH_SCHEMA);
 
 export type FolderDialogResponse = v.InferOutput<typeof FOLDER_DIALOG_RESPONSE_SCHEMA>;

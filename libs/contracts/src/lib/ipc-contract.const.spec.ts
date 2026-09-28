@@ -58,16 +58,6 @@ const SAMPLES: { readonly [C in IpcChannel]: Sample<C> } = {
     request: { query: 'readme', root: '/root' },
     response: [NODE],
   },
-  [IPC_CHANNELS.fs.writeBinaryFile]: {
-    invalidRequests: [
-      undefined,
-      { content: 'bytes', path: '/r/a.bin' },
-      { content: [1, 2], path: '/r/a.bin' },
-    ],
-    invalidResponses: [undefined, 'ok', 0],
-    request: { content: new Uint8Array([1, 2, 3]), path: '/root/a.bin' },
-    response: null,
-  },
   [IPC_CHANNELS.fs.writeTextFile]: {
     invalidRequests: [undefined, { content: 42, path: '/r/a.txt' }, { content: 'x' }],
     invalidResponses: [undefined, 'ok', 0],

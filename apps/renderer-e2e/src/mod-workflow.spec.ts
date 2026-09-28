@@ -140,25 +140,6 @@ test.describe('mod workflow', () => {
     await expect(page.getByRole('option')).toHaveCount(0);
   });
 
-  test('shows why an entity file cannot be tabled yet and offers the code view', async () => {
-    const { page } = launched;
-    await openFixture(launched, fixture);
-    await treeButton(page, 'common').first().click();
-    await treeButton(page, 'technologies').first().click();
-    await selectFile(page, 'air.txt');
-    await expect(page.getByRole('alert').filter({ hasText: 'entity table' })).toContainText(
-      'An internal error occurred.',
-    );
-    await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible();
-    const modes = page.getByRole('radiogroup', { name: 'Panel actions' });
-    await expect(modes.getByRole('radio', { name: 'Table view' })).toBeChecked();
-    await expectNoAxeViolations(page);
-    await modes.getByRole('radio', { name: 'Code view' }).click();
-    await expect(page.getByRole('textbox', { name: 'File contents' })).toHaveValue(
-      /fixture_fighter/u,
-    );
-  });
-
   test('edits the mod descriptor through the form and keeps the file lossless', async () => {
     const { page } = launched;
     await openFixture(launched, fixture);

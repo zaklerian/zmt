@@ -34,14 +34,11 @@
       "@zmt/renderer/app-settings/util": ["./libs/renderer/app-settings/util/src/index.ts"],
       "@zmt/renderer/async-status/util": ["./libs/renderer/async-status/util/src/index.ts"],
       "@zmt/renderer/dialog/util": ["./libs/renderer/dialog/util/src/index.ts"],
-      "@zmt/renderer/entity-form/ui": ["./libs/renderer/entity-form/ui/src/index.ts"],
-      "@zmt/renderer/entity-form/util": ["./libs/renderer/entity-form/util/src/index.ts"],
       "@zmt/renderer/feature-nav/data-access": [
         "./libs/renderer/feature-nav/data-access/src/index.ts"
       ],
       "@zmt/renderer/feature-nav/feature": ["./libs/renderer/feature-nav/feature/src/index.ts"],
       "@zmt/renderer/feature-nav/ui": ["./libs/renderer/feature-nav/ui/src/index.ts"],
-      "@zmt/renderer/hoi4/util": ["./libs/renderer/hoi4/util/src/index.ts"],
       "@zmt/renderer/home/feature": ["./libs/renderer/home/feature/src/index.ts"],
       "@zmt/renderer/i18n/data-access": ["./libs/renderer/i18n/data-access/src/index.ts"],
       "@zmt/renderer/mod-content/data-access": [
@@ -56,7 +53,6 @@
       "@zmt/renderer/mod-info/util": ["./libs/renderer/mod-info/util/src/index.ts"],
       "@zmt/renderer/pending/util": ["./libs/renderer/pending/util/src/index.ts"],
       "@zmt/renderer/plugin/data-access": ["./libs/renderer/plugin/data-access/src/index.ts"],
-      "@zmt/renderer/plugin/util": ["./libs/renderer/plugin/util/src/index.ts"],
       "@zmt/renderer/shell/data-access": ["./libs/renderer/shell/data-access/src/index.ts"],
       "@zmt/renderer/shell/feature": ["./libs/renderer/shell/feature/src/index.ts"],
       "@zmt/renderer/shell/ui": ["./libs/renderer/shell/ui/src/index.ts"],

@@ -27,10 +27,10 @@ describe('buildAppApi', () => {
     expect(invokeFn).toHaveBeenLastCalledWith('system:ping', undefined);
     await api.fs.listDirectory({ path: '/root' });
     expect(invokeFn).toHaveBeenLastCalledWith('fs:listDirectory', { path: '/root' });
-    await api.fs.writeBinaryFile({ content: new Uint8Array([1]), path: '/root/a.bin' });
-    expect(invokeFn).toHaveBeenLastCalledWith('fs:writeBinaryFile', {
-      content: new Uint8Array([1]),
-      path: '/root/a.bin',
+    await api.fs.writeTextFile({ content: 'body', path: '/root/a.txt' });
+    expect(invokeFn).toHaveBeenLastCalledWith('fs:writeTextFile', {
+      content: 'body',
+      path: '/root/a.txt',
     });
     await api.plugins.list();
     expect(invokeFn).toHaveBeenLastCalledWith('plugins:list', undefined);

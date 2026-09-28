@@ -26,14 +26,6 @@ export const EN_MESSAGES = {
     unsavedChangesMessage: 'You have unsaved changes. Discard them?',
     unsavedChangesTitle: 'Unsaved changes',
   },
-  entityForm: {
-    addField: 'Add field',
-    keyDuplicate: 'Duplicate property key.',
-    keyLabel: 'Property',
-    keyRequired: 'Property key is required.',
-    remove: 'Remove',
-    valueLabel: 'Value',
-  },
   errors: {
     400: 'The request was invalid.',
     403: 'The path lies outside the open mod folder.',
@@ -60,15 +52,11 @@ export const EN_MESSAGES = {
     en: 'English',
   },
   modContent: {
-    actionFailed: 'The action failed.',
     breadcrumbs: 'File path',
     codeView: 'Code view',
-    columns: 'Columns',
     editorFailed: 'The file could not be loaded.',
     editorLabel: 'File contents',
     entityActions: 'Entity actions',
-    entityTable: 'Entities',
-    entityTableFailed: 'The entity table could not be loaded.',
     fileTree: 'Files',
     fileTreeEmpty: 'Folder is empty',
     fileTreeFailed: 'The folder could not be listed.',
@@ -85,7 +73,6 @@ export const EN_MESSAGES = {
     searchNoRoot: 'Open a folder to search',
     searchReady: 'Search files…',
     selectSomething: 'Select a file in the file tree to view it.',
-    tableView: 'Table view',
     title: 'Mod content',
   },
   modInfo: {

@@ -1,4 +1,3 @@
-export * from './lib/entity-table.store';
 export * from './lib/file-search.store';
 export * from './lib/file-tree-item.util';
 export * from './lib/file-tree.store';

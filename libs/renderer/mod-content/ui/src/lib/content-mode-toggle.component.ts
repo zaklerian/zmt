@@ -1,8 +1,8 @@
 import type { Messages } from '@zmt/shared/i18n';
 
-import { Component, computed, input, model } from '@angular/core';
+import { Component, input, model } from '@angular/core';
 import { type MatButtonToggleChange, MatButtonToggleModule } from '@angular/material/button-toggle';
-import { type StructuredView, VIEW_MODES, type ViewMode } from '@zmt/renderer/mod-content/util';
+import { VIEW_MODES, type ViewMode } from '@zmt/renderer/mod-content/util';
 
 @Component({
   imports: [MatButtonToggleModule],
@@ -15,8 +15,8 @@ import { type StructuredView, VIEW_MODES, type ViewMode } from '@zmt/renderer/mo
       [value]="mode()"
       (change)="onChange($event)"
     >
-      <mat-button-toggle [value]="modes.table" [attr.aria-label]="structuredLabel()">{{
-        structuredLabel()
+      <mat-button-toggle [value]="modes.table" [attr.aria-label]="messages().modContent.formView">{{
+        messages().modContent.formView
       }}</mat-button-toggle>
       <mat-button-toggle [value]="modes.code" [attr.aria-label]="messages().modContent.codeView">{{
         messages().modContent.codeView
@@ -27,15 +27,8 @@ import { type StructuredView, VIEW_MODES, type ViewMode } from '@zmt/renderer/mo
 export class ContentModeToggleComponent {
   readonly messages = input.required<Messages>();
   readonly mode = model<ViewMode>('table');
-  readonly structuredView = input<StructuredView>('table');
 
   protected readonly modes = VIEW_MODES;
-
-  protected readonly structuredLabel = computed(() =>
-    this.structuredView() === 'form'
-      ? this.messages().modContent.formView
-      : this.messages().modContent.tableView,
-  );
 
   protected onChange(change: MatButtonToggleChange): void {
     const value: unknown = change.value;

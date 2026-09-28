@@ -10,7 +10,6 @@ describe('WindowApi', () => {
         openFolderDialog: () => Promise.resolve(ok(null)),
         readTextFile: () => Promise.resolve(ok('')),
         searchFiles: () => Promise.resolve(ok([])),
-        writeBinaryFile: () => Promise.resolve(ok(null)),
         writeTextFile: () => Promise.resolve(ok(null)),
       },
       plugins: { list: () => Promise.resolve(ok([])) },

@@ -72,14 +72,7 @@ test.describe('electron shell', () => {
       ),
     );
     expect(shape).toEqual({
-      fs: [
-        'listDirectory',
-        'openFolderDialog',
-        'readTextFile',
-        'searchFiles',
-        'writeBinaryFile',
-        'writeTextFile',
-      ],
+      fs: ['listDirectory', 'openFolderDialog', 'readTextFile', 'searchFiles', 'writeTextFile'],
       plugins: ['list'],
       system: ['ping'],
     });

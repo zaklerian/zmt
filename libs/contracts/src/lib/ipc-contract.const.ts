@@ -6,7 +6,6 @@ import {
   LIST_DIRECTORY_REQUEST_SCHEMA,
   READ_TEXT_FILE_REQUEST_SCHEMA,
   SEARCH_FILES_REQUEST_SCHEMA,
-  WRITE_BINARY_FILE_REQUEST_SCHEMA,
   WRITE_TEXT_FILE_REQUEST_SCHEMA,
 } from './fs-request.schema';
 import { GAME_PLUGIN_LIST_SCHEMA } from './game-plugin.schema';
@@ -37,7 +36,6 @@ export const IPC_CONTRACTS = Object.freeze({
   [IPC_CHANNELS.fs.openFolderDialog]: contract(v.undefined(), FOLDER_DIALOG_RESPONSE_SCHEMA),
   [IPC_CHANNELS.fs.readTextFile]: contract(READ_TEXT_FILE_REQUEST_SCHEMA, v.string()),
   [IPC_CHANNELS.fs.searchFiles]: contract(SEARCH_FILES_REQUEST_SCHEMA, FS_NODE_LIST_SCHEMA),
-  [IPC_CHANNELS.fs.writeBinaryFile]: contract(WRITE_BINARY_FILE_REQUEST_SCHEMA, v.null()),
   [IPC_CHANNELS.fs.writeTextFile]: contract(WRITE_TEXT_FILE_REQUEST_SCHEMA, v.null()),
   [IPC_CHANNELS.plugins.list]: contract(v.undefined(), GAME_PLUGIN_LIST_SCHEMA),
   [IPC_CHANNELS.system.ping]: contract(v.undefined(), v.literal('pong')),

@@ -20,8 +20,3 @@ export type DialogData =
 export interface HasUnsavedChanges {
   readonly dirty: Signal<boolean>;
 }
-
-export interface FormDialogOptions<TData> {
-  readonly data: TData;
-  readonly discard: ConfirmDialogOptions;
-}

@@ -1,5 +1,4 @@
 import type { FsNode } from '@zmt/contracts';
-import type { AsyncStatus } from '@zmt/renderer/async-status/util';
 import type { Messages } from '@zmt/shared/i18n';
 
 import { Component, computed, input, model, output } from '@angular/core';
@@ -21,7 +20,6 @@ export class FileSearchComponent {
   readonly query = model('');
   readonly results = input.required<readonly FsNode[]>();
   readonly selectNode = output<FsNode>();
-  readonly status = input.required<AsyncStatus>();
 
   protected readonly placeholder = computed(() =>
     this.disabled()
