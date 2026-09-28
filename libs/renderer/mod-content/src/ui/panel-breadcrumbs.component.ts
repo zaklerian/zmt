@@ -1,6 +1,5 @@
-import type { Messages } from '@zmt/shared/i18n';
-
-import { Component, input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 
 @Component({
   selector: 'zmt-panel-breadcrumbs',
@@ -25,7 +24,7 @@ import { Component, input } from '@angular/core';
   `,
 })
 export class PanelBreadcrumbsComponent {
-  readonly messages = input.required<Messages>();
+  protected readonly messages = inject(MESSAGES);
   readonly rootName = input.required<string>();
   readonly segments = input.required<readonly string[]>();
 }

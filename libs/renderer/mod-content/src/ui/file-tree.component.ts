@@ -1,8 +1,7 @@
-import type { Messages } from '@zmt/shared/i18n';
-
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTreeModule } from '@angular/material/tree';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 import { NavIconComponent } from '@zmt/renderer/shell/ui';
 
 import type { FileTreeItem } from '../util';
@@ -17,7 +16,7 @@ export class FileTreeComponent {
   readonly expand = output<FileTreeItem>();
   readonly expanded = input<readonly string[]>([]);
   readonly items = input.required<readonly FileTreeItem[]>();
-  readonly messages = input.required<Messages>();
+  protected readonly messages = inject(MESSAGES);
   readonly selectItem = output<FileTreeItem>();
   readonly selectedId = input<null | string>(null);
 

@@ -52,7 +52,6 @@ export const SAVED_SNACKBAR_MS = 3000;
         <zmt-plugin-config-form
           [activePlugin]="store.activePlugin()"
           [features]="features()"
-          [messages]="messages()"
           [plugins]="store.plugins()"
           (featuresChange)="features.set($event)"
           (gameChange)="onGameChange($event)"
@@ -62,7 +61,6 @@ export const SAVED_SNACKBAR_MS = 3000;
       }
       <zmt-file-display-form
         [hideUnsupportedFiles]="hideUnsupportedFiles()"
-        [messages]="messages()"
         (hideUnsupportedFilesChange)="hideUnsupportedFiles.set($event)"
       />
       <div class="actions">

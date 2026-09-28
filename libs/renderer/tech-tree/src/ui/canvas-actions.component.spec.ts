@@ -1,6 +1,8 @@
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatButtonHarness } from '@angular/material/button/testing';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 import { EN_MESSAGES } from '@zmt/shared/i18n';
 
 import { CanvasActionsComponent, flowCaption } from './canvas-actions.component';
@@ -18,12 +20,17 @@ describe('flowCaption', () => {
 });
 
 describe('CanvasActionsComponent', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: MESSAGES, useValue: signal(EN_MESSAGES) }],
+    });
+  });
+
   async function setup(technologyId: null | string) {
     const fixture = TestBed.createComponent(CanvasActionsComponent);
     fixture.componentRef.setInput('addStatus', { kind: 'idle' });
     fixture.componentRef.setInput('deleteStatus', { kind: 'readonly' });
     fixture.componentRef.setInput('editStatus', { kind: 'idle' });
-    fixture.componentRef.setInput('messages', EN_MESSAGES);
     fixture.componentRef.setInput('technologyId', technologyId);
     await fixture.whenStable();
     return { fixture, loader: TestbedHarnessEnvironment.loader(fixture) };

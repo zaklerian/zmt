@@ -1,4 +1,6 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 import { EN_MESSAGES } from '@zmt/shared/i18n';
 
 import type { TechTreeEdge, TechTreeNodeView } from '../util';
@@ -33,10 +35,15 @@ const EDGES: readonly TechTreeEdge[] = [
 ];
 
 describe('TechTreeCanvasComponent', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: MESSAGES, useValue: signal(EN_MESSAGES) }],
+    });
+  });
+
   async function setup() {
     const fixture = TestBed.createComponent(TechTreeCanvasComponent);
     fixture.componentRef.setInput('edges', EDGES);
-    fixture.componentRef.setInput('messages', EN_MESSAGES);
     fixture.componentRef.setInput('nodes', [FIGHTER, FIGHTER2]);
     await fixture.whenStable();
     const host: unknown = fixture.nativeElement;

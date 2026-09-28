@@ -1,9 +1,11 @@
 import type { GamePlugin } from '@zmt/contracts';
 
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatSelectHarness } from '@angular/material/select/testing';
 import { MatSlideToggleHarness } from '@angular/material/slide-toggle/testing';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 import { EN_MESSAGES } from '@zmt/shared/i18n';
 
 import { PluginConfigFormComponent } from './plugin-config-form.component';
@@ -20,9 +22,14 @@ const HOI4: GamePlugin = {
 const STELLARIS: GamePlugin = { displayName: 'Stellaris', features: [], gameId: 'stellaris' };
 
 describe('PluginConfigFormComponent', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: MESSAGES, useValue: signal(EN_MESSAGES) }],
+    });
+  });
+
   async function setup(plugins: readonly GamePlugin[]) {
     const fixture = TestBed.createComponent(PluginConfigFormComponent);
-    fixture.componentRef.setInput('messages', EN_MESSAGES);
     fixture.componentRef.setInput('plugins', plugins);
     fixture.componentRef.setInput('activePlugin', HOI4);
     await fixture.whenStable();

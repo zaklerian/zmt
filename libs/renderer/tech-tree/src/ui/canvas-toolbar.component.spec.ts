@@ -1,16 +1,23 @@
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatInputHarness } from '@angular/material/input/testing';
 import { MatSelectHarness } from '@angular/material/select/testing';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 import { EN_MESSAGES } from '@zmt/shared/i18n';
 
 import { CanvasToolbarComponent } from './canvas-toolbar.component';
 
 describe('CanvasToolbarComponent', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: MESSAGES, useValue: signal(EN_MESSAGES) }],
+    });
+  });
+
   it('mirrors the search text and the chosen categories into its models', async () => {
     const fixture = TestBed.createComponent(CanvasToolbarComponent);
     fixture.componentRef.setInput('categories', ['air_equipment', 'naval_equipment']);
-    fixture.componentRef.setInput('messages', EN_MESSAGES);
     await fixture.whenStable();
     const loader = TestbedHarnessEnvironment.loader(fixture);
 

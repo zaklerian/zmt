@@ -1,6 +1,6 @@
-import type { Messages } from '@zmt/shared/i18n';
+import { Component, inject, input } from '@angular/core';
 
-import { Component, input } from '@angular/core';
+import { MESSAGES } from './messages.const';
 
 @Component({
   selector: 'zmt-app-footer',
@@ -11,6 +11,6 @@ import { Component, input } from '@angular/core';
   `,
 })
 export class AppFooterComponent {
-  readonly messages = input.required<Messages>();
+  protected readonly messages = inject(MESSAGES);
   readonly version = input.required<string>();
 }

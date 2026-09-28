@@ -1,11 +1,10 @@
-import type { Messages } from '@zmt/shared/i18n';
-
-import { Component, input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { MatListModule } from '@angular/material/list';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 import type { NavEntry } from './navigation.model';
 
+import { MESSAGES } from './messages.const';
 import { NavIconComponent } from './nav-icon.component';
 
 @Component({
@@ -17,5 +16,5 @@ import { NavIconComponent } from './nav-icon.component';
 export class NavRailComponent {
   readonly entries = input.required<readonly NavEntry[]>();
   readonly expanded = input(false);
-  readonly messages = input.required<Messages>();
+  protected readonly messages = inject(MESSAGES);
 }

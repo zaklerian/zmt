@@ -2,7 +2,6 @@
 <div class="chrome">
   <zmt-canvas-toolbar
     [categories]="tree.categories()"
-    [messages]="messages()"
     [search]="tree.search()"
     [selectedCategories]="tree.selectedCategories()"
     (searchChange)="tree.setSearch($event)"
@@ -21,7 +20,6 @@
   [busy]="form.busy() || delete.deleting()"
   [deleteStatus]="delete.status()"
   [editStatus]="form.status()"
-  [messages]="messages()"
   [technologyId]="tree.selectedId()"
   (add)="onAddChild()"
   (deleteTechnology)="onDelete()"
@@ -32,7 +30,6 @@
 } @else {
   <zmt-tech-tree-canvas
     [edges]="tree.visibleEdges()"
-    [messages]="messages()"
     [nodes]="tree.nodeViews()"
     (nodeContextMenu)="openNodeMenu($event)"
     (openNode)="form.openEdit($event)"
@@ -43,7 +40,6 @@
 @if (menu(); as target) {
   <zmt-canvas-context-menu
     [anchor]="target.anchor"
-    [messages]="messages()"
     [technologyId]="target.technologyId"
     (addChild)="form.openAddChild($event); closeMenu()"
     (addFree)="form.openAddFree(target.position); closeMenu()"
@@ -57,7 +53,6 @@
     <zmt-technology-delete-dialog
       [busy]="delete.deleting()"
       [hasTree]="delete.hasTree()"
-      [messages]="messages()"
       [plan]="plan"
       [token]="token"
       (confirmDelete)="delete.commit($event)"

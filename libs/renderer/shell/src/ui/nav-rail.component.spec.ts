@@ -1,4 +1,5 @@
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatNavListHarness } from '@angular/material/list/testing';
 import { provideRouter } from '@angular/router';
@@ -6,6 +7,7 @@ import { EN_MESSAGES } from '@zmt/shared/i18n';
 
 import type { NavEntry } from './navigation.model';
 
+import { MESSAGES } from './messages.const';
 import { NavRailComponent } from './nav-rail.component';
 
 const ENTRIES: readonly NavEntry[] = [
@@ -15,10 +17,11 @@ const ENTRIES: readonly NavEntry[] = [
 
 describe('NavRailComponent', () => {
   it('renders one link per entry with the localized label and the route path', async () => {
-    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), { provide: MESSAGES, useValue: signal(EN_MESSAGES) }],
+    });
     const fixture = TestBed.createComponent(NavRailComponent);
     fixture.componentRef.setInput('entries', ENTRIES);
-    fixture.componentRef.setInput('messages', EN_MESSAGES);
     await fixture.whenStable();
 
     const loader = TestbedHarnessEnvironment.loader(fixture);

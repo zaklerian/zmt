@@ -1,5 +1,6 @@
 import type { GamePlugin } from '@zmt/contracts';
 
+import { inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
@@ -7,6 +8,8 @@ import { patchState } from '@ngrx/signals';
 import { unprotected } from '@ngrx/signals/testing';
 import { fail, ok } from '@zmt/contracts';
 import { flushPromises } from '@zmt/renderer/core';
+import { I18nStore } from '@zmt/renderer/shell/data-access';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 import { EN_MESSAGES } from '@zmt/shared/i18n';
 
 import { AppSettingsStore, FeatureNavStore, PluginService } from '../data-access';
@@ -29,7 +32,11 @@ describe('FeatureNavComponent', () => {
   beforeEach(() => {
     list.mockReset().mockResolvedValue(ok([HOI4]));
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), { provide: PluginService, useValue: { list } }],
+      providers: [
+        provideRouter([]),
+        { provide: PluginService, useValue: { list } },
+        { provide: MESSAGES, useFactory: () => inject(I18nStore).messages },
+      ],
     });
   });
 

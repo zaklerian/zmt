@@ -1,8 +1,10 @@
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatChipSetHarness } from '@angular/material/chips/testing';
 import { MatInputHarness } from '@angular/material/input/testing';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 import { EN_MESSAGES } from '@zmt/shared/i18n';
 
 import type { ModDescriptorValues } from '../util';
@@ -19,9 +21,14 @@ const VALUES: ModDescriptorValues = {
 };
 
 describe('ModInfoFormComponent', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: MESSAGES, useValue: signal(EN_MESSAGES) }],
+    });
+  });
+
   async function setup() {
     const fixture = TestBed.createComponent(ModInfoFormComponent);
-    fixture.componentRef.setInput('messages', EN_MESSAGES);
     fixture.componentRef.setInput('values', VALUES);
     await fixture.whenStable();
     return { fixture, loader: TestbedHarnessEnvironment.loader(fixture) };

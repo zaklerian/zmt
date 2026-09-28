@@ -1,7 +1,6 @@
-import type { Messages } from '@zmt/shared/i18n';
-
-import { Component, input, model } from '@angular/core';
+import { Component, inject, model } from '@angular/core';
 import { type MatButtonToggleChange, MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 
 import { VIEW_MODES, type ViewMode } from '../util';
 
@@ -26,7 +25,7 @@ import { VIEW_MODES, type ViewMode } from '../util';
   `,
 })
 export class ContentModeToggleComponent {
-  readonly messages = input.required<Messages>();
+  protected readonly messages = inject(MESSAGES);
   readonly mode = model<ViewMode>('table');
 
   protected readonly modes = VIEW_MODES;

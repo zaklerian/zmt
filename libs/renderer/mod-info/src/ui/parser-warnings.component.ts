@@ -1,6 +1,5 @@
-import type { Messages } from '@zmt/shared/i18n';
-
-import { Component, input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 
 import type { ParserWarning } from '../util';
 
@@ -25,6 +24,6 @@ import type { ParserWarning } from '../util';
   `,
 })
 export class ParserWarningsComponent {
-  readonly messages = input.required<Messages>();
+  protected readonly messages = inject(MESSAGES);
   readonly warnings = input.required<readonly ParserWarning[]>();
 }

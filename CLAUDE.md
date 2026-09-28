@@ -18,7 +18,7 @@ apps/renderer-e2e/                    Playwright _electron smokes + axe   type:a
 libs/contracts/                       Valibot IPC schemas, channels, Result envelope   type:contracts  scope:shared
 libs/shared/i18n/                     locale dictionaries, loaders        type:util         scope:shared
 libs/renderer/core/                   domain-free renderer utilities: AsyncStatus, DialogService and confirm dialog, pending('ZMT-A-5') and NotImplementedError, window.api declaration   type:util    scope:renderer
-libs/renderer/shell/                  app chrome: shell container (feature); toolbar, nav rail, footer, nav entries token, route paths (ui); I18nStore, WorkspaceService and WorkspaceStore, APP_VERSION token, unsaved-changes guard (data-access)   type:domain  scope:renderer
+libs/renderer/shell/                  app chrome: shell container (feature); toolbar, nav rail, footer, nav entries and messages tokens, route paths (ui); I18nStore, WorkspaceService and WorkspaceStore, APP_VERSION token, unsaved-changes guard (data-access)   type:domain  scope:renderer
 libs/renderer/home/                   lazy home route (feature)           type:domain  scope:renderer
 libs/renderer/mod-content/            mod content route (feature); file tree, search, editor, mode toggle, breadcrumbs (ui); ModContentService and the ModContent, FileTree, FileSearch and PlainEditor stores (data-access); file selection, tree item and view mode models (util)   type:domain  scope:renderer
 libs/renderer/mod-info/               mod descriptor route (feature); descriptor Signal Form, parser warnings (ui); ModInfoService, ModInfoStore (data-access); descriptor values model, path helpers, lossless descriptor parser (util)   type:domain  scope:renderer

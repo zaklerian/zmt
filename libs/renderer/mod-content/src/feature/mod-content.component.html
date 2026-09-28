@@ -4,7 +4,6 @@
     <aside class="sidebar">
       <zmt-file-search
         [disabled]="!workspace.hasRoot()"
-        [messages]="messages()"
         [query]="search.query()"
         [results]="search.results()"
         (queryChange)="onSearch($event)"
@@ -23,7 +22,6 @@
       <zmt-file-tree
         [expanded]="tree.expanded()"
         [items]="tree.items()"
-        [messages]="messages()"
         [selectedId]="content.selectedPath()"
         (expand)="tree.loadChildren($event.id)"
         (selectItem)="onTreeSelect($event)"
@@ -31,16 +29,11 @@
     </aside>
     <section class="content">
       @if (workspace.rootName(); as rootName) {
-        <zmt-panel-breadcrumbs
-          [messages]="messages()"
-          [rootName]="rootName"
-          [segments]="segments()"
-        />
+        <zmt-panel-breadcrumbs [rootName]="rootName" [segments]="segments()" />
       }
       @if (content.showsModeToggle()) {
         <div class="toolbar" role="toolbar" [attr.aria-label]="messages().modContent.panelToolbar">
           <zmt-content-mode-toggle
-            [messages]="messages()"
             [mode]="content.viewMode()"
             (modeChange)="onModeChange($event)"
           />
@@ -52,7 +45,6 @@
             @case ('success') {
               <zmt-plain-editor
                 [dirty]="editor.dirty()"
-                [messages]="messages()"
                 [saveError]="saveError()"
                 [saving]="editor.saving()"
                 [text]="editor.text()"
@@ -78,7 +70,7 @@
           }
         }
         @default {
-          <zmt-content-placeholder [messages]="messages()" />
+          <zmt-content-placeholder />
         }
       }
     </section>
@@ -89,5 +81,5 @@
       {{ messages().modContent.folderFailed }} {{ messages().errors[error.code] }}
     </p>
   }
-  <zmt-no-folder-state [messages]="messages()" (openFolder)="workspace.openFolder()" />
+  <zmt-no-folder-state (openFolder)="workspace.openFolder()" />
 }

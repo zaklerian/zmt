@@ -1,8 +1,8 @@
 import { provideCheckNoChangesConfig, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { APP_VERSION } from '@zmt/renderer/shell/data-access';
-import { NAV_ENTRIES } from '@zmt/renderer/shell/ui';
+import { APP_VERSION, I18nStore } from '@zmt/renderer/shell/data-access';
+import { MESSAGES, NAV_ENTRIES } from '@zmt/renderer/shell/ui';
 
 import { version } from '../../../../package.json';
 import { APP_CONFIG, DEV_PROVIDERS, modeProviders } from './app-config.const';
@@ -25,7 +25,7 @@ describe('APP_CONFIG', () => {
     expect(Reflect.get(globalThis, 'Zone')).toBeUndefined();
   });
 
-  it('provides one lazy route per domain, the package version and the nav entries', async () => {
+  it('provides one lazy route per domain, the package version, the nav entries and the messages signal', async () => {
     TestBed.configureTestingModule({ providers: APP_CONFIG.providers });
     const router = TestBed.inject(Router);
     const routes = router.config;
@@ -63,6 +63,7 @@ describe('APP_CONFIG', () => {
     );
     expect(TestBed.inject(APP_VERSION)).toBe(version);
     expect(TestBed.inject(NAV_ENTRIES)).toBe(APP_NAV_ENTRIES);
+    expect(TestBed.inject(MESSAGES)).toBe(TestBed.inject(I18nStore).messages);
     expect(APP_NAV_ENTRIES.map((entry) => entry.path)).toEqual(
       routes.slice(0, -1).map((route) => route.path),
     );

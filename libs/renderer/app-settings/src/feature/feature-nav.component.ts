@@ -42,10 +42,9 @@ import { FEATURE_ROUTES } from './feature-route.const';
       <zmt-feature-nav-list
         [activeFeatureId]="store.activeFeatureId()"
         [features]="store.features()"
-        [messages]="messages()"
         (selectFeature)="onSelect($event)"
       />
-      <zmt-feature-tree-placeholder [feature]="store.activeFeature()" [messages]="messages()" />
+      <zmt-feature-tree-placeholder [feature]="store.activeFeature()" />
     </div>
   `,
 })

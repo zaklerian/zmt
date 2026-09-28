@@ -1,5 +1,6 @@
 export * from './app-footer.component';
 export * from './app-toolbar.component';
+export * from './messages.const';
 export * from './nav-icon.component';
 export * from './nav-icon.const';
 export * from './nav-rail.component';

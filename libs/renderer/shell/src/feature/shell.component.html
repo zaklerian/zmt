@@ -3,7 +3,6 @@
     [expanded]="expanded()"
     [locale]="locale()"
     [locales]="locales"
-    [messages]="messages()"
     (localeChange)="i18n.setLocale($event)"
     (openFolder)="workspace.openFolder()"
     (openSettings)="openSettings()"
@@ -19,7 +18,7 @@
     disableClose
     [class.expanded]="expanded()"
   >
-    <zmt-nav-rail [entries]="entries" [expanded]="expanded()" [messages]="messages()" />
+    <zmt-nav-rail [entries]="entries" [expanded]="expanded()" />
   </mat-sidenav>
   <mat-sidenav-content class="content">
     <main>
@@ -27,4 +26,4 @@
     </main>
   </mat-sidenav-content>
 </mat-sidenav-container>
-<zmt-app-footer [messages]="messages()" [version]="version" />
+<zmt-app-footer [version]="version" />

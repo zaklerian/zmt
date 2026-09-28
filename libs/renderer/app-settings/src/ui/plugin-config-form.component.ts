@@ -1,10 +1,10 @@
 import type { FeatureContribution, GameId, GamePlugin } from '@zmt/contracts';
-import type { Messages } from '@zmt/shared/i18n';
 
-import { Component, input, model, output } from '@angular/core';
+import { Component, inject, input, model, output } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { type MatSelectChange, MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 
 import { type FeatureToggles, isFeatureEnabled } from '../util';
 
@@ -26,7 +26,7 @@ export class PluginConfigFormComponent {
   readonly activePlugin = input<GamePlugin | null>(null);
   readonly features = model<FeatureToggles>({});
   readonly gameChange = output<GameId>();
-  readonly messages = input.required<Messages>();
+  protected readonly messages = inject(MESSAGES);
   readonly plugins = input.required<readonly GamePlugin[]>();
 
   protected isEnabled(feature: FeatureContribution): boolean {

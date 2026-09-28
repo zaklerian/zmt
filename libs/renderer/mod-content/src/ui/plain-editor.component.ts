@@ -1,8 +1,8 @@
 import type { IpcError } from '@zmt/contracts';
-import type { Messages } from '@zmt/shared/i18n';
 
-import { Component, input, output } from '@angular/core';
+import { Component, inject, input, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 
 @Component({
   imports: [MatButtonModule],
@@ -13,7 +13,7 @@ import { MatButtonModule } from '@angular/material/button';
 export class PlainEditorComponent {
   readonly discard = output();
   readonly dirty = input(false);
-  readonly messages = input.required<Messages>();
+  protected readonly messages = inject(MESSAGES);
   readonly save = output();
   readonly saveError = input<IpcError | null>(null);
   readonly saving = input(false);

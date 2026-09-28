@@ -50,14 +50,13 @@ export const SAVED_SNACKBAR_MS = 3000;
         @case ('success') {
           @if (draft(); as values) {
             <zmt-mod-info-form
-              [messages]="messages()"
               [saving]="store.saving()"
               [values]="values"
               (valuesChange)="draft.set($event)"
               (discard)="draft.set(store.values())"
               (save)="store.save($event)"
             />
-            <zmt-parser-warnings [messages]="messages()" [warnings]="store.parserWarnings()" />
+            <zmt-parser-warnings [warnings]="store.parserWarnings()" />
           }
         }
         @case ('error') {

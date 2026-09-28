@@ -1,9 +1,8 @@
-import type { Messages } from '@zmt/shared/i18n';
-
-import { Component, input, model } from '@angular/core';
+import { Component, inject, input, model } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { type MatSelectChange, MatSelectModule } from '@angular/material/select';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 
 @Component({
   imports: [MatFormFieldModule, MatInputModule, MatSelectModule],
@@ -38,7 +37,7 @@ import { type MatSelectChange, MatSelectModule } from '@angular/material/select'
 })
 export class CanvasToolbarComponent {
   readonly categories = input.required<readonly string[]>();
-  readonly messages = input.required<Messages>();
+  protected readonly messages = inject(MESSAGES);
   readonly search = model('');
   readonly selectedCategories = model<readonly string[]>([]);
 

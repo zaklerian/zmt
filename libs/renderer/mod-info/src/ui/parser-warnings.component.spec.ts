@@ -1,9 +1,17 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 import { EN_MESSAGES } from '@zmt/shared/i18n';
 
 import { ParserWarningsComponent } from './parser-warnings.component';
 
 describe('ParserWarningsComponent', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: MESSAGES, useValue: signal(EN_MESSAGES) }],
+    });
+  });
+
   function hostOf(fixture: { readonly nativeElement: unknown }): HTMLElement {
     const host = fixture.nativeElement;
     if (!(host instanceof HTMLElement)) {
@@ -14,7 +22,6 @@ describe('ParserWarningsComponent', () => {
 
   it('renders nothing without warnings', async () => {
     const fixture = TestBed.createComponent(ParserWarningsComponent);
-    fixture.componentRef.setInput('messages', EN_MESSAGES);
     fixture.componentRef.setInput('warnings', []);
     await fixture.whenStable();
     expect(hostOf(fixture).querySelector('details')).toBeNull();
@@ -22,7 +29,6 @@ describe('ParserWarningsComponent', () => {
 
   it('summarises the count and lists each warning with its offset', async () => {
     const fixture = TestBed.createComponent(ParserWarningsComponent);
-    fixture.componentRef.setInput('messages', EN_MESSAGES);
     fixture.componentRef.setInput('warnings', [{ from: 3, message: 'unexpected token', to: 9 }]);
     await fixture.whenStable();
     const host = hostOf(fixture);
