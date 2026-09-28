@@ -52,16 +52,6 @@
     (edit)="form.openEdit($event); closeMenu()"
   />
 }
-@if (form.model(); as model) {
-  <zmt-entity-form-shell
-    chrome="dialog"
-    [messages]="messages()"
-    [model]="model"
-    [saving]="form.busy()"
-    (dismiss)="form.close()"
-    (save)="form.save($event)"
-  />
-}
 @if (delete.isConfirming() && delete.plan() && delete.token(); as token) {
   @if (delete.plan(); as plan) {
     <zmt-technology-delete-dialog

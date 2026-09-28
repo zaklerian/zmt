@@ -29,14 +29,6 @@ export const DE_MESSAGES = {
     unsavedChangesMessage: 'Sie haben ungespeicherte Änderungen. Verwerfen?',
     unsavedChangesTitle: 'Ungespeicherte Änderungen',
   },
-  entityForm: {
-    addField: 'Feld hinzufügen',
-    keyDuplicate: 'Doppelter Eigenschaftsschlüssel.',
-    keyLabel: 'Eigenschaft',
-    keyRequired: 'Eigenschaftsschlüssel ist erforderlich.',
-    remove: 'Entfernen',
-    valueLabel: 'Wert',
-  },
   errors: {
     400: 'Die Anfrage war ungültig.',
     403: 'Der Pfad liegt außerhalb des geöffneten Mod-Ordners.',
@@ -63,15 +55,11 @@ export const DE_MESSAGES = {
     en: 'English',
   },
   modContent: {
-    actionFailed: 'Die Aktion ist fehlgeschlagen.',
     breadcrumbs: 'Dateipfad',
     codeView: 'Code-Ansicht',
-    columns: 'Spalten',
     editorFailed: 'Die Datei konnte nicht geladen werden.',
     editorLabel: 'Dateiinhalt',
     entityActions: 'Entitätsaktionen',
-    entityTable: 'Entitäten',
-    entityTableFailed: 'Die Entitätstabelle konnte nicht geladen werden.',
     fileTree: 'Dateien',
     fileTreeEmpty: 'Ordner ist leer',
     fileTreeFailed: 'Der Ordner konnte nicht gelesen werden.',
@@ -88,7 +76,6 @@ export const DE_MESSAGES = {
     searchNoRoot: 'Öffnen Sie einen Ordner, um zu suchen',
     searchReady: 'Dateien suchen…',
     selectSomething: 'Wählen Sie eine Datei im Dateibaum, um sie anzuzeigen.',
-    tableView: 'Tabellenansicht',
     title: 'Mod-Inhalt',
   },
   modInfo: {

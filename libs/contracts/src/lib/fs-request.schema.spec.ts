@@ -7,7 +7,6 @@ import {
   PATH_SCHEMA,
   READ_TEXT_FILE_REQUEST_SCHEMA,
   SEARCH_FILES_REQUEST_SCHEMA,
-  WRITE_BINARY_FILE_REQUEST_SCHEMA,
   WRITE_TEXT_FILE_REQUEST_SCHEMA,
 } from './fs-request.schema';
 import { MAX_PATH_LENGTH, MAX_SEARCH_QUERY_LENGTH } from './payload-limit.const';
@@ -91,25 +90,6 @@ describe('WRITE_TEXT_FILE_REQUEST_SCHEMA', () => {
     expect(
       v.safeParse(WRITE_TEXT_FILE_REQUEST_SCHEMA, { content: new Uint8Array(), path: '/r' })
         .success,
-    ).toBe(false);
-  });
-});
-
-describe('WRITE_BINARY_FILE_REQUEST_SCHEMA', () => {
-  it('accepts a Uint8Array', () => {
-    const content = new Uint8Array([1, 2]);
-    expect(v.parse(WRITE_BINARY_FILE_REQUEST_SCHEMA, { content, path: '/r/a.bin' }).content).toBe(
-      content,
-    );
-  });
-
-  it('rejects other byte containers', () => {
-    expect(
-      v.safeParse(WRITE_BINARY_FILE_REQUEST_SCHEMA, { content: new ArrayBuffer(2), path: '/r' })
-        .success,
-    ).toBe(false);
-    expect(
-      v.safeParse(WRITE_BINARY_FILE_REQUEST_SCHEMA, { content: 'bytes', path: '/r' }).success,
     ).toBe(false);
   });
 });

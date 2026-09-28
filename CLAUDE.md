@@ -24,9 +24,9 @@ libs/renderer/shell/ui/               toolbar, nav rail, footer, nav entries tok
 libs/renderer/shell/data-access/      unsaved-changes route guard         type:data-access  scope:renderer
 libs/renderer/home/feature/           lazy home route                     type:feature      scope:renderer
 libs/renderer/workspace/data-access/  WorkspaceService (folder dialog), WorkspaceStore (root folder)   type:data-access  scope:renderer
-libs/renderer/mod-content/feature/    mod content route: file tree, search, editor, entity table      type:feature      scope:renderer
-libs/renderer/mod-content/ui/         file tree, search, editor, mode toggle, entity table, breadcrumbs   type:ui  scope:renderer
-libs/renderer/mod-content/data-access/ ModContentService (fs), ModContent/FileTree/FileSearch/PlainEditor/EntityTable stores   type:data-access  scope:renderer
+libs/renderer/mod-content/feature/    mod content route: file tree, search, editor                    type:feature      scope:renderer
+libs/renderer/mod-content/ui/         file tree, search, editor, mode toggle, breadcrumbs   type:ui  scope:renderer
+libs/renderer/mod-content/data-access/ ModContentService (fs), ModContent/FileTree/FileSearch/PlainEditor stores   type:data-access  scope:renderer
 libs/renderer/mod-content/util/       file selection, tree item and view mode models                  type:util         scope:renderer
 libs/renderer/mod-info/feature/       mod descriptor route                type:feature      scope:renderer
 libs/renderer/mod-info/ui/            descriptor Signal Form, parser warnings   type:ui       scope:renderer
@@ -43,12 +43,8 @@ libs/renderer/app-settings/feature/   settings route                      type:f
 libs/renderer/app-settings/ui/        plugin config and file display forms   type:ui        scope:renderer
 libs/renderer/app-settings/data-access/ AppSettingsStore                  type:data-access  scope:renderer
 libs/renderer/app-settings/util/      settings values model, feature toggle helper   type:util  scope:renderer
-libs/renderer/entity-form/ui/         entity form shell and block components   type:ui       scope:renderer
-libs/renderer/entity-form/util/       entity form model, blocks, field specs   type:util     scope:renderer
-libs/renderer/plugin/data-access/     PluginService (plugins:list), PluginRegistryStore   type:data-access  scope:renderer
-libs/renderer/plugin/util/            renderer plugin, recognizer, entity table and action models   type:util  scope:renderer
-libs/renderer/hoi4/util/              hoi4 renderer plugin: recognizers and form descriptors   type:util  scope:renderer
-libs/renderer/dialog/util/            DialogService (confirm, info, form dialog), confirm dialog   type:util  scope:renderer
+libs/renderer/plugin/data-access/     PluginService (plugins:list)        type:data-access  scope:renderer
+libs/renderer/dialog/util/            DialogService (confirm, info), confirm dialog   type:util  scope:renderer
 libs/renderer/pending/util/           pending('ZMT-A-5') helper, NotImplementedError, unhandled-error capture   type:util  scope:renderer
 libs/renderer/async-status/util/      AsyncStatus union and constructors  type:util         scope:renderer
 libs/renderer/window-api/util/        window.api global declaration       type:util         scope:renderer

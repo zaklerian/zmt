@@ -23,7 +23,6 @@ describe('FileSearchComponent', () => {
     fixture.componentRef.setInput('disabled', disabled);
     fixture.componentRef.setInput('messages', EN_MESSAGES);
     fixture.componentRef.setInput('results', [HIT]);
-    fixture.componentRef.setInput('status', { kind: 'idle' });
     await fixture.whenStable();
     return { fixture, loader: TestbedHarnessEnvironment.loader(fixture) };
   }

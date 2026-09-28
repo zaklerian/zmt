@@ -1,6 +1,6 @@
 import type { FsNode, IpcError } from '@zmt/contracts';
 import type { HasUnsavedChanges } from '@zmt/renderer/dialog/util';
-import type { EntityTableRequest, LoadRootRequest } from '@zmt/renderer/mod-content/data-access';
+import type { LoadRootRequest } from '@zmt/renderer/mod-content/data-access';
 import type { FileSelection, FileTreeItem, ViewMode } from '@zmt/renderer/mod-content/util';
 
 import { Component, computed, effect, inject } from '@angular/core';
@@ -11,10 +11,8 @@ import { Router } from '@angular/router';
 import { AppSettingsStore } from '@zmt/renderer/app-settings/data-access';
 import { errorOf } from '@zmt/renderer/async-status/util';
 import { DialogService } from '@zmt/renderer/dialog/util';
-import { EntityFormShellComponent } from '@zmt/renderer/entity-form/ui';
 import { I18nStore } from '@zmt/renderer/i18n/data-access';
 import {
-  EntityTableStore,
   FileSearchStore,
   FileTreeStore,
   ModContentStore,
@@ -23,7 +21,6 @@ import {
 import {
   ContentModeToggleComponent,
   ContentPlaceholderComponent,
-  EntityTableComponent,
   FileSearchComponent,
   FileTreeComponent,
   NoFolderStateComponent,
@@ -31,7 +28,6 @@ import {
   PlainEditorComponent,
 } from '@zmt/renderer/mod-content/ui';
 import { isDescriptorPath } from '@zmt/renderer/mod-info/util';
-import { PluginRegistryStore } from '@zmt/renderer/plugin/data-access';
 import { ROUTE_PATHS } from '@zmt/renderer/shell/ui';
 import { WorkspaceStore } from '@zmt/renderer/workspace/data-access';
 import { distinctUntilChanged, filter, map, type Observable } from 'rxjs';
@@ -46,8 +42,6 @@ function present<T>(source$: Observable<T | null>): Observable<T> {
   imports: [
     ContentModeToggleComponent,
     ContentPlaceholderComponent,
-    EntityFormShellComponent,
-    EntityTableComponent,
     FileSearchComponent,
     FileTreeComponent,
     MatButtonModule,
@@ -62,12 +56,10 @@ function present<T>(source$: Observable<T | null>): Observable<T> {
 export class ModContentComponent implements HasUnsavedChanges {
   private readonly appSettings = inject(AppSettingsStore);
   private readonly dialog = inject(DialogService);
-  private readonly plugins = inject(PluginRegistryStore);
   private readonly router = inject(Router);
   private readonly snackBar = inject(MatSnackBar);
   protected readonly content = inject(ModContentStore);
   protected readonly editor = inject(PlainEditorStore);
-  protected readonly entities = inject(EntityTableStore);
   protected readonly messages = inject(I18nStore).messages;
   protected readonly search = inject(FileSearchStore);
   protected readonly tree = inject(FileTreeStore);
@@ -75,9 +67,7 @@ export class ModContentComponent implements HasUnsavedChanges {
 
   readonly dirty = this.editor.dirty;
 
-  protected readonly actionError = computed(() => errorOf(this.entities.actionStatus()));
   protected readonly editorError = computed(() => errorOf(this.editor.status()));
-  protected readonly entitiesError = computed(() => errorOf(this.entities.status()));
   protected readonly folderError = computed(() => errorOf(this.workspace.status()));
   protected readonly saveError = computed<IpcError | null>(() => errorOf(this.editor.saveStatus()));
   protected readonly searchError = computed(() => errorOf(this.search.status()));
@@ -106,15 +96,6 @@ export class ModContentComponent implements HasUnsavedChanges {
     this.content.contentKind() === 'editor' ? this.content.selectedPath() : null,
   );
 
-  private readonly tableRequest = computed<EntityTableRequest | null>(() => {
-    const selection = this.content.selection();
-    return this.content.contentKind() === 'entityTable' &&
-      selection !== null &&
-      selection.recognizerId !== null
-      ? { filePath: selection.path, recognizerId: selection.recognizerId }
-      : null;
-  });
-
   constructor() {
     this.tree.loadRoot(
       present(toObservable(this.rootRequest)).pipe(
@@ -126,14 +107,6 @@ export class ModContentComponent implements HasUnsavedChanges {
       ),
     );
     this.editor.load(present(toObservable(this.editorPath)).pipe(distinctUntilChanged()));
-    this.entities.load(
-      present(toObservable(this.tableRequest)).pipe(
-        distinctUntilChanged(
-          (previous, next) =>
-            previous.filePath === next.filePath && previous.recognizerId === next.recognizerId,
-        ),
-      ),
-    );
     this.search.search(
       toObservable(this.workspace.root).pipe(
         map((root) => ({
@@ -153,7 +126,7 @@ export class ModContentComponent implements HasUnsavedChanges {
   }
 
   protected onModeChange(mode: ViewMode): void {
-    if (mode === 'table' && this.content.structuredView() === 'form') {
+    if (mode === 'table') {
       void this.router.navigate(['/', ROUTE_PATHS.modInfo]);
       return;
     }
@@ -216,7 +189,6 @@ export class ModContentComponent implements HasUnsavedChanges {
       isDescriptor: isDescriptorPath(node.path),
       isModRoot,
       path: node.path,
-      recognizerId: this.plugins.recognize(node.path)?.id ?? null,
       support: node.support,
     };
     if (selection.path === this.content.selectedPath()) {

@@ -7,7 +7,6 @@
         [messages]="messages()"
         [query]="search.query()"
         [results]="search.results()"
-        [status]="search.status()"
         (queryChange)="onSearch($event)"
         (selectNode)="onSearchSelect($event)"
       />
@@ -43,7 +42,6 @@
           <zmt-content-mode-toggle
             [messages]="messages()"
             [mode]="content.viewMode()"
-            [structuredView]="content.structuredView()"
             (modeChange)="onModeChange($event)"
           />
         </div>
@@ -70,49 +68,6 @@
                   {{ messages().modContent.editorFailed }} {{ messages().errors[error.code] }}
                 </p>
                 <button matButton type="button" class="retry" (click)="retryEditor()">
-                  {{ messages().actions.retry }}
-                </button>
-              }
-            }
-            @default {
-              <p class="loading">{{ messages().modContent.loading }}</p>
-            }
-          }
-        }
-        @case ('entityTable') {
-          @switch (entities.status().kind) {
-            @case ('success') {
-              @if (actionError(); as error) {
-                <p class="error action-error" role="alert">
-                  {{ messages().modContent.actionFailed }} {{ messages().errors[error.code] }}
-                </p>
-              }
-              <zmt-entity-table
-                [actions]="entities.actionViews()"
-                [columns]="entities.columns()"
-                [messages]="messages()"
-                [rows]="entities.sortedRows()"
-                [selectedRowId]="entities.selectedRowId()"
-                (runAction)="entities.runAction($event)"
-                (selectRow)="entities.selectRow($event)"
-              />
-              @if (entities.form(); as form) {
-                <zmt-entity-form-shell
-                  chrome="dialog"
-                  [messages]="messages()"
-                  [model]="form"
-                  [saving]="entities.formStatus().kind === 'loading'"
-                  (dismiss)="entities.closeForm()"
-                  (save)="entities.submitForm($event)"
-                />
-              }
-            }
-            @case ('error') {
-              @if (entitiesError(); as error) {
-                <p class="error entities-error" role="alert">
-                  {{ messages().modContent.entityTableFailed }} {{ messages().errors[error.code] }}
-                </p>
-                <button matButton type="button" class="retry" (click)="entities.reload()">
                   {{ messages().actions.retry }}
                 </button>
               }

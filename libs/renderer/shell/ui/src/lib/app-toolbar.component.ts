@@ -14,7 +14,6 @@ import { NavIconComponent } from './nav-icon.component';
 })
 export class AppToolbarComponent {
   readonly expanded = input(false);
-  readonly hasRoot = input(false);
   readonly locale = input.required<Locale>();
   readonly localeChange = output<Locale>();
   readonly locales = input.required<readonly Locale[]>();

@@ -10,7 +10,6 @@ import { fail, ok } from '@zmt/contracts';
 import { flushPromises } from '@zmt/renderer/async-status/util';
 import { DialogService } from '@zmt/renderer/dialog/util';
 import {
-  EntityTableStore,
   FileSearchStore,
   FileTreeStore,
   ModContentService,
@@ -24,7 +23,6 @@ import {
   NoFolderStateComponent,
   PlainEditorComponent,
 } from '@zmt/renderer/mod-content/ui';
-import { PluginRegistryStore } from '@zmt/renderer/plugin/data-access';
 import { WorkspaceStore } from '@zmt/renderer/workspace/data-access';
 import { EN_MESSAGES } from '@zmt/shared/i18n';
 import { of } from 'rxjs';
@@ -157,7 +155,6 @@ describe('ModContentComponent', () => {
     const select = vi.spyOn(content, 'select');
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     const search = vi.spyOn(TestBed.inject(FileSearchStore), 'search');
-    vi.spyOn(TestBed.inject(PluginRegistryStore), 'recognize').mockReturnValue(null);
     const { fixture } = await setup();
 
     const tree = fixture.debugElement
@@ -171,7 +168,6 @@ describe('ModContentComponent', () => {
       isDescriptor: true,
       isModRoot: false,
       path: FILE_ITEM.id,
-      recognizerId: null,
       support: 'editable',
     });
 
@@ -188,7 +184,6 @@ describe('ModContentComponent', () => {
 
   it('loads a selected text file into the editor and saves through it', async () => {
     patchState(unprotected(TestBed.inject(WorkspaceStore)), { root: '/mods/my-mod' });
-    vi.spyOn(TestBed.inject(PluginRegistryStore), 'recognize').mockReturnValue(null);
     writeTextFile.mockResolvedValue(ok(null));
     const { fixture } = await setup();
     const tree = fixture.debugElement
@@ -216,7 +211,6 @@ describe('ModContentComponent', () => {
 
   it('asks before replacing a dirty editor and keeps the file when refused', async () => {
     patchState(unprotected(TestBed.inject(WorkspaceStore)), { root: '/mods/my-mod' });
-    vi.spyOn(TestBed.inject(PluginRegistryStore), 'recognize').mockReturnValue(null);
     confirm.mockReturnValue(of(false));
     const { fixture } = await setup();
     const tree = fixture.debugElement
@@ -240,7 +234,6 @@ describe('ModContentComponent', () => {
 
   it('shows the editor error with a retry that reloads the file', async () => {
     patchState(unprotected(TestBed.inject(WorkspaceStore)), { root: '/mods/my-mod' });
-    vi.spyOn(TestBed.inject(PluginRegistryStore), 'recognize').mockReturnValue(null);
     readTextFile.mockResolvedValueOnce(fail(404, 'missing')).mockResolvedValueOnce(ok('back'));
     const { fixture, host } = await setup();
     const tree = fixture.debugElement
@@ -257,33 +250,6 @@ describe('ModContentComponent', () => {
     expect(TestBed.inject(PlainEditorStore).text()).toBe('back');
   });
 
-  it('loads a recognised file into the entity table and surfaces its failure', async () => {
-    patchState(unprotected(TestBed.inject(WorkspaceStore)), { root: '/mods/my-mod' });
-    const { fixture, host } = await setup();
-    const tree = fixture.debugElement
-      .query(By.directive(FileTreeComponent))
-      .injector.get(FileTreeComponent);
-    tree.selectItem.emit({
-      ...README_ITEM,
-      id: '/mods/my-mod/common/technologies/air.txt',
-      node: {
-        ...DESCRIPTOR_NODE,
-        extension: '.txt',
-        name: 'air.txt',
-        path: '/mods/my-mod/common/technologies/air.txt',
-      },
-    });
-    await flushPromises();
-    await fixture.whenStable();
-    expect(TestBed.inject(EntityTableStore).status()).toEqual({
-      error: { code: 500, message: 'Not implemented; the body ships with ZMT-A-5' },
-      kind: 'error',
-    });
-    expect(host.querySelector('.entities-error')?.textContent.trim()).toBe(
-      `${EN_MESSAGES.modContent.entityTableFailed} ${EN_MESSAGES.errors[500]}`,
-    );
-  });
-
   it('routes the descriptor form view to the mod-info page', async () => {
     patchState(unprotected(TestBed.inject(WorkspaceStore)), { root: '/mods/my-mod' });
     patchState(unprotected(TestBed.inject(ModContentStore)), {
@@ -291,7 +257,6 @@ describe('ModContentComponent', () => {
         isDescriptor: true,
         isModRoot: false,
         path: '/mods/my-mod/descriptor.mod',
-        recognizerId: null,
         support: 'editable',
       },
       viewMode: 'code',

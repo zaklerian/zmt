@@ -43,11 +43,7 @@ export function tempPathFor(target: string): string {
   return path.join(path.dirname(target), `.${path.basename(target)}.${suffix}.tmp`);
 }
 
-async function atomicWrite(
-  target: SafePath,
-  payload: string | Uint8Array,
-  byteLength: number,
-): Promise<void> {
+async function atomicWrite(target: SafePath, payload: string, byteLength: number): Promise<void> {
   if (byteLength > MAX_PAYLOAD_BYTES) {
     throw new IpcFailure(
       IPC_ERROR_CODES.payloadTooLarge,
@@ -68,8 +64,4 @@ async function atomicWrite(
 
 export async function writeTextFile(target: SafePath, content: string): Promise<void> {
   await atomicWrite(target, content, Buffer.byteLength(content, 'utf8'));
-}
-
-export async function writeBinaryFile(target: SafePath, content: Uint8Array): Promise<void> {
-  await atomicWrite(target, content, content.byteLength);
 }

@@ -7,7 +7,7 @@ import { type AllowedRoot } from './allowed-root.service';
 import { listDirectory } from './list-directory.service';
 import { readTextFile } from './read-file.service';
 import { searchFiles } from './search-files.service';
-import { writeBinaryFile, writeTextFile } from './write-file.service';
+import { writeTextFile } from './write-file.service';
 
 export interface FsHandlerDependencies extends IpcHandleOptions {
   readonly allowedRoot: AllowedRoot;
@@ -73,15 +73,6 @@ export function registerFsHandlers(dependencies: FsHandlerDependencies): void {
     IPC_CHANNELS.fs.writeTextFile,
     async (payload) => {
       await writeTextFile(await allowedRoot.guard(payload.path), payload.content);
-      return null;
-    },
-    dependencies,
-  );
-
-  ipcHandle(
-    IPC_CHANNELS.fs.writeBinaryFile,
-    async (payload) => {
-      await writeBinaryFile(await allowedRoot.guard(payload.path), payload.content);
       return null;
     },
     dependencies,

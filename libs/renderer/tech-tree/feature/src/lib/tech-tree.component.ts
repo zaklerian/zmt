@@ -3,7 +3,6 @@ import type { TechTreePoint } from '@zmt/renderer/tech-tree/util';
 
 import { Component, computed, inject, signal } from '@angular/core';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { EntityFormShellComponent } from '@zmt/renderer/entity-form/ui';
 import { I18nStore } from '@zmt/renderer/i18n/data-access';
 import {
   TechnologyDeleteStore,
@@ -29,7 +28,6 @@ export interface CanvasMenuTarget {
     CanvasActionsComponent,
     CanvasContextMenuComponent,
     CanvasToolbarComponent,
-    EntityFormShellComponent,
     MatSlideToggleModule,
     TechnologyDeleteDialogComponent,
     TechTreeCanvasComponent,

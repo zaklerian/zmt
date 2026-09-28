@@ -21,8 +21,6 @@ export interface TechTreeState {
   readonly status: AsyncStatus;
 }
 
-export const AIR_TECHS_FOLDER = 'air_techs_folder';
-
 const INITIAL_STATE: TechTreeState = {
   categories: [],
   edges: [],
@@ -59,9 +57,6 @@ export const TechTreeStore = signalStore(
         };
         return nodes().map((node) => toNodeView(node, context));
       }),
-      selectedNode: computed<TechTreeNode | null>(
-        () => nodes().find((node) => node.id === selectedId()) ?? null,
-      ),
       visibleEdges: computed<readonly TechTreeEdge[]>(() =>
         showDependencies() ? edges() : edges().filter((edge) => edge.kind === 'path'),
       ),

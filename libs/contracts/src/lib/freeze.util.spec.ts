@@ -7,7 +7,6 @@ import {
   type LIST_OPTIONS_SCHEMA,
   type READ_TEXT_FILE_REQUEST_SCHEMA,
   type SEARCH_FILES_REQUEST_SCHEMA,
-  type WRITE_BINARY_FILE_REQUEST_SCHEMA,
   type WRITE_TEXT_FILE_REQUEST_SCHEMA,
 } from './fs-request.schema';
 import {
@@ -84,9 +83,6 @@ describe('exported object and array schemas infer deeply readonly types (SEC-7)'
     >();
     expectTypeOf<Output<typeof WRITE_TEXT_FILE_REQUEST_SCHEMA>>().toEqualTypeOf<
       DeepReadonly<Output<typeof WRITE_TEXT_FILE_REQUEST_SCHEMA>>
-    >();
-    expectTypeOf<Output<typeof WRITE_BINARY_FILE_REQUEST_SCHEMA>>().toEqualTypeOf<
-      DeepReadonly<Output<typeof WRITE_BINARY_FILE_REQUEST_SCHEMA>>
     >();
     expectTypeOf<Output<typeof FEATURE_CONTRIBUTION_SCHEMA>>().toEqualTypeOf<
       DeepReadonly<Output<typeof FEATURE_CONTRIBUTION_SCHEMA>>
