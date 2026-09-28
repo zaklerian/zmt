@@ -1,0 +1,59 @@
+<form class="shell" [class.dialog]="chrome() === 'dialog'" (submit)="onSubmit($event)">
+  @if (chrome() === 'dialog') {
+    <header class="header">
+      <h3 class="title">{{ model().dialogTitle }}</h3>
+      @if (model().note; as note) {
+        <p class="note">{{ note }}</p>
+      }
+    </header>
+  }
+  @for (block of model().blocks; track keyOf(block, $index)) {
+    @if (block.kind === 'listOfScalars') {
+      <zmt-list-of-scalars-block
+        [block]="block"
+        [messages]="messages()"
+        (patch)="applyPatch($event)"
+      />
+    } @else if (block.kind === 'namedNested') {
+      <zmt-named-nested-block
+        [block]="block"
+        [messages]="messages()"
+        (patch)="applyPatch($event)"
+      />
+    } @else if (block.kind === 'objectList') {
+      <zmt-object-list-block [block]="block" [messages]="messages()" (patch)="applyPatch($event)" />
+    } @else {
+      <zmt-property-bag-block
+        [block]="block"
+        [messages]="messages()"
+        (patch)="applyPatch($event)"
+      />
+    }
+  }
+  <footer class="actions">
+    @if (chrome() === 'dialog') {
+      <button
+        matButton
+        type="button"
+        class="dismiss"
+        [disabled]="saving()"
+        (click)="dismiss.emit()"
+      >
+        {{ messages().actions.cancel }}
+      </button>
+    } @else {
+      <button
+        matButton
+        type="button"
+        class="discard"
+        [disabled]="saving()"
+        (click)="discard.emit()"
+      >
+        {{ messages().actions.cancel }}
+      </button>
+    }
+    <button matButton="filled" type="submit" class="save" [disabled]="!dirty() || saving()">
+      {{ messages().actions.save }}
+    </button>
+  </footer>
+</form>

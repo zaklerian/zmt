@@ -1,0 +1,26 @@
+<mat-form-field appearance="outline" class="game">
+  <mat-label>{{ messages().appSettings.game }}</mat-label>
+  <mat-select
+    [value]="activePlugin()?.gameId ?? null"
+    [disabled]="plugins().length <= 1"
+    (selectionChange)="onGameChange($event)"
+  >
+    @for (plugin of plugins(); track plugin.gameId) {
+      <mat-option [value]="plugin.gameId">{{ plugin.displayName }}</mat-option>
+    }
+  </mat-select>
+</mat-form-field>
+@if (activePlugin(); as plugin) {
+  <fieldset class="features">
+    <legend>{{ messages().appSettings.features }}</legend>
+    @for (feature of plugin.features; track feature.featureId) {
+      <mat-slide-toggle
+        class="feature"
+        [checked]="isEnabled(feature)"
+        (change)="toggle(feature.featureId, $event.checked)"
+      >
+        {{ feature.label }}
+      </mat-slide-toggle>
+    }
+  </fieldset>
+}

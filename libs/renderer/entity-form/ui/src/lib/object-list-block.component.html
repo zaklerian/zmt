@@ -1,0 +1,22 @@
+<fieldset class="block">
+  <legend>{{ block().sectionLabel ?? block().itemLabel }}</legend>
+  @for (item of block().items; track $index) {
+    <section class="item">
+      <h4 class="item-title">{{ block().itemLabel }} {{ $index + 1 }}</h4>
+      @for (field of block().fields; track field.spec.name) {
+        <mat-form-field appearance="outline">
+          <mat-label>{{ field.label }}</mat-label>
+          <input
+            matInput
+            [value]="valueOf(item, field.spec.name)"
+            (input)="onFieldInput($index, field.spec.name, $event)"
+          />
+        </mat-form-field>
+      }
+      <button matButton type="button" class="remove" (click)="removeItem($index)">
+        {{ messages().entityForm.remove }}
+      </button>
+    </section>
+  }
+  <button matButton type="button" class="add" (click)="addItem()">{{ block().addLabel }}</button>
+</fieldset>

@@ -1,0 +1,47 @@
+<form class="descriptor-form" (submit)="onSubmit($event)">
+  <mat-form-field appearance="outline">
+    <mat-label>{{ messages().modInfo.name }}</mat-label>
+    <input matInput [formField]="descriptorForm.name" />
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>{{ messages().modInfo.version }}</mat-label>
+    <input matInput [formField]="descriptorForm.version" />
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>{{ messages().modInfo.supportedVersion }}</mat-label>
+    <input matInput [formField]="descriptorForm.supportedVersion" />
+  </mat-form-field>
+  <fieldset class="tags">
+    <legend>{{ messages().modInfo.tags }}</legend>
+    <mat-chip-set [attr.aria-label]="messages().modInfo.tags">
+      @for (tag of values().tags; track tag) {
+        <mat-chip>{{ tag }}</mat-chip>
+      }
+    </mat-chip-set>
+    <mat-form-field appearance="outline">
+      <mat-label>{{ messages().modInfo.tagsPlaceholder }}</mat-label>
+      <input
+        matInput
+        class="tag-input"
+        [placeholder]="messages().modInfo.tagsPlaceholder"
+        (keydown.enter)="addTag($event)"
+      />
+    </mat-form-field>
+  </fieldset>
+  <mat-form-field appearance="outline">
+    <mat-label>{{ messages().modInfo.picture }}</mat-label>
+    <input matInput [formField]="descriptorForm.picture" />
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>{{ messages().modInfo.path }}</mat-label>
+    <input matInput [formField]="descriptorForm.path" />
+  </mat-form-field>
+  <div class="actions">
+    <button matButton type="button" class="cancel" [disabled]="saving()" (click)="discard.emit()">
+      {{ messages().actions.cancel }}
+    </button>
+    <button matButton="filled" type="submit" class="save" [disabled]="!dirty() || saving()">
+      {{ messages().actions.save }}
+    </button>
+  </div>
+</form>

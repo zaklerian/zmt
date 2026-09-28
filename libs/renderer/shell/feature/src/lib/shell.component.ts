@@ -1,20 +1,24 @@
 import { Component, inject, signal } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { type MatButtonToggleChange, MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatListModule } from '@angular/material/list';
 import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet } from '@angular/router';
+import { APP_VERSION } from '@zmt/renderer/app-info/data-access';
 import { I18nStore } from '@zmt/renderer/i18n/data-access';
-import { isLocale, LOCALES } from '@zmt/shared/i18n';
+import {
+  AppFooterComponent,
+  AppToolbarComponent,
+  NAV_ENTRIES,
+  NavRailComponent,
+  ROUTE_PATHS,
+} from '@zmt/renderer/shell/ui';
+import { WorkspaceStore } from '@zmt/renderer/workspace/data-access';
+import { LOCALES } from '@zmt/shared/i18n';
 
 @Component({
   imports: [
-    MatButtonModule,
-    MatButtonToggleModule,
-    MatListModule,
+    AppFooterComponent,
+    AppToolbarComponent,
     MatSidenavModule,
-    MatToolbarModule,
+    NavRailComponent,
     RouterOutlet,
   ],
   selector: 'zmt-shell',
@@ -22,17 +26,18 @@ import { isLocale, LOCALES } from '@zmt/shared/i18n';
   templateUrl: './shell.component.html',
 })
 export class ShellComponent {
+  private readonly router = inject(Router);
+  protected readonly entries = inject(NAV_ENTRIES);
   protected readonly expanded = signal(false);
-  protected readonly locales = LOCALES;
-  private readonly i18n = inject(I18nStore);
+  protected readonly i18n = inject(I18nStore);
   protected readonly locale = this.i18n.locale;
+  protected readonly locales = LOCALES;
   protected readonly messages = this.i18n.messages;
+  protected readonly version = inject(APP_VERSION);
+  protected readonly workspace = inject(WorkspaceStore);
 
-  protected selectLocale(change: MatButtonToggleChange): void {
-    const value: unknown = change.value;
-    if (isLocale(value)) {
-      this.i18n.setLocale(value);
-    }
+  protected openSettings(): void {
+    void this.router.navigate(['/', ROUTE_PATHS.appSettings]);
   }
 
   protected toggleNavigation(): void {

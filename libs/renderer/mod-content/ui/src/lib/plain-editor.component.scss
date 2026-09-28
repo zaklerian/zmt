@@ -1,0 +1,24 @@
+.editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+.error {
+  margin: 0;
+  padding: 0.5rem 1rem;
+  color: var(--mat-sys-error);
+}
+
+.surface {
+  flex: 1 1 auto;
+  min-height: 12rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}

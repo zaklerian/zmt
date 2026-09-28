@@ -1,0 +1,17 @@
+.title {
+  margin: 0 0 1rem;
+  font: var(--mat-sys-headline-small);
+}
+
+.chrome {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+.message {
+  padding: 2rem;
+  color: var(--mat-sys-on-surface-variant);
+  text-align: center;
+}

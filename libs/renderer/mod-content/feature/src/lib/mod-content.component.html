@@ -1,0 +1,73 @@
+<h2 class="title">{{ messages().modContent.title }}</h2>
+@if (workspace.hasRoot()) {
+  <div class="layout">
+    <aside class="sidebar">
+      <zmt-file-search
+        [disabled]="!workspace.hasRoot()"
+        [messages]="messages()"
+        [query]="search.query()"
+        [results]="search.results()"
+        [status]="search.status()"
+        (queryChange)="onSearch($event)"
+        (selectNode)="onSearchSelect($event)"
+      />
+      <zmt-file-tree
+        [items]="tree.items()"
+        [messages]="messages()"
+        [selectedId]="content.selectedPath()"
+        (expand)="tree.loadChildren($event.id)"
+        (selectItem)="onTreeSelect($event)"
+      />
+    </aside>
+    <section class="content">
+      @if (workspace.rootName(); as rootName) {
+        <zmt-panel-breadcrumbs
+          [messages]="messages()"
+          [rootName]="rootName"
+          [segments]="segments()"
+        />
+      }
+      @if (content.showsModeToggle()) {
+        <div class="toolbar" role="toolbar" [attr.aria-label]="messages().modContent.panelToolbar">
+          <zmt-content-mode-toggle
+            [messages]="messages()"
+            [mode]="content.viewMode()"
+            [structuredView]="content.structuredView()"
+            (modeChange)="onModeChange($event)"
+          />
+        </div>
+      }
+      @switch (content.contentKind()) {
+        @case ('editor') {
+          <zmt-plain-editor
+            [dirty]="editor.dirty()"
+            [messages]="messages()"
+            [saveError]="saveError()"
+            [saving]="editor.saving()"
+            [text]="editor.text()"
+            [writable]="workspace.hasRoot()"
+            (discard)="editor.reset()"
+            (save)="editor.save()"
+            (textChange)="editor.updateText($event)"
+          />
+        }
+        @case ('entityTable') {
+          <zmt-entity-table
+            [actions]="entities.actionViews()"
+            [columns]="entities.columns()"
+            [messages]="messages()"
+            [rows]="entities.sortedRows()"
+            [selectedRowId]="entities.selectedRowId()"
+            (runAction)="entities.runAction($event)"
+            (selectRow)="entities.selectRow($event)"
+          />
+        }
+        @default {
+          <zmt-content-placeholder [messages]="messages()" />
+        }
+      }
+    </section>
+  </div>
+} @else {
+  <zmt-no-folder-state [messages]="messages()" (openFolder)="workspace.openFolder()" />
+}

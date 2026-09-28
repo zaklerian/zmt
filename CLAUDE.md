@@ -19,8 +19,39 @@ libs/contracts/                       Valibot IPC schemas, channels, Result enve
 libs/shared/i18n/                     locale dictionaries, loaders        type:util         scope:shared
 libs/renderer/i18n/data-access/       I18nStore                           type:data-access  scope:renderer
 libs/renderer/app-info/data-access/   APP_VERSION token                   type:data-access  scope:renderer
-libs/renderer/shell/feature/          toolbar, rail, locale switcher      type:feature      scope:renderer
+libs/renderer/shell/feature/          app chrome container, router outlet type:feature      scope:renderer
+libs/renderer/shell/ui/               toolbar, nav rail, footer, nav entries token, route paths   type:ui  scope:renderer
+libs/renderer/shell/data-access/      unsaved-changes route guard         type:data-access  scope:renderer
 libs/renderer/home/feature/           lazy home route                     type:feature      scope:renderer
+libs/renderer/workspace/data-access/  WorkspaceService (folder dialog), WorkspaceStore (root folder)   type:data-access  scope:renderer
+libs/renderer/mod-content/feature/    mod content route: file tree, search, editor, entity table      type:feature      scope:renderer
+libs/renderer/mod-content/ui/         file tree, search, editor, mode toggle, entity table, breadcrumbs   type:ui  scope:renderer
+libs/renderer/mod-content/data-access/ ModContentService (fs), ModContent/FileTree/FileSearch/PlainEditor/EntityTable stores   type:data-access  scope:renderer
+libs/renderer/mod-content/util/       file selection, tree item and view mode models                  type:util         scope:renderer
+libs/renderer/mod-info/feature/       mod descriptor route                type:feature      scope:renderer
+libs/renderer/mod-info/ui/            descriptor Signal Form, parser warnings   type:ui       scope:renderer
+libs/renderer/mod-info/data-access/   ModInfoService (fs), ModInfoStore   type:data-access  scope:renderer
+libs/renderer/mod-info/util/          descriptor values model and path helpers   type:util    scope:renderer
+libs/renderer/feature-nav/feature/    enabled features route              type:feature      scope:renderer
+libs/renderer/feature-nav/ui/         feature list, tree placeholder      type:ui           scope:renderer
+libs/renderer/feature-nav/data-access/ FeatureNavStore                    type:data-access  scope:renderer
+libs/renderer/tech-tree/feature/      air tech tree route                 type:feature      scope:renderer
+libs/renderer/tech-tree/ui/           canvas, toolbar, actions, context menu, delete dialog   type:ui  scope:renderer
+libs/renderer/tech-tree/data-access/  TechTree, TechnologyForm, TechnologyDelete stores      type:data-access  scope:renderer
+libs/renderer/tech-tree/util/         canvas node, edge and delete plan models   type:util    scope:renderer
+libs/renderer/app-settings/feature/   settings route                      type:feature      scope:renderer
+libs/renderer/app-settings/ui/        plugin config and file display forms   type:ui        scope:renderer
+libs/renderer/app-settings/data-access/ AppSettingsStore                  type:data-access  scope:renderer
+libs/renderer/app-settings/util/      settings values model, feature toggle helper   type:util  scope:renderer
+libs/renderer/entity-form/ui/         entity form shell and block components   type:ui       scope:renderer
+libs/renderer/entity-form/util/       entity form model, blocks, field specs   type:util     scope:renderer
+libs/renderer/plugin/data-access/     PluginService (plugins:list), PluginRegistryStore   type:data-access  scope:renderer
+libs/renderer/plugin/util/            renderer plugin, recognizer, entity table and action models   type:util  scope:renderer
+libs/renderer/hoi4/util/              hoi4 renderer plugin: recognizers and form descriptors   type:util  scope:renderer
+libs/renderer/dialog/util/            DialogService (confirm, info, form dialog), confirm dialog   type:util  scope:renderer
+libs/renderer/pending/util/           pending('ZMT-A-5') helper, NotImplementedError, unhandled-error capture   type:util  scope:renderer
+libs/renderer/async-status/util/      AsyncStatus union and constructors  type:util         scope:renderer
+libs/renderer/window-api/util/        window.api global declaration       type:util         scope:renderer
 tools/eslint-rules/                   workspace lint rules                type:util         scope:shared
 tools/commitlint-plugin/              commit grammar, pre-push check      type:util         scope:shared
 tools/scripts/                        negative-typecheck, pin, push and electron-dev scripts

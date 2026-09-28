@@ -1,0 +1,50 @@
+<mat-tree
+  class="tree"
+  [dataSource]="dataSource()"
+  [childrenAccessor]="childrenOf"
+  [attr.aria-label]="messages().modContent.fileTree"
+>
+  <mat-tree-node *matTreeNodeDef="let item" matTreeNodePadding>
+    <button
+      matButton
+      type="button"
+      class="node"
+      [class.selected]="item.id === selectedId()"
+      [disabled]="item.node?.support === 'unsupported'"
+      (click)="selectItem.emit(item)"
+    >
+      {{ item.label }}
+    </button>
+  </mat-tree-node>
+  <mat-tree-node
+    *matTreeNodeDef="let item; when: isExpandable"
+    matTreeNodePadding
+    [isExpandable]="true"
+  >
+    <button
+      matIconButton
+      type="button"
+      class="toggle"
+      matTreeNodeToggle
+      [attr.aria-label]="item.label"
+      (click)="expand.emit(item)"
+    >
+      <zmt-nav-icon icon="folder" />
+    </button>
+    <button
+      matButton
+      type="button"
+      class="node"
+      [class.selected]="item.id === selectedId()"
+      (click)="selectItem.emit(item)"
+    >
+      {{ item.label }}
+    </button>
+    @if (item.children === null) {
+      <span class="loading">{{ messages().modContent.fileTreeLoading }}</span>
+    }
+  </mat-tree-node>
+</mat-tree>
+@if (items().length === 0) {
+  <p class="empty">{{ messages().modContent.fileTreeEmpty }}</p>
+}

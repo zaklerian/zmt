@@ -1,0 +1,46 @@
+<fieldset class="block">
+  <legend>{{ block().sectionLabel ?? block().name }}</legend>
+  @for (row of block().rows; track $index) {
+    <div class="row">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ messages().entityForm.keyLabel }}</mat-label>
+        <input matInput [value]="row.key" (input)="onRowInput($index, 'key', $event)" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ messages().entityForm.valueLabel }}</mat-label>
+        <input matInput [value]="row.value ?? ''" (input)="onRowInput($index, 'value', $event)" />
+      </mat-form-field>
+      <button matButton type="button" class="remove" (click)="removeRow($index)">
+        {{ messages().entityForm.remove }}
+      </button>
+    </div>
+  }
+  <button matButton type="button" class="add" (click)="addRow()">
+    {{ messages().entityForm.addField }}
+  </button>
+  @for (child of block().listChildren ?? []; track child.name) {
+    <zmt-list-of-scalars-block
+      [block]="child"
+      [messages]="messages()"
+      (patch)="patch.emit($event)"
+    />
+  }
+  @for (child of block().namedChildren ?? []; track child.name) {
+    <section class="child">
+      <h4 class="child-title">{{ child.sectionLabel ?? child.name }}</h4>
+      <ul class="child-rows">
+        @for (row of child.rows; track $index) {
+          <li>
+            <span class="key">{{ row.key }}</span>
+            <span class="value">{{ row.value ?? '' }}</span>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+  @if (block().editableKeyedMap; as map) {
+    <button matButton type="button" class="add-entry" (click)="addEntry()">
+      {{ map.addLabel }}
+    </button>
+  }
+</fieldset>

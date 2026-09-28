@@ -1,0 +1,39 @@
+<div class="toolbar" role="toolbar" [attr.aria-label]="messages().modContent.entityActions">
+  @for (action of actions(); track action.id) {
+    <button
+      matButton
+      type="button"
+      class="action"
+      [disabled]="!action.available"
+      (click)="runAction.emit(action.id)"
+    >
+      {{ action.label }}
+    </button>
+  }
+</div>
+<table
+  mat-table
+  class="table"
+  [dataSource]="dataSource()"
+  [attr.aria-label]="messages().modContent.entityTable"
+>
+  @for (column of columns(); track column.id) {
+    <ng-container [matColumnDef]="column.id">
+      <th mat-header-cell *matHeaderCellDef>{{ column.label }}</th>
+      <td mat-cell *matCellDef="let row">{{ row.cells[column.id] ?? '' }}</td>
+    </ng-container>
+  }
+  <tr mat-header-row *matHeaderRowDef="columnIds()"></tr>
+  <tr
+    mat-row
+    *matRowDef="let row; columns: columnIds()"
+    tabindex="0"
+    [class.selected]="row.id === selectedRowId()"
+    [class.error]="row.state === 'error'"
+    [class.muted]="row.state === 'muted'"
+    [class.warning]="row.state === 'warning'"
+    [attr.aria-selected]="row.id === selectedRowId()"
+    (click)="toggleRow(row.id)"
+    (keydown.enter)="toggleRow(row.id)"
+  ></tr>
+</table>
