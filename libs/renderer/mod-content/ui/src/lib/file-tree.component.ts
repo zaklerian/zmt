@@ -24,6 +24,10 @@ export class FileTreeComponent {
 
   protected readonly childrenOf = (item: FileTreeItem) => [...(item.children ?? [])];
 
+  protected readonly keyOf = (item: FileTreeItem): string => item.id;
+
+  protected readonly trackById = (index: number, item: FileTreeItem): string => item.id;
+
   protected readonly isExpandable = (...args: readonly [number, FileTreeItem]): boolean =>
     args[1].expandable;
 

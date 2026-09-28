@@ -73,7 +73,9 @@ test.describe('mod workflow', () => {
     await treeButton(page, 'common').first().click();
     await treeButton(page, 'technologies').first().click();
     await expect(treeButton(page, 'air.txt')).toBeVisible();
-    await expect(page.getByRole('navigation', { name: 'File path' })).toHaveCount(0);
+    await expect(
+      page.getByRole('navigation', { name: 'File path' }).getByRole('listitem'),
+    ).toHaveCount(1);
     await expectNoAxeViolations(page);
   });
 
@@ -90,7 +92,7 @@ test.describe('mod workflow', () => {
     await expect(save).toBeEnabled();
     await expectNoAxeViolations(page);
     await save.click();
-    await expect(page.getByRole('alert').filter({ hasText: 'Saved' })).toBeVisible();
+    await expect(page.getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
     expect(await readFixtureFile(fixture.readmePath)).toBe('Edited readme\n');
     await expect(save).toBeDisabled();
 
@@ -148,8 +150,8 @@ test.describe('mod workflow', () => {
     await expect(modes.getByRole('radio', { name: 'Table view' })).toBeChecked();
     await expectNoAxeViolations(page);
     await modes.getByRole('radio', { name: 'Code view' }).click();
-    await expect(page.getByRole('textbox', { name: 'File contents' })).toContainText(
-      'fixture_fighter',
+    await expect(page.getByRole('textbox', { name: 'File contents' })).toHaveValue(
+      /fixture_fighter/u,
     );
   });
 
@@ -176,7 +178,7 @@ test.describe('mod workflow', () => {
     await page.getByRole('textbox', { name: 'Add tag…' }).press('Enter');
     await expectNoAxeViolations(page);
     await page.getByRole('button', { exact: true, name: 'Save' }).click();
-    await expect(page.getByRole('alert').filter({ hasText: 'Descriptor saved' })).toBeVisible();
+    await expect(page.getByRole('status').filter({ hasText: 'Descriptor saved' })).toBeVisible();
     expect(await readFixtureFile(fixture.descriptorPath)).toBe(
       FIXTURE_DESCRIPTOR.replace('version="0.1"', 'version="0.2"').replace(
         '\t"Gameplay"\n',
@@ -209,7 +211,7 @@ test.describe('mod workflow', () => {
     await expect(save).toBeEnabled();
     await expectNoAxeViolations(page);
     await save.click();
-    await expect(page.getByRole('alert').filter({ hasText: 'Settings saved' })).toBeVisible();
+    await expect(page.getByRole('status').filter({ hasText: 'Settings saved' })).toBeVisible();
     await expect(save).toBeDisabled();
 
     await page.getByRole('link', { exact: true, name: 'Mod content' }).click();

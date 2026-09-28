@@ -2,6 +2,8 @@
   class="tree"
   [dataSource]="dataSource()"
   [childrenAccessor]="childrenOf"
+  [expansionKey]="keyOf"
+  [trackBy]="trackById"
   [attr.aria-label]="messages().modContent.fileTree"
 >
   <mat-tree-node *matTreeNodeDef="let item" matTreeNodePadding>

@@ -95,6 +95,20 @@ describe('FileTreeComponent', () => {
     );
   });
 
+  it('keeps the root expanded and renders children that arrive after the first paint', async () => {
+    const { fixture, loader } = await setup([{ ...ROOT, children: null }], ['/mod']);
+    const host: unknown = fixture.nativeElement;
+    expect(host instanceof HTMLElement && host.querySelector('.loading')).not.toBeNull();
+    fixture.componentRef.setInput('items', [ROOT]);
+    await fixture.whenStable();
+    const labels = await loader.getAllHarnesses(MatButtonHarness.with({ selector: '.node' }));
+    expect(await Promise.all(labels.map((label) => label.getText()))).toEqual([
+      'mod',
+      'readme.txt',
+      'common',
+    ]);
+  });
+
   it('shows the folder error instead of the loading marker', async () => {
     const failed: FileTreeItem = {
       ...ROOT,

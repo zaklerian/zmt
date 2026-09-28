@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { patchState } from '@ngrx/signals';
 import { unprotected } from '@ngrx/signals/testing';
 
-import { ModContentStore, resolveContentKind } from './mod-content.store';
+import { ModContentStore, naturalViewMode, resolveContentKind } from './mod-content.store';
 
 const ENTITY_FILE: FileSelection = {
   isDescriptor: false,
@@ -72,6 +72,17 @@ describe('ModContentStore', () => {
     store.setViewMode('code');
     expect(store.viewMode()).toBe('code');
     expect(store.contentKind()).toBe('editor');
+  });
+
+  it('opens a descriptor in code view because its form is a route', () => {
+    expect(naturalViewMode(DESCRIPTOR)).toBe('code');
+    expect(naturalViewMode(PLAIN)).toBe('table');
+    expect(naturalViewMode(null)).toBe('table');
+    store.select(DESCRIPTOR);
+    expect(store.viewMode()).toBe('code');
+    expect(store.contentKind()).toBe('editor');
+    store.select(PLAIN);
+    expect(store.viewMode()).toBe('table');
   });
 
   it('keeps the view mode for the same path and resets it when the path changes', () => {

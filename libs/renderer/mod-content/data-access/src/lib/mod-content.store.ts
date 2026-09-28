@@ -38,6 +38,10 @@ export function resolveContentKind(
   return selection.support === 'editable' ? 'editor' : 'placeholder';
 }
 
+export function naturalViewMode(selection: FileSelection | null): ViewMode {
+  return selection?.isDescriptor === true ? 'code' : 'table';
+}
+
 export const ModContentStore = signalStore(
   { providedIn: 'root' },
   withState(INITIAL_STATE),
@@ -56,7 +60,8 @@ export const ModContentStore = signalStore(
     const select = (selection: FileSelection | null): void => {
       patchState(store, (state) => ({
         selection,
-        viewMode: selection?.path === state.selection?.path ? state.viewMode : 'table',
+        viewMode:
+          selection?.path === state.selection?.path ? state.viewMode : naturalViewMode(selection),
       }));
     };
     const setViewMode = (viewMode: ViewMode): void => {
