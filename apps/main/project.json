@@ -1,0 +1,88 @@
+{
+  "name": "main",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/main/src",
+  "tags": ["type:app", "scope:main"],
+  "implicitDependencies": ["preload"],
+  "targets": {
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "main": "apps/main/src/main.ts",
+        "outputPath": "dist/apps/main",
+        "outputFileName": "main.js",
+        "tsConfig": "apps/main/tsconfig.app.json",
+        "platform": "node",
+        "target": "node24",
+        "format": ["cjs"],
+        "bundle": true,
+        "thirdParty": true,
+        "external": ["electron"],
+        "generatePackageJson": false,
+        "deleteOutputPath": true,
+        "esbuildOptions": {
+          "outExtension": { ".js": ".js" }
+        }
+      },
+      "configurations": {
+        "development": {
+          "minify": false,
+          "sourcemap": true
+        },
+        "production": {
+          "minify": true,
+          "sourcemap": false
+        }
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "options": {
+        "commands": [
+          "nx run renderer:serve",
+          "nx run main:build:development --watch",
+          "nx run preload:build:development --watch",
+          "node tools/scripts/electron-dev.mjs"
+        ],
+        "parallel": true,
+        "env": {
+          "ZMT_RENDERER_URL": "http://localhost:4200"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["default", "^production"],
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "command": "vitest run --coverage",
+        "cwd": "apps/main"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "tsc -p apps/main/tsconfig.app.json --noEmit",
+          "tsc -p apps/main/tsconfig.spec.json --noEmit"
+        ],
+        "parallel": false
+      }
+    },
+    "mutation": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "stryker run apps/main/stryker.config.mjs"
+      }
+    }
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "name": "preload",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/preload/src",
+  "tags": ["type:app", "scope:preload"],
+  "targets": {
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "main": "apps/preload/src/main.ts",
+        "outputPath": "dist/apps/preload",
+        "outputFileName": "main.js",
+        "tsConfig": "apps/preload/tsconfig.app.json",
+        "platform": "node",
+        "target": "node24",
+        "format": ["cjs"],
+        "bundle": true,
+        "thirdParty": true,
+        "external": ["electron"],
+        "generatePackageJson": false,
+        "deleteOutputPath": true,
+        "esbuildOptions": {
+          "outExtension": { ".js": ".js" }
+        }
+      },
+      "configurations": {
+        "development": {
+          "minify": false,
+          "sourcemap": true
+        },
+        "production": {
+          "minify": true,
+          "sourcemap": false
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["default", "^production"],
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "command": "vitest run --coverage",
+        "cwd": "apps/preload"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "tsc -p apps/preload/tsconfig.app.json --noEmit",
+          "tsc -p apps/preload/tsconfig.spec.json --noEmit"
+        ],
+        "parallel": false
+      }
+    }
+  }
+}

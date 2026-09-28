@@ -4,8 +4,11 @@
   "projectType": "application",
   "sourceRoot": "apps/renderer-e2e/src",
   "tags": ["type:app", "scope:renderer"],
-  "implicitDependencies": ["renderer"],
+  "implicitDependencies": ["renderer", "main", "preload"],
   "targets": {
+    "e2e": {
+      "dependsOn": ["^build"]
+    },
     "lint": {
       "executor": "@nx/eslint:lint"
     },

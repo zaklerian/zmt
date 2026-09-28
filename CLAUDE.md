@@ -8,11 +8,14 @@ Electron · Nx · TypeScript (strict+, ARCH-4) · Angular 22 (standalone, zonele
 
 ## Repo map
 
-Every Nx project has one `type:` and one `scope:` tag (ARCH-1); the governance check fails when a `project.json` root is missing here (AI-12). Planned entries arrive with the Electron shell in ZMT-A-3.
+Every Nx project has one `type:` and one `scope:` tag (ARCH-1); the governance check fails when a `project.json` root is missing here (AI-12).
 
 ```
-apps/renderer/                        Angular shell bootstrap, routes     type:app          scope:renderer
-apps/renderer-e2e/                    Playwright smokes + axe             type:app          scope:renderer
+apps/main/                            Electron main: window, protocol, CSP, fs, plugins, IPC handlers   type:app  scope:main
+apps/preload/                         contextBridge api derived from the channel constants               type:app  scope:preload
+apps/renderer/                        Angular shell bootstrap, routes, window.api declaration           type:app  scope:renderer
+apps/renderer-e2e/                    Playwright _electron smokes + axe   type:app          scope:renderer
+libs/contracts/                       Valibot IPC schemas, channels, Result envelope   type:contracts  scope:shared
 libs/shared/i18n/                     locale dictionaries, loaders        type:util         scope:shared
 libs/renderer/i18n/data-access/       I18nStore                           type:data-access  scope:renderer
 libs/renderer/app-info/data-access/   APP_VERSION token                   type:data-access  scope:renderer
@@ -20,9 +23,9 @@ libs/renderer/shell/feature/          toolbar, rail, locale switcher      type:f
 libs/renderer/home/feature/           lazy home route                     type:feature      scope:renderer
 tools/eslint-rules/                   workspace lint rules                type:util         scope:shared
 tools/commitlint-plugin/              commit grammar, pre-push check      type:util         scope:shared
-tools/scripts/                        negative-typecheck, pin and push scripts
-planned: apps/main/ (type:app scope:main) · apps/preload/ (type:app scope:preload) · libs/contracts/ (type:contracts scope:shared)
+tools/scripts/                        negative-typecheck, pin, push and electron-dev scripts
 layout: libs/<scope>/<domain>/{feature,ui,data-access,util}; renderer data-access holds *.service.ts (IPC facade) and *.store.ts
+main layout: apps/main/src/<domain>/ (app, fs, ipc, plugin, system, window); handlers register through ipc/ipc-handle.util.ts only
 .claude/                              rules, hooks, skills, settings
 docs/                                 adr/, rationale/, ledger.md
 ```
@@ -31,12 +34,14 @@ docs/                                 adr/, rationale/, ledger.md
 
 ```
 pnpm install --frozen-lockfile                 install (Node 24 via .nvmrc, pnpm via corepack)
-pnpm nx serve renderer                         dev renderer
+pnpm nx serve main                             Electron dev: renderer dev server + main/preload watch + restart
+pnpm nx serve renderer                         dev renderer in a browser only
+pnpm nx run-many -t build -p main preload renderer   production bundles under dist/apps
 pnpm nx affected -t lint typecheck test        the Stop-hook gate
 pnpm nx run-many -t lint typecheck test build  full gate
-pnpm nx e2e renderer-e2e                       Playwright smokes with axe
+pnpm nx e2e renderer-e2e                       Playwright _electron smokes with axe (builds first; xvfb-run on headless Linux)
+pnpm nx run-many -t mutation -p contracts main Stryker gate, break 80 (TEST-3)
 pnpm nx run shared-i18n:typecheck-negative     dictionary parity fixtures must fail typecheck
-pnpm nx run shared-i18n:mutation               Stryker smoke (gate lands on contracts and main in ZMT-A-3)
 pnpm commitlint                                commit grammar (reads stdin or --edit)
 bash .claude/hooks/governance.sh               rule, rationale, ADR, ledger, repo-map and retro checks
 bash .claude/hooks/verify.sh                   governance + nx gate
