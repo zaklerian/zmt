@@ -1,9 +1,11 @@
 import type { FsNode } from '@zmt/contracts';
 
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatAutocompleteHarness } from '@angular/material/autocomplete/testing';
 import { MatInputHarness } from '@angular/material/input/testing';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 import { EN_MESSAGES } from '@zmt/shared/i18n';
 
 import { FileSearchComponent } from './file-search.component';
@@ -18,10 +20,15 @@ const HIT: FsNode = {
 };
 
 describe('FileSearchComponent', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: MESSAGES, useValue: signal(EN_MESSAGES) }],
+    });
+  });
+
   async function setup(disabled: boolean) {
     const fixture = TestBed.createComponent(FileSearchComponent);
     fixture.componentRef.setInput('disabled', disabled);
-    fixture.componentRef.setInput('messages', EN_MESSAGES);
     fixture.componentRef.setInput('results', [HIT]);
     await fixture.whenStable();
     return { fixture, loader: TestbedHarnessEnvironment.loader(fixture) };

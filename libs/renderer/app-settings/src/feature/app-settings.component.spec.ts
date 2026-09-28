@@ -1,12 +1,15 @@
 import type { GamePlugin } from '@zmt/contracts';
 
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
+import { inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { By } from '@angular/platform-browser';
 import { fail, ok } from '@zmt/contracts';
 import { DialogService, flushPromises } from '@zmt/renderer/core';
+import { I18nStore } from '@zmt/renderer/shell/data-access';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 import { EN_MESSAGES } from '@zmt/shared/i18n';
 import { of } from 'rxjs';
 
@@ -33,6 +36,7 @@ describe('AppSettingsComponent', () => {
       providers: [
         { provide: PluginService, useValue: { list } },
         { provide: DialogService, useValue: { confirm } },
+        { provide: MESSAGES, useFactory: () => inject(I18nStore).messages },
       ],
     });
   });

@@ -1,13 +1,20 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 import { EN_MESSAGES } from '@zmt/shared/i18n';
 
 import { CanvasContextMenuComponent } from './canvas-context-menu.component';
 
 describe('CanvasContextMenuComponent', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: MESSAGES, useValue: signal(EN_MESSAGES) }],
+    });
+  });
+
   async function setup(technologyId: null | string) {
     const fixture = TestBed.createComponent(CanvasContextMenuComponent);
     fixture.componentRef.setInput('anchor', { x: 40, y: 50 });
-    fixture.componentRef.setInput('messages', EN_MESSAGES);
     fixture.componentRef.setInput('technologyId', technologyId);
     await fixture.whenStable();
     const host: unknown = fixture.nativeElement;

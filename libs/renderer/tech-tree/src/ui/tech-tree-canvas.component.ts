@@ -1,6 +1,5 @@
-import type { Messages } from '@zmt/shared/i18n';
-
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 
 import type { TechTreeEdge, TechTreeNodeView, TechTreePoint } from '../util';
 
@@ -23,7 +22,7 @@ const NODE_WIDTH = { simple: 120, sub: 80, wide: 160 } as const;
 })
 export class TechTreeCanvasComponent {
   readonly edges = input.required<readonly TechTreeEdge[]>();
-  readonly messages = input.required<Messages>();
+  protected readonly messages = inject(MESSAGES);
   readonly nodeContextMenu = output<CanvasNodeMenuRequest>();
   readonly nodes = input.required<readonly TechTreeNodeView[]>();
   readonly openNode = output<string>();

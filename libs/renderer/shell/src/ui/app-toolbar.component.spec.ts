@@ -1,4 +1,5 @@
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatButtonToggleGroupHarness } from '@angular/material/button-toggle/testing';
 import { MatButtonHarness } from '@angular/material/button/testing';
@@ -6,13 +7,19 @@ import { MatToolbarHarness } from '@angular/material/toolbar/testing';
 import { EN_MESSAGES, LOCALES } from '@zmt/shared/i18n';
 
 import { AppToolbarComponent } from './app-toolbar.component';
+import { MESSAGES } from './messages.const';
 
 describe('AppToolbarComponent', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: MESSAGES, useValue: signal(EN_MESSAGES) }],
+    });
+  });
+
   async function setup() {
     const fixture = TestBed.createComponent(AppToolbarComponent);
     fixture.componentRef.setInput('locale', 'en');
     fixture.componentRef.setInput('locales', LOCALES);
-    fixture.componentRef.setInput('messages', EN_MESSAGES);
     await fixture.whenStable();
     return { fixture, loader: TestbedHarnessEnvironment.loader(fixture) };
   }

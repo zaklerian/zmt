@@ -1,8 +1,8 @@
 import type { FeatureContribution, FeatureId } from '@zmt/contracts';
-import type { Messages } from '@zmt/shared/i18n';
 
-import { Component, input, output } from '@angular/core';
+import { Component, inject, input, output } from '@angular/core';
 import { MatListModule } from '@angular/material/list';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 
 @Component({
   imports: [MatListModule],
@@ -28,6 +28,6 @@ import { MatListModule } from '@angular/material/list';
 export class FeatureNavListComponent {
   readonly activeFeatureId = input<FeatureId | null>(null);
   readonly features = input.required<readonly FeatureContribution[]>();
-  readonly messages = input.required<Messages>();
+  protected readonly messages = inject(MESSAGES);
   readonly selectFeature = output<FeatureId>();
 }

@@ -1,12 +1,12 @@
 import type { HasUnsavedChanges } from '@zmt/renderer/core';
-import type { Messages } from '@zmt/shared/i18n';
 
-import { Component, computed, input, model, output } from '@angular/core';
+import { Component, computed, inject, input, model, output } from '@angular/core';
 import { form, FormField, readonly } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 
 import type { ModDescriptorValues } from '../util';
 
@@ -27,7 +27,7 @@ export const EMPTY_DESCRIPTOR: ModDescriptorValues = {
 })
 export class ModInfoFormComponent implements HasUnsavedChanges {
   readonly discard = output();
-  readonly messages = input.required<Messages>();
+  protected readonly messages = inject(MESSAGES);
   readonly save = output<ModDescriptorValues>();
   readonly saving = input(false);
   readonly values = model<ModDescriptorValues>(EMPTY_DESCRIPTOR);

@@ -1,7 +1,6 @@
-import type { Messages } from '@zmt/shared/i18n';
-
-import { Component, input, output } from '@angular/core';
+import { Component, inject, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 
 @Component({
   imports: [MatButtonModule],
@@ -17,6 +16,6 @@ import { MatButtonModule } from '@angular/material/button';
   `,
 })
 export class NoFolderStateComponent {
-  readonly messages = input.required<Messages>();
+  protected readonly messages = inject(MESSAGES);
   readonly openFolder = output();
 }

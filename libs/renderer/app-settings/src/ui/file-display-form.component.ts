@@ -1,7 +1,6 @@
-import type { Messages } from '@zmt/shared/i18n';
-
-import { Component, input, model } from '@angular/core';
+import { Component, inject, model } from '@angular/core';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 
 @Component({
   imports: [MatSlideToggleModule],
@@ -21,5 +20,5 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 })
 export class FileDisplayFormComponent {
   readonly hideUnsupportedFiles = model(false);
-  readonly messages = input.required<Messages>();
+  protected readonly messages = inject(MESSAGES);
 }

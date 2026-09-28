@@ -31,7 +31,6 @@ export class ShellComponent {
   protected readonly i18n = inject(I18nStore);
   protected readonly locale = this.i18n.locale;
   protected readonly locales = LOCALES;
-  protected readonly messages = this.i18n.messages;
   protected readonly version = inject(APP_VERSION);
   protected readonly workspace = inject(WorkspaceStore);
 

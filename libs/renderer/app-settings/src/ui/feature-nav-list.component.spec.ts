@@ -1,14 +1,21 @@
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatNavListHarness } from '@angular/material/list/testing';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 import { EN_MESSAGES } from '@zmt/shared/i18n';
 
 import { FeatureNavListComponent } from './feature-nav-list.component';
 
 describe('FeatureNavListComponent', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: MESSAGES, useValue: signal(EN_MESSAGES) }],
+    });
+  });
+
   it('lists enabled features, marks the active one and emits the picked id', async () => {
     const fixture = TestBed.createComponent(FeatureNavListComponent);
-    fixture.componentRef.setInput('messages', EN_MESSAGES);
     fixture.componentRef.setInput('features', [
       { enabled: true, featureId: 'aircraft', label: 'Aircraft' },
       { enabled: true, featureId: 'traits', label: 'Traits' },
@@ -28,7 +35,6 @@ describe('FeatureNavListComponent', () => {
 
   it('shows the empty message without features', async () => {
     const fixture = TestBed.createComponent(FeatureNavListComponent);
-    fixture.componentRef.setInput('messages', EN_MESSAGES);
     fixture.componentRef.setInput('features', []);
     await fixture.whenStable();
     const host: unknown = fixture.nativeElement;

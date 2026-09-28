@@ -1,13 +1,13 @@
 import type { FsNode } from '@zmt/contracts';
-import type { Messages } from '@zmt/shared/i18n';
 
-import { Component, computed, input, model, output } from '@angular/core';
+import { Component, computed, inject, input, model, output } from '@angular/core';
 import {
   MatAutocompleteModule,
   type MatAutocompleteSelectedEvent,
 } from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 
 @Component({
   imports: [MatAutocompleteModule, MatFormFieldModule, MatInputModule],
@@ -16,7 +16,7 @@ import { MatInputModule } from '@angular/material/input';
 })
 export class FileSearchComponent {
   readonly disabled = input(false);
-  readonly messages = input.required<Messages>();
+  protected readonly messages = inject(MESSAGES);
   readonly query = model('');
   readonly results = input.required<readonly FsNode[]>();
   readonly selectNode = output<FsNode>();

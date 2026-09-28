@@ -1,7 +1,6 @@
-import type { Messages } from '@zmt/shared/i18n';
-
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 
 import type {
   TechnologyDeleteMode,
@@ -65,7 +64,7 @@ export class TechnologyDeleteDialogComponent {
   readonly confirmDelete = output<TechnologyDeleteMode>();
   readonly dismiss = output();
   readonly hasTree = input(false);
-  readonly messages = input.required<Messages>();
+  protected readonly messages = inject(MESSAGES);
   readonly plan = input.required<TechnologyDeletePlanResult>();
   readonly token = input.required<string>();
 

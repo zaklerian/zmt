@@ -1,6 +1,8 @@
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatButtonHarness } from '@angular/material/button/testing';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 import { EN_MESSAGES } from '@zmt/shared/i18n';
 
 import type { TechnologyDeletePlanResult } from '../util';
@@ -13,10 +15,15 @@ const PLAN: TechnologyDeletePlanResult = {
 };
 
 describe('TechnologyDeleteDialogComponent', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: MESSAGES, useValue: signal(EN_MESSAGES) }],
+    });
+  });
+
   async function setup(hasTree: boolean) {
     const fixture = TestBed.createComponent(TechnologyDeleteDialogComponent);
     fixture.componentRef.setInput('hasTree', hasTree);
-    fixture.componentRef.setInput('messages', EN_MESSAGES);
     fixture.componentRef.setInput('plan', PLAN);
     fixture.componentRef.setInput('token', 'fighter1');
     await fixture.whenStable();

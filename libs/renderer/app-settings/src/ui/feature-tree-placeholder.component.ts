@@ -1,7 +1,7 @@
 import type { FeatureContribution } from '@zmt/contracts';
-import type { Messages } from '@zmt/shared/i18n';
 
-import { Component, input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 
 @Component({
   selector: 'zmt-feature-tree-placeholder',
@@ -19,5 +19,5 @@ import { Component, input } from '@angular/core';
 })
 export class FeatureTreePlaceholderComponent {
   readonly feature = input<FeatureContribution | null>(null);
-  readonly messages = input.required<Messages>();
+  protected readonly messages = inject(MESSAGES);
 }

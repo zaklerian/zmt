@@ -82,6 +82,18 @@ describe('renderer layer boundaries (ARCH-2)', () => {
   );
 
   it(
+    'accepts a ui file that injects the MESSAGES token from the shell ui layer',
+    async () => {
+      const messages = await restrictedImports(
+        UI_FILE,
+        "import { inject } from '@angular/core';\nimport { MESSAGES } from '@zmt/renderer/shell/ui';\nexport const PROBE = () => inject(MESSAGES);\n",
+      );
+      expect(messages).toEqual([]);
+    },
+    TIMEOUT,
+  );
+
+  it(
     'rejects a data-access file that imports ui or feature code',
     async () => {
       const messages = await restrictedImports(

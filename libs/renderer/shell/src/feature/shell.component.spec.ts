@@ -1,6 +1,7 @@
 import type { Messages } from '@zmt/shared/i18n';
 
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
+import { inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatButtonToggleGroupHarness } from '@angular/material/button-toggle/testing';
 import { MatButtonHarness } from '@angular/material/button/testing';
@@ -15,7 +16,7 @@ import { EN_MESSAGES, LOCALE, LOCALE_LOADERS } from '@zmt/shared/i18n';
 import type { NavEntry } from '../ui';
 
 import { APP_VERSION, I18nStore, WorkspaceStore } from '../data-access';
-import { NAV_ENTRIES } from '../ui';
+import { MESSAGES, NAV_ENTRIES } from '../ui';
 import { ShellComponent } from './shell.component';
 
 const ENTRIES: readonly NavEntry[] = [
@@ -36,6 +37,7 @@ describe('ShellComponent', () => {
         provideRouter([]),
         { provide: APP_VERSION, useValue: '1.2.3' },
         { provide: NAV_ENTRIES, useValue: ENTRIES },
+        { provide: MESSAGES, useFactory: () => inject(I18nStore).messages },
       ],
     });
   });

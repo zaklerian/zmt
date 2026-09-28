@@ -1,6 +1,5 @@
-import type { Messages } from '@zmt/shared/i18n';
-
-import { Component, input, output } from '@angular/core';
+import { Component, inject, input, output } from '@angular/core';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 
 import type { TechTreePoint } from '../util';
 
@@ -70,6 +69,6 @@ export class CanvasContextMenuComponent {
   readonly deleteTechnology = output<string>();
   readonly dismiss = output();
   readonly edit = output<string>();
-  readonly messages = input.required<Messages>();
+  protected readonly messages = inject(MESSAGES);
   readonly technologyId = input<null | string>(null);
 }

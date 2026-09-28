@@ -1,3 +1,4 @@
+import { inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { By } from '@angular/platform-browser';
@@ -5,7 +6,8 @@ import { patchState } from '@ngrx/signals';
 import { unprotected } from '@ngrx/signals/testing';
 import { fail, ok } from '@zmt/contracts';
 import { DialogService, flushPromises } from '@zmt/renderer/core';
-import { WorkspaceStore } from '@zmt/renderer/shell/data-access';
+import { I18nStore, WorkspaceStore } from '@zmt/renderer/shell/data-access';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 import { EN_MESSAGES } from '@zmt/shared/i18n';
 import { of } from 'rxjs';
 
@@ -28,6 +30,7 @@ describe('ModInfoComponent', () => {
       providers: [
         { provide: ModInfoService, useValue: { readDescriptor, writeDescriptor } },
         { provide: DialogService, useValue: { info } },
+        { provide: MESSAGES, useFactory: () => inject(I18nStore).messages },
       ],
     });
   });

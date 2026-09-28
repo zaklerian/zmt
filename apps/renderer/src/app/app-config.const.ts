@@ -1,14 +1,15 @@
 import {
   type ApplicationConfig,
   type EnvironmentProviders,
+  inject,
   isDevMode,
   provideBrowserGlobalErrorListeners,
   provideCheckNoChangesConfig,
   provideZonelessChangeDetection,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { APP_VERSION } from '@zmt/renderer/shell/data-access';
-import { NAV_ENTRIES } from '@zmt/renderer/shell/ui';
+import { APP_VERSION, I18nStore } from '@zmt/renderer/shell/data-access';
+import { MESSAGES, NAV_ENTRIES } from '@zmt/renderer/shell/ui';
 
 import { version } from '../../../../package.json';
 import { APP_NAV_ENTRIES } from './app-navigation.const';
@@ -29,6 +30,7 @@ export const APP_CONFIG: ApplicationConfig = {
     provideRouter(APP_ROUTES),
     { provide: APP_VERSION, useValue: version },
     { provide: NAV_ENTRIES, useValue: APP_NAV_ENTRIES },
+    { provide: MESSAGES, useFactory: () => inject(I18nStore).messages },
     ...modeProviders(isDevMode()),
   ],
 };

@@ -1,7 +1,9 @@
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatButtonHarness } from '@angular/material/button/testing';
 import { MatTreeHarness } from '@angular/material/tree/testing';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 import { EN_MESSAGES } from '@zmt/shared/i18n';
 
 import type { FileTreeItem } from '../util';
@@ -50,11 +52,16 @@ const ROOT: FileTreeItem = {
 };
 
 describe('FileTreeComponent', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: MESSAGES, useValue: signal(EN_MESSAGES) }],
+    });
+  });
+
   async function setup(items: readonly FileTreeItem[], expanded: readonly string[] = []) {
     const fixture = TestBed.createComponent(FileTreeComponent);
     fixture.componentRef.setInput('items', items);
     fixture.componentRef.setInput('expanded', expanded);
-    fixture.componentRef.setInput('messages', EN_MESSAGES);
     await fixture.whenStable();
     return { fixture, loader: TestbedHarnessEnvironment.loader(fixture) };
   }

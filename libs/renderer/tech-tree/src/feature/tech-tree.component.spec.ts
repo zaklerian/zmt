@@ -1,7 +1,10 @@
+import { inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { patchState } from '@ngrx/signals';
 import { unprotected } from '@ngrx/signals/testing';
+import { I18nStore } from '@zmt/renderer/shell/data-access';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 import { EN_MESSAGES } from '@zmt/shared/i18n';
 
 import { TechnologyDeleteStore, TechnologyFormStore, TechTreeStore } from '../data-access';
@@ -9,6 +12,12 @@ import { CanvasActionsComponent, CanvasContextMenuComponent, TechTreeCanvasCompo
 import { TechTreeComponent } from './tech-tree.component';
 
 describe('TechTreeComponent', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: MESSAGES, useFactory: () => inject(I18nStore).messages }],
+    });
+  });
+
   async function setup() {
     const fixture = TestBed.createComponent(TechTreeComponent);
     await fixture.whenStable();

@@ -1,7 +1,6 @@
-import type { Messages } from '@zmt/shared/i18n';
-
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MESSAGES } from '@zmt/renderer/shell/ui';
 
 import type { TechnologyDeleteStatus, TechnologyFlowStatus } from '../util';
 
@@ -88,7 +87,7 @@ export class CanvasActionsComponent {
   readonly deleteTechnology = output();
   readonly edit = output();
   readonly editStatus = input.required<TechnologyFlowStatus>();
-  readonly messages = input.required<Messages>();
+  protected readonly messages = inject(MESSAGES);
   readonly technologyId = input<null | string>(null);
 
   protected readonly hasSelection = computed(() => this.technologyId() !== null);

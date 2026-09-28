@@ -1,9 +1,10 @@
-import { Component, input, output } from '@angular/core';
+import { Component, inject, input, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { type MatButtonToggleChange, MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { isLocale, type Locale, type Messages } from '@zmt/shared/i18n';
+import { isLocale, type Locale } from '@zmt/shared/i18n';
 
+import { MESSAGES } from './messages.const';
 import { NavIconComponent } from './nav-icon.component';
 
 @Component({
@@ -17,7 +18,7 @@ export class AppToolbarComponent {
   readonly locale = input.required<Locale>();
   readonly localeChange = output<Locale>();
   readonly locales = input.required<readonly Locale[]>();
-  readonly messages = input.required<Messages>();
+  protected readonly messages = inject(MESSAGES);
   readonly openFolder = output();
   readonly openSettings = output();
   readonly toggleNavigation = output();
