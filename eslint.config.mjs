@@ -367,6 +367,28 @@ export default tseslint.config(
     },
   },
   {
+    files: ['libs/renderer/*/feature/**/*.spec.ts'],
+    name: 'ZMT-A-4: container specs seed store state through patchState(unprotected(store)) (STATE-4)',
+    rules: {
+      'no-restricted-imports': ['error', RENDERER_IMPORTS],
+    },
+  },
+  {
+    files: ['libs/renderer/dialog/util/**/*.ts'],
+    name: 'ZMT-A-4: the dialog util library is the one MatDialog import site (NG-11)',
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: RENDERER_IMPORTS.paths.filter(
+            (entry) => !entry.importNames?.includes('MatDialog'),
+          ),
+          patterns: [...RENDERER_IMPORTS.patterns, SIGNAL_STORE_IMPORT],
+        },
+      ],
+    },
+  },
+  {
     extends: [...angular.configs.templateRecommended, ...angular.configs.templateAccessibility],
     files: RENDERER_HTML,
     rules: {

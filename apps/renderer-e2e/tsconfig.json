@@ -5,5 +5,9 @@
     "types": ["node"],
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "playwright.config.mts", "../renderer/src/app/window-api.model.ts"]
+  "include": [
+    "src/**/*.ts",
+    "playwright.config.mts",
+    "../../libs/renderer/window-api/util/src/lib/window-api.model.ts"
+  ]
 }

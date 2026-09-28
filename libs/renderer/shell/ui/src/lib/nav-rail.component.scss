@@ -1,0 +1,20 @@
+.rail {
+  min-width: 4rem;
+}
+
+.rail.expanded {
+  min-width: 14rem;
+}
+
+.rail:not(.expanded) .label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.active {
+  background: var(--mat-sys-secondary-container);
+}

@@ -1,0 +1,17 @@
+<mat-form-field class="search" appearance="outline">
+  <mat-label>{{ messages().modContent.searchLabel }}</mat-label>
+  <input
+    matInput
+    type="search"
+    [disabled]="disabled()"
+    [placeholder]="placeholder()"
+    [value]="query()"
+    [matAutocomplete]="auto"
+    (input)="onInput($event)"
+  />
+  <mat-autocomplete #auto (optionSelected)="pick($event)">
+    @for (node of results(); track node.path) {
+      <mat-option [value]="node.path">{{ node.name }}</mat-option>
+    }
+  </mat-autocomplete>
+</mat-form-field>

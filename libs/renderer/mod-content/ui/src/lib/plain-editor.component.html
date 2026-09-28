@@ -1,0 +1,34 @@
+<section class="editor">
+  @if (writable()) {
+    <div class="actions" role="toolbar" [attr.aria-label]="messages().modContent.panelToolbar">
+      <button
+        matButton
+        type="button"
+        class="cancel"
+        [disabled]="!dirty() || saving()"
+        (click)="discard.emit()"
+      >
+        {{ messages().actions.cancel }}
+      </button>
+      <button
+        matButton="filled"
+        type="button"
+        class="save"
+        [disabled]="!dirty() || saving()"
+        (click)="save.emit()"
+      >
+        {{ messages().actions.save }}
+      </button>
+    </div>
+  }
+  @if (saveError(); as error) {
+    <p class="error" role="alert">{{ error.message }}</p>
+  }
+  <textarea
+    class="surface"
+    [attr.aria-label]="messages().modContent.editorLabel"
+    [readOnly]="!writable()"
+    [value]="text()"
+    (input)="onInput($event)"
+  ></textarea>
+</section>

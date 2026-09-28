@@ -1,0 +1,18 @@
+<mat-nav-list
+  class="rail"
+  [class.expanded]="expanded()"
+  [attr.aria-label]="messages().shell.navigation"
+>
+  @for (entry of entries(); track entry.path) {
+    <a
+      mat-list-item
+      [routerLink]="['/', entry.path]"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      [attr.aria-label]="messages().nav[entry.label]"
+    >
+      <zmt-nav-icon matListItemIcon [icon]="entry.icon" />
+      <span matListItemTitle class="label">{{ messages().nav[entry.label] }}</span>
+    </a>
+  }
+</mat-nav-list>

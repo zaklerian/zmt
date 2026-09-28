@@ -1,0 +1,46 @@
+<mat-toolbar class="toolbar">
+  <button
+    matIconButton
+    type="button"
+    class="navigation-toggle"
+    [attr.aria-label]="messages().shell.toggleNavigation"
+    [attr.aria-expanded]="expanded()"
+    aria-controls="zmt-navigation"
+    (click)="toggleNavigation.emit()"
+  >
+    <zmt-nav-icon icon="list" />
+  </button>
+  <h1 class="title">{{ messages().app.title }}</h1>
+  <span class="spacer"></span>
+  <button
+    matIconButton
+    type="button"
+    class="open-folder"
+    [attr.aria-label]="messages().shell.openFolder"
+    (click)="openFolder.emit()"
+  >
+    <zmt-nav-icon icon="folder" />
+  </button>
+  <button
+    matIconButton
+    type="button"
+    class="open-settings"
+    [attr.aria-label]="messages().shell.settings"
+    (click)="openSettings.emit()"
+  >
+    <zmt-nav-icon icon="settings" />
+  </button>
+  <mat-button-toggle-group
+    class="locale-switcher"
+    hideSingleSelectionIndicator
+    [attr.aria-label]="messages().shell.language"
+    [value]="locale()"
+    (change)="selectLocale($event)"
+  >
+    @for (option of locales(); track option) {
+      <mat-button-toggle [value]="option" [attr.lang]="option">{{
+        messages().locale[option]
+      }}</mat-button-toggle>
+    }
+  </mat-button-toggle-group>
+</mat-toolbar>

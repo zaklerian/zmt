@@ -1,14 +1,25 @@
+import type { NavEntry } from '@zmt/renderer/shell/ui';
+import type { Messages } from '@zmt/shared/i18n';
+
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { TestBed } from '@angular/core/testing';
 import { MatButtonToggleGroupHarness } from '@angular/material/button-toggle/testing';
 import { MatButtonHarness } from '@angular/material/button/testing';
+import { MatNavListHarness } from '@angular/material/list/testing';
 import { MatSidenavHarness } from '@angular/material/sidenav/testing';
 import { MatToolbarHarness } from '@angular/material/toolbar/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
+import { APP_VERSION } from '@zmt/renderer/app-info/data-access';
 import { I18nStore } from '@zmt/renderer/i18n/data-access';
-import { EN_MESSAGES, LOCALE, LOCALE_LOADERS, type Messages } from '@zmt/shared/i18n';
+import { NAV_ENTRIES } from '@zmt/renderer/shell/ui';
+import { EN_MESSAGES, LOCALE, LOCALE_LOADERS } from '@zmt/shared/i18n';
 
 import { ShellComponent } from './shell.component';
+
+const ENTRIES: readonly NavEntry[] = [
+  { icon: 'home', label: 'home', path: '' },
+  { icon: 'settings', label: 'appSettings', path: 'settings' },
+];
 
 describe('ShellComponent', () => {
   let deMessages: Messages;
@@ -18,7 +29,13 @@ describe('ShellComponent', () => {
   });
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: APP_VERSION, useValue: '1.2.3' },
+        { provide: NAV_ENTRIES, useValue: ENTRIES },
+      ],
+    });
   });
 
   async function setup() {
@@ -28,10 +45,24 @@ describe('ShellComponent', () => {
     return { fixture, loader };
   }
 
-  it('shows the app title in the toolbar', async () => {
-    const { loader } = await setup();
+  it('shows the app title in the toolbar and the version in the footer', async () => {
+    const { fixture, loader } = await setup();
     const toolbar = await loader.getHarness(MatToolbarHarness);
     expect((await toolbar.getRowsAsText()).join(' ')).toContain(EN_MESSAGES.app.title);
+    const host: unknown = fixture.nativeElement;
+    expect(host instanceof HTMLElement && host.querySelector('footer')?.textContent.trim()).toBe(
+      EN_MESSAGES.home.version('1.2.3'),
+    );
+  });
+
+  it('renders one navigation link per provided entry', async () => {
+    const { loader } = await setup();
+    const list = await loader.getHarness(MatNavListHarness);
+    const items = await list.getItems();
+    expect(await Promise.all(items.map((item) => item.getTitle()))).toEqual([
+      EN_MESSAGES.nav.home,
+      EN_MESSAGES.nav.appSettings,
+    ]);
   });
 
   it('renders one toggle per locale with the active locale checked', async () => {
@@ -76,5 +107,12 @@ describe('ShellComponent', () => {
     await toggle.click();
     expect(await host.getAttribute('aria-expanded')).toBe('true');
     expect(await (await sidenav.host()).hasClass('expanded')).toBe(true);
+  });
+
+  it('navigates to the settings page from the toolbar', async () => {
+    const { loader } = await setup();
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    await (await loader.getHarness(MatButtonHarness.with({ selector: '.open-settings' }))).click();
+    expect(navigate).toHaveBeenCalledWith(['/', 'settings']);
   });
 });

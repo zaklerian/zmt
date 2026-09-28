@@ -1,0 +1,42 @@
+<svg
+  class="canvas"
+  role="group"
+  tabindex="0"
+  [attr.aria-label]="messages().techTree.canvas"
+  (click)="selectNode.emit(null)"
+  (contextmenu)="onPaneContextMenu($event)"
+  (keydown.escape)="selectNode.emit(null)"
+>
+  @for (edge of edgeLines(); track edge.id) {
+    <line
+      class="edge"
+      [class.dependency]="edge.kind === 'dependency'"
+      [attr.x1]="edge.from.x"
+      [attr.y1]="edge.from.y"
+      [attr.x2]="edge.to.x"
+      [attr.y2]="edge.to.y"
+    />
+  }
+  @for (node of nodes(); track node.id) {
+    <g
+      class="node"
+      role="button"
+      tabindex="0"
+      [class.selected]="node.selected"
+      [class.highlighted]="node.highlighted"
+      [class.dimmed]="node.dimmed"
+      [class.sub]="node.kind === 'sub'"
+      [class.wide]="node.kind === 'wide'"
+      [attr.transform]="translate(node)"
+      [attr.aria-label]="node.name ?? node.token"
+      [attr.aria-pressed]="node.selected"
+      (click)="onNodeClick($event, node.id)"
+      (dblclick)="onNodeOpen($event, node.id)"
+      (contextmenu)="onNodeContextMenu($event, node.id)"
+      (keydown.enter)="openNode.emit(node.id)"
+    >
+      <rect class="box" [attr.width]="width(node)" height="48" rx="4" />
+      <text class="token" x="8" y="28">{{ node.token }}</text>
+    </g>
+  }
+</svg>

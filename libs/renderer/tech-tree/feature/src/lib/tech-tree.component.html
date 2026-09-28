@@ -1,0 +1,77 @@
+<h2 class="title">{{ messages().techTree.title }}</h2>
+<div class="chrome">
+  <zmt-canvas-toolbar
+    [categories]="tree.categories()"
+    [messages]="messages()"
+    [search]="tree.search()"
+    [selectedCategories]="tree.selectedCategories()"
+    (searchChange)="tree.setSearch($event)"
+    (selectedCategoriesChange)="tree.setSelectedCategories($event)"
+  />
+  <mat-slide-toggle
+    class="dependencies"
+    [checked]="tree.showDependencies()"
+    (change)="tree.setShowDependencies($event.checked)"
+  >
+    {{ messages().techTree.dependenciesToggle }}
+  </mat-slide-toggle>
+</div>
+<zmt-canvas-actions
+  [addStatus]="form.status()"
+  [busy]="form.busy() || delete.deleting()"
+  [deleteStatus]="delete.status()"
+  [editStatus]="form.status()"
+  [messages]="messages()"
+  [technologyId]="tree.selectedId()"
+  (add)="onAddChild()"
+  (deleteTechnology)="onDelete()"
+  (edit)="onEdit()"
+/>
+@if (message(); as text) {
+  <p class="message">{{ text }}</p>
+} @else {
+  <zmt-tech-tree-canvas
+    [edges]="tree.visibleEdges()"
+    [messages]="messages()"
+    [nodes]="tree.nodeViews()"
+    (nodeContextMenu)="openNodeMenu($event)"
+    (openNode)="form.openEdit($event)"
+    (paneContextMenu)="openPaneMenu($event)"
+    (selectNode)="tree.select($event)"
+  />
+}
+@if (menu(); as target) {
+  <zmt-canvas-context-menu
+    [anchor]="target.anchor"
+    [messages]="messages()"
+    [technologyId]="target.technologyId"
+    (addChild)="form.openAddChild($event); closeMenu()"
+    (addFree)="form.openAddFree(target.position); closeMenu()"
+    (deleteTechnology)="delete.open($event); closeMenu()"
+    (dismiss)="closeMenu()"
+    (edit)="form.openEdit($event); closeMenu()"
+  />
+}
+@if (form.model(); as model) {
+  <zmt-entity-form-shell
+    chrome="dialog"
+    [messages]="messages()"
+    [model]="model"
+    [saving]="form.busy()"
+    (dismiss)="form.close()"
+    (save)="form.save($event)"
+  />
+}
+@if (delete.isConfirming() && delete.plan() && delete.token(); as token) {
+  @if (delete.plan(); as plan) {
+    <zmt-technology-delete-dialog
+      [busy]="delete.deleting()"
+      [hasTree]="delete.hasTree()"
+      [messages]="messages()"
+      [plan]="plan"
+      [token]="token"
+      (confirmDelete)="delete.commit($event)"
+      (dismiss)="delete.cancel()"
+    />
+  }
+}

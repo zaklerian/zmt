@@ -1,0 +1,14 @@
+<h2 mat-dialog-title>{{ data.options.title }}</h2>
+<mat-dialog-content>
+  <p>{{ data.options.message }}</p>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  @if (data.kind === 'confirm') {
+    <button matButton type="button" [mat-dialog-close]="false">
+      {{ data.options.cancelLabel }}
+    </button>
+  }
+  <button matButton="filled" type="button" cdkFocusInitial [mat-dialog-close]="true">
+    {{ data.options.confirmLabel }}
+  </button>
+</mat-dialog-actions>
