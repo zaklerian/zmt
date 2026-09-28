@@ -50,9 +50,21 @@ describe('TechnologyFormStore', () => {
     }
   });
 
-  it('declares close as pending', () => {
-    expect(() => {
-      store.close();
-    }).toThrow(NotImplementedError);
+  it('closes the form and returns to idle', () => {
+    patchState(unprotected(store), {
+      mode: 'edit',
+      model: {
+        blocks: [],
+        errorMessage: () => 'failed',
+        errorTitle: 'Action failed',
+        save: () => Promise.resolve(ok(null)),
+      },
+      status: { error: { code: 500, message: 'x' }, kind: 'error' },
+    });
+    store.close();
+    expect(store.mode()).toBeNull();
+    expect(store.model()).toBeNull();
+    expect(store.status()).toEqual({ kind: 'idle' });
+    expect(store.isOpen()).toBe(false);
   });
 });

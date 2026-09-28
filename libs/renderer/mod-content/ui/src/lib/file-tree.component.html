@@ -2,6 +2,8 @@
   class="tree"
   [dataSource]="dataSource()"
   [childrenAccessor]="childrenOf"
+  [expansionKey]="keyOf"
+  [trackBy]="trackById"
   [attr.aria-label]="messages().modContent.fileTree"
 >
   <mat-tree-node *matTreeNodeDef="let item" matTreeNodePadding>
@@ -20,6 +22,7 @@
     *matTreeNodeDef="let item; when: isExpandable"
     matTreeNodePadding
     [isExpandable]="true"
+    [isExpanded]="isInitiallyExpanded(item)"
   >
     <button
       matIconButton
@@ -40,7 +43,9 @@
     >
       {{ item.label }}
     </button>
-    @if (item.children === null) {
+    @if (errorText(item); as text) {
+      <span class="error" role="alert">{{ text }}</span>
+    } @else if (item.children === null) {
       <span class="loading">{{ messages().modContent.fileTreeLoading }}</span>
     }
   </mat-tree-node>

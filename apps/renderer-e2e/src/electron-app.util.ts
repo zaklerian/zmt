@@ -33,11 +33,18 @@ export async function launchApp(): Promise<LaunchedApp> {
 export const CLOSE_TIMEOUT_MS = 10_000;
 
 export async function closeApp(launched: LaunchedApp): Promise<void> {
+  const child = launched.app.process();
+  let timer: NodeJS.Timeout | undefined;
   const forceKill = new Promise<void>((done) => {
-    setTimeout(() => {
-      launched.app.process().kill('SIGKILL');
+    timer = setTimeout(() => {
+      child.kill('SIGKILL');
       done();
-    }, CLOSE_TIMEOUT_MS).unref();
+    }, CLOSE_TIMEOUT_MS);
+    timer.unref();
   });
-  await Promise.race([launched.app.close(), forceKill]);
+  try {
+    await Promise.race([launched.app.close(), forceKill]);
+  } finally {
+    clearTimeout(timer);
+  }
 }

@@ -1,11 +1,15 @@
-import type { GamePlugin } from '@zmt/contracts';
+import type { GamePlugin, IpcChannelResult } from '@zmt/contracts';
 
 import { TestBed } from '@angular/core/testing';
 import { patchState } from '@ngrx/signals';
 import { unprotected } from '@ngrx/signals/testing';
-import { collectUnhandledErrors, NotImplementedError } from '@zmt/renderer/pending/util';
+import { fail, ok } from '@zmt/contracts';
+import { deferred, flushPromises } from '@zmt/renderer/async-status/util';
+import { PluginService } from '@zmt/renderer/plugin/data-access';
 
 import { AppSettingsStore } from './app-settings.store';
+
+type ListResult = IpcChannelResult<'plugins:list'>;
 
 const HOI4: GamePlugin = {
   displayName: 'Hearts of Iron IV',
@@ -13,10 +17,17 @@ const HOI4: GamePlugin = {
   gameId: 'hoi4',
 };
 
+const STELLARIS: GamePlugin = { displayName: 'Stellaris', features: [], gameId: 'stellaris' };
+
 describe('AppSettingsStore', () => {
   let store: InstanceType<typeof AppSettingsStore>;
+  const list = vi.fn<() => Promise<ListResult>>();
 
   beforeEach(() => {
+    list.mockReset();
+    TestBed.configureTestingModule({
+      providers: [{ provide: PluginService, useValue: { list } }],
+    });
     store = TestBed.inject(AppSettingsStore);
   });
 
@@ -51,20 +62,74 @@ describe('AppSettingsStore', () => {
     expect(store.saving()).toBe(true);
   });
 
-  it('declares load and save as pending loaders', async () => {
-    const loadErrors = await collectUnhandledErrors(() => {
-      store.load();
-    });
-    expect(loadErrors).toEqual([expect.any(NotImplementedError)]);
-    const saveErrors = await collectUnhandledErrors(() => {
-      store.save({ activeGameId: 'hoi4', features: {}, hideUnsupportedFiles: false });
-    });
-    expect(saveErrors).toEqual([expect.any(NotImplementedError)]);
+  it('loads the plugins and activates the first one', async () => {
+    const listing = deferred<ListResult>();
+    list.mockReturnValue(listing.promise);
+    store.load();
+    expect(store.status()).toEqual({ kind: 'loading' });
+    listing.resolve(ok([HOI4, STELLARIS]));
+    await flushPromises();
+    expect(store.status()).toEqual({ kind: 'success' });
+    expect(store.plugins()).toEqual([HOI4, STELLARIS]);
+    expect(store.activeGameId()).toBe('hoi4');
+    expect(list).toHaveBeenCalledWith();
   });
 
-  it('declares selectGame as pending', () => {
-    expect(() => {
-      store.selectGame('hoi4');
-    }).toThrow(NotImplementedError);
+  it('keeps the chosen game across reloads while it is still listed', async () => {
+    patchState(unprotected(store), { activeGameId: 'stellaris' });
+    list.mockResolvedValueOnce(ok([HOI4, STELLARIS])).mockResolvedValueOnce(ok([HOI4]));
+    store.load();
+    await flushPromises();
+    expect(store.activeGameId()).toBe('stellaris');
+    store.load();
+    await flushPromises();
+    expect(store.activeGameId()).toBe('hoi4');
+    list.mockResolvedValueOnce(ok([]));
+    store.load();
+    await flushPromises();
+    expect(store.activeGameId()).toBeNull();
+  });
+
+  it.each([400, 403, 404, 409, 413, 500] as const)('reports a %i failure', async (code) => {
+    list.mockResolvedValue(fail(code, 'boom'));
+    store.load();
+    await flushPromises();
+    expect(store.status()).toEqual({ error: { code, message: 'boom' }, kind: 'error' });
+    expect(store.plugins()).toEqual([]);
+  });
+
+  it('lets a newer load supersede an older one so the stale list never lands', async () => {
+    const first = deferred<ListResult>();
+    const second = deferred<ListResult>();
+    list.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+    store.load();
+    store.load();
+    second.resolve(ok([STELLARIS]));
+    await flushPromises();
+    first.resolve(ok([HOI4]));
+    await flushPromises();
+    expect(store.plugins()).toEqual([STELLARIS]);
+    expect(store.activeGameId()).toBe('stellaris');
+  });
+
+  it('saves the values in memory and marks the save as done', () => {
+    patchState(unprotected(store), { activeGameId: 'hoi4', plugins: [HOI4] });
+    store.save({ activeGameId: 'hoi4', features: { aircraft: false }, hideUnsupportedFiles: true });
+    expect(store.featureToggles()).toEqual({ aircraft: false });
+    expect(store.hideUnsupportedFiles()).toBe(true);
+    expect(store.saveStatus()).toEqual({ kind: 'success' });
+    expect(store.values()).toEqual({
+      activeGameId: 'hoi4',
+      features: { aircraft: false },
+      hideUnsupportedFiles: true,
+    });
+  });
+
+  it('selects only a listed game', () => {
+    patchState(unprotected(store), { activeGameId: 'hoi4', plugins: [HOI4, STELLARIS] });
+    store.selectGame('stellaris');
+    expect(store.activeGameId()).toBe('stellaris');
+    store.selectGame('v3');
+    expect(store.activeGameId()).toBe('stellaris');
   });
 });

@@ -1,12 +1,19 @@
 import type { GameId, GamePlugin } from '@zmt/contracts';
 import type { AppSettingsValues, FeatureToggles } from '@zmt/renderer/app-settings/util';
 
-import { computed } from '@angular/core';
-import { signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { computed, inject } from '@angular/core';
+import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { ASYNC_IDLE, type AsyncStatus } from '@zmt/renderer/async-status/util';
-import { pending } from '@zmt/renderer/pending/util';
-import { type Observable, pipe, tap } from 'rxjs';
+import {
+  ASYNC_IDLE,
+  ASYNC_LOADING,
+  ASYNC_SUCCESS,
+  asyncError,
+  type AsyncStatus,
+  settle,
+} from '@zmt/renderer/async-status/util';
+import { PluginService } from '@zmt/renderer/plugin/data-access';
+import { from, type Observable, switchMap, tap } from 'rxjs';
 
 export interface AppSettingsState {
   readonly activeGameId: GameId | null;
@@ -49,11 +56,48 @@ export const AppSettingsStore = signalStore(
       }),
     };
   }),
-  withMethods(() => {
-    const selectGame: (gameId: GameId) => void = () => pending('ZMT-A-5');
+  withMethods((store, service = inject(PluginService)) => {
+    const selectGame = (gameId: GameId): void => {
+      if (store.plugins().some((plugin) => plugin.gameId === gameId)) {
+        patchState(store, { activeGameId: gameId });
+      }
+    };
     return {
-      load: rxMethod((source$: Observable<void>) => source$.pipe(tap(() => pending('ZMT-A-5')))),
-      save: rxMethod<AppSettingsValues>(pipe(tap(() => pending('ZMT-A-5')))),
+      load: rxMethod((source$: Observable<void>) =>
+        source$.pipe(
+          tap(() => {
+            patchState(store, { status: ASYNC_LOADING });
+          }),
+          switchMap(() => from(service.list())),
+          tap((result) => {
+            settle(result, {
+              failure: (error) => {
+                patchState(store, { status: asyncError(error) });
+              },
+              success: (plugins) => {
+                patchState(store, (state) => ({
+                  activeGameId:
+                    plugins.find((plugin) => plugin.gameId === state.activeGameId)?.gameId ??
+                    plugins[0]?.gameId ??
+                    null,
+                  plugins,
+                  status: ASYNC_SUCCESS,
+                }));
+              },
+            });
+          }),
+        ),
+      ),
+      save: rxMethod<AppSettingsValues>(
+        tap((values) => {
+          patchState(store, {
+            activeGameId: values.activeGameId,
+            featureToggles: values.features,
+            hideUnsupportedFiles: values.hideUnsupportedFiles,
+            saveStatus: ASYNC_SUCCESS,
+          });
+        }),
+      ),
       selectGame,
     };
   }),

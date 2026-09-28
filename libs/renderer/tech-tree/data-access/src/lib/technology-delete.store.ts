@@ -5,7 +5,7 @@ import type {
 } from '@zmt/renderer/tech-tree/util';
 
 import { computed } from '@angular/core';
-import { signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pending } from '@zmt/renderer/pending/util';
 import { pipe, tap } from 'rxjs';
@@ -33,8 +33,10 @@ export const TechnologyDeleteStore = signalStore(
     }),
     isConfirming: computed(() => plan() !== null && token() !== null),
   })),
-  withMethods(() => {
-    const cancel: () => void = () => pending('ZMT-A-5');
+  withMethods((store) => {
+    const cancel = (): void => {
+      patchState(store, { plan: null, status: { kind: 'idle' }, token: null });
+    };
     return {
       cancel,
       commit: rxMethod<TechnologyDeleteMode>(pipe(tap(() => pending('ZMT-A-5')))),

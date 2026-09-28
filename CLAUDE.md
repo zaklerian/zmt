@@ -31,7 +31,7 @@ libs/renderer/mod-content/util/       file selection, tree item and view mode mo
 libs/renderer/mod-info/feature/       mod descriptor route                type:feature      scope:renderer
 libs/renderer/mod-info/ui/            descriptor Signal Form, parser warnings   type:ui       scope:renderer
 libs/renderer/mod-info/data-access/   ModInfoService (fs), ModInfoStore   type:data-access  scope:renderer
-libs/renderer/mod-info/util/          descriptor values model and path helpers   type:util    scope:renderer
+libs/renderer/mod-info/util/          descriptor values model, path helpers, lossless descriptor parser   type:util    scope:renderer
 libs/renderer/feature-nav/feature/    enabled features route              type:feature      scope:renderer
 libs/renderer/feature-nav/ui/         feature list, tree placeholder      type:ui           scope:renderer
 libs/renderer/feature-nav/data-access/ FeatureNavStore                    type:data-access  scope:renderer
@@ -54,7 +54,7 @@ libs/renderer/async-status/util/      AsyncStatus union and constructors  type:u
 libs/renderer/window-api/util/        window.api global declaration       type:util         scope:renderer
 tools/eslint-rules/                   workspace lint rules                type:util         scope:shared
 tools/commitlint-plugin/              commit grammar, pre-push check      type:util         scope:shared
-tools/scripts/                        negative-typecheck, pin, push and electron-dev scripts
+tools/scripts/                        negative-typecheck, pin, push, electron-dev and renderer-vitest scripts
 layout: libs/<scope>/<domain>/{feature,ui,data-access,util}; renderer data-access holds *.service.ts (IPC facade) and *.store.ts
 main layout: apps/main/src/<domain>/ (app, fs, ipc, plugin, system, window); handlers register through ipc/ipc-handle.util.ts only
 .claude/                              rules, hooks, skills, settings
@@ -72,6 +72,7 @@ pnpm nx affected -t lint typecheck test        the Stop-hook gate
 pnpm nx run-many -t lint typecheck test build  full gate
 pnpm nx e2e renderer-e2e                       Playwright _electron smokes with axe (builds first; xvfb-run on headless Linux)
 pnpm nx run-many -t mutation -p contracts main Stryker gate, break 80 (TEST-3)
+pnpm nx run-many -t mutation --projects 'renderer-*-data-access'   Stryker gate on renderer stores and services, break 70 (TEST-3)
 pnpm nx run shared-i18n:typecheck-negative     dictionary parity fixtures must fail typecheck
 pnpm commitlint                                commit grammar (reads stdin or --edit)
 bash .claude/hooks/governance.sh               rule, rationale, ADR, ledger, repo-map and retro checks

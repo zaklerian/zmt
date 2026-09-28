@@ -6,7 +6,7 @@ import type {
 import type { TechnologyFlowStatus, TechTreePoint } from '@zmt/renderer/tech-tree/util';
 
 import { computed } from '@angular/core';
-import { signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pending } from '@zmt/renderer/pending/util';
 import { pipe, tap } from 'rxjs';
@@ -30,8 +30,10 @@ export const TechnologyFormStore = signalStore(
     busy: computed(() => status().kind === 'loading'),
     isOpen: computed(() => model() !== null),
   })),
-  withMethods(() => {
-    const close: () => void = () => pending('ZMT-A-5');
+  withMethods((store) => {
+    const close = (): void => {
+      patchState(store, { mode: null, model: null, status: { kind: 'idle' } });
+    };
     return {
       close,
       openAddChild: rxMethod<string>(pipe(tap(() => pending('ZMT-A-5')))),

@@ -6,9 +6,8 @@ import type {
 } from '@zmt/renderer/plugin/util';
 
 import { computed } from '@angular/core';
-import { signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { HOI4_RENDERER_PLUGIN } from '@zmt/renderer/hoi4/util';
-import { pending } from '@zmt/renderer/pending/util';
 
 export interface PluginRegistryState {
   readonly plugins: readonly RendererPlugin[];
@@ -29,13 +28,19 @@ export const PluginRegistryStore = signalStore(
       plugins().flatMap((plugin) => plugin.recognizers),
     ),
   })),
-  withMethods(() => {
-    const recognize: (filePath: string) => EntityRecognizer | null = () => pending('ZMT-A-5');
-    const register: (plugin: RendererPlugin) => void = () => pending('ZMT-A-5');
-    const resolveFormDescriptor: (
-      gameId: GameId,
-      entityId: string,
-    ) => EntityFormDescriptor | null = () => pending('ZMT-A-5');
+  withMethods((store) => {
+    const recognize = (filePath: string): EntityRecognizer | null =>
+      store.recognizers().find((recognizer) => recognizer.matches(filePath)) ?? null;
+    const register = (plugin: RendererPlugin): void => {
+      patchState(store, (state) => ({
+        plugins: [...state.plugins.filter((known) => known.gameId !== plugin.gameId), plugin],
+      }));
+    };
+    const resolveFormDescriptor = (gameId: GameId, entityId: string): EntityFormDescriptor | null =>
+      store
+        .formDescriptors()
+        .find((descriptor) => descriptor.gameId === gameId && descriptor.entityId === entityId) ??
+      null;
     return { recognize, register, resolveFormDescriptor };
   }),
 );

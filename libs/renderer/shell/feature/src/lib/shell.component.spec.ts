@@ -9,9 +9,12 @@ import { MatNavListHarness } from '@angular/material/list/testing';
 import { MatSidenavHarness } from '@angular/material/sidenav/testing';
 import { MatToolbarHarness } from '@angular/material/toolbar/testing';
 import { provideRouter, Router } from '@angular/router';
+import { patchState } from '@ngrx/signals';
+import { unprotected } from '@ngrx/signals/testing';
 import { APP_VERSION } from '@zmt/renderer/app-info/data-access';
 import { I18nStore } from '@zmt/renderer/i18n/data-access';
 import { NAV_ENTRIES } from '@zmt/renderer/shell/ui';
+import { WorkspaceStore } from '@zmt/renderer/workspace/data-access';
 import { EN_MESSAGES, LOCALE, LOCALE_LOADERS } from '@zmt/shared/i18n';
 
 import { ShellComponent } from './shell.component';
@@ -114,5 +117,26 @@ describe('ShellComponent', () => {
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     await (await loader.getHarness(MatButtonHarness.with({ selector: '.open-settings' }))).click();
     expect(navigate).toHaveBeenCalledWith(['/', 'settings']);
+  });
+
+  it('navigates to the mod content page when a root folder opens', async () => {
+    const { fixture } = await setup();
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const workspace = TestBed.inject(WorkspaceStore);
+    patchState(unprotected(workspace), { root: '/mods/my-mod' });
+    await fixture.whenStable();
+    expect(navigate).toHaveBeenCalledWith(['/', 'mod-content']);
+    patchState(unprotected(workspace), { root: null });
+    await fixture.whenStable();
+    expect(navigate).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens the folder dialog from the toolbar', async () => {
+    const { loader } = await setup();
+    const openFolder = vi
+      .spyOn(TestBed.inject(WorkspaceStore), 'openFolder')
+      .mockImplementation(() => ({ destroy: () => undefined }));
+    await (await loader.getHarness(MatButtonHarness.with({ selector: '.open-folder' }))).click();
+    expect(openFolder).toHaveBeenCalledTimes(1);
   });
 });

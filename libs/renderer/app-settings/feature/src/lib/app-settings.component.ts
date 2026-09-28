@@ -1,10 +1,17 @@
+import type { GameId } from '@zmt/contracts';
 import type { HasUnsavedChanges } from '@zmt/renderer/dialog/util';
 
-import { Component, computed, inject, linkedSignal } from '@angular/core';
+import { Component, computed, effect, inject, linkedSignal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { AppSettingsStore } from '@zmt/renderer/app-settings/data-access';
 import { FileDisplayFormComponent, PluginConfigFormComponent } from '@zmt/renderer/app-settings/ui';
+import { errorOf } from '@zmt/renderer/async-status/util';
+import { DialogService } from '@zmt/renderer/dialog/util';
 import { I18nStore } from '@zmt/renderer/i18n/data-access';
+import { filter } from 'rxjs';
+
+export const SAVED_SNACKBAR_MS = 3000;
 
 @Component({
   imports: [FileDisplayFormComponent, MatButtonModule, PluginConfigFormComponent],
@@ -27,10 +34,20 @@ import { I18nStore } from '@zmt/renderer/i18n/data-access';
       justify-content: flex-end;
       gap: 0.5rem;
     }
+
+    .error {
+      margin: 0;
+      color: var(--mat-sys-error);
+    }
   `,
   template: `
     <h2 class="title">{{ messages().appSettings.title }}</h2>
     <section class="settings">
+      @if (loadError(); as error) {
+        <p class="error" role="alert">
+          {{ messages().appSettings.loadFailed }} {{ messages().errors[error.code] }}
+        </p>
+      }
       @if (store.hasPlugins()) {
         <zmt-plugin-config-form
           [activePlugin]="store.activePlugin()"
@@ -38,9 +55,9 @@ import { I18nStore } from '@zmt/renderer/i18n/data-access';
           [messages]="messages()"
           [plugins]="store.plugins()"
           (featuresChange)="features.set($event)"
-          (gameChange)="store.selectGame($event)"
+          (gameChange)="onGameChange($event)"
         />
-      } @else {
+      } @else if (store.status().kind === 'success') {
         <p class="no-plugins">{{ messages().appSettings.noPlugins }}</p>
       }
       <zmt-file-display-form
@@ -66,17 +83,53 @@ import { I18nStore } from '@zmt/renderer/i18n/data-access';
   `,
 })
 export class AppSettingsComponent implements HasUnsavedChanges {
+  private readonly dialog = inject(DialogService);
+  private readonly snackBar = inject(MatSnackBar);
   protected readonly messages = inject(I18nStore).messages;
   protected readonly store = inject(AppSettingsStore);
 
   protected readonly features = linkedSignal(() => this.store.featureToggles());
   protected readonly hideUnsupportedFiles = linkedSignal(() => this.store.hideUnsupportedFiles());
+  protected readonly loadError = computed(() => errorOf(this.store.status()));
 
   readonly dirty = computed(
     () =>
       this.features() !== this.store.featureToggles() ||
       this.hideUnsupportedFiles() !== this.store.hideUnsupportedFiles(),
   );
+
+  constructor() {
+    this.store.load();
+    effect(() => {
+      if (this.store.saveStatus().kind === 'success') {
+        this.snackBar.open(this.messages().appSettings.saved, undefined, {
+          duration: SAVED_SNACKBAR_MS,
+        });
+      }
+    });
+  }
+
+  protected onGameChange(gameId: GameId): void {
+    if (gameId === this.store.activeGameId()) {
+      return;
+    }
+    if (!this.dirty()) {
+      this.switchGame(gameId);
+      return;
+    }
+    const texts = this.messages();
+    this.dialog
+      .confirm({
+        cancelLabel: texts.actions.cancel,
+        confirmLabel: texts.actions.discard,
+        message: texts.appSettings.gameSwitchMessage,
+        title: texts.dialog.unsavedChangesTitle,
+      })
+      .pipe(filter((confirmed) => confirmed))
+      .subscribe(() => {
+        this.switchGame(gameId);
+      });
+  }
 
   protected reset(): void {
     this.features.set(this.store.featureToggles());
@@ -92,5 +145,10 @@ export class AppSettingsComponent implements HasUnsavedChanges {
         hideUnsupportedFiles: this.hideUnsupportedFiles(),
       });
     }
+  }
+
+  private switchGame(gameId: GameId): void {
+    this.store.selectGame(gameId);
+    this.reset();
   }
 }

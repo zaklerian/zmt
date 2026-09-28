@@ -1,11 +1,21 @@
-import type { FeatureContribution, FeatureId } from '@zmt/contracts';
+import type { FeatureContribution, FeatureId, GamePlugin } from '@zmt/contracts';
+import type { FeatureToggles } from '@zmt/renderer/app-settings/util';
 
-import { computed } from '@angular/core';
-import { signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { computed, inject } from '@angular/core';
+import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { ASYNC_IDLE, type AsyncStatus } from '@zmt/renderer/async-status/util';
-import { pending } from '@zmt/renderer/pending/util';
-import { type Observable, tap } from 'rxjs';
+import { AppSettingsStore } from '@zmt/renderer/app-settings/data-access';
+import { isFeatureEnabled } from '@zmt/renderer/app-settings/util';
+import {
+  ASYNC_IDLE,
+  ASYNC_LOADING,
+  ASYNC_SUCCESS,
+  asyncError,
+  type AsyncStatus,
+  settle,
+} from '@zmt/renderer/async-status/util';
+import { PluginService } from '@zmt/renderer/plugin/data-access';
+import { from, type Observable, switchMap, tap } from 'rxjs';
 
 export interface FeatureNavState {
   readonly activeFeatureId: FeatureId | null;
@@ -19,6 +29,15 @@ const INITIAL_STATE: FeatureNavState = {
   status: ASYNC_IDLE,
 };
 
+export function enabledFeatures(
+  plugins: readonly GamePlugin[],
+  toggles: FeatureToggles,
+): readonly FeatureContribution[] {
+  return plugins.flatMap((plugin) =>
+    plugin.features.filter((feature) => isFeatureEnabled(toggles, feature)),
+  );
+}
+
 export const FeatureNavStore = signalStore(
   { providedIn: 'root' },
   withState(INITIAL_STATE),
@@ -28,10 +47,32 @@ export const FeatureNavStore = signalStore(
     ),
     hasFeatures: computed(() => features().length > 0),
   })),
-  withMethods(() => {
-    const select: (featureId: FeatureId | null) => void = () => pending('ZMT-A-5');
+  withMethods((store, service = inject(PluginService), settings = inject(AppSettingsStore)) => {
+    const select = (featureId: FeatureId | null): void => {
+      patchState(store, { activeFeatureId: featureId });
+    };
     return {
-      load: rxMethod((source$: Observable<void>) => source$.pipe(tap(() => pending('ZMT-A-5')))),
+      load: rxMethod((source$: Observable<void>) =>
+        source$.pipe(
+          tap(() => {
+            patchState(store, { status: ASYNC_LOADING });
+          }),
+          switchMap(() => from(service.list())),
+          tap((result) => {
+            settle(result, {
+              failure: (error) => {
+                patchState(store, { features: [], status: asyncError(error) });
+              },
+              success: (plugins) => {
+                patchState(store, {
+                  features: enabledFeatures(plugins, settings.featureToggles()),
+                  status: ASYNC_SUCCESS,
+                });
+              },
+            });
+          }),
+        ),
+      ),
       select,
     };
   }),

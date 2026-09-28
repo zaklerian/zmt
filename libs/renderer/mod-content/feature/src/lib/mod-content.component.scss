@@ -27,3 +27,14 @@
   justify-content: flex-end;
   padding: 0.5rem 0;
 }
+
+.error {
+  margin: 0;
+  padding: 0.5rem 1rem;
+  color: var(--mat-sys-error);
+}
+
+.loading {
+  padding: 1rem;
+  color: var(--mat-sys-on-surface-variant);
+}

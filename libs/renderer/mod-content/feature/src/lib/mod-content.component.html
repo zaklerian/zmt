@@ -11,7 +11,18 @@
         (queryChange)="onSearch($event)"
         (selectNode)="onSearchSelect($event)"
       />
+      @if (searchError(); as error) {
+        <p class="error search-error" role="alert">
+          {{ messages().modContent.searchFailed }} {{ messages().errors[error.code] }}
+        </p>
+      }
+      @if (treeError(); as error) {
+        <p class="error tree-error" role="alert">
+          {{ messages().modContent.fileTreeFailed }} {{ messages().errors[error.code] }}
+        </p>
+      }
       <zmt-file-tree
+        [expanded]="tree.expanded()"
         [items]="tree.items()"
         [messages]="messages()"
         [selectedId]="content.selectedPath()"
@@ -39,28 +50,77 @@
       }
       @switch (content.contentKind()) {
         @case ('editor') {
-          <zmt-plain-editor
-            [dirty]="editor.dirty()"
-            [messages]="messages()"
-            [saveError]="saveError()"
-            [saving]="editor.saving()"
-            [text]="editor.text()"
-            [writable]="workspace.hasRoot()"
-            (discard)="editor.reset()"
-            (save)="editor.save()"
-            (textChange)="editor.updateText($event)"
-          />
+          @switch (editor.status().kind) {
+            @case ('success') {
+              <zmt-plain-editor
+                [dirty]="editor.dirty()"
+                [messages]="messages()"
+                [saveError]="saveError()"
+                [saving]="editor.saving()"
+                [text]="editor.text()"
+                [writable]="workspace.hasRoot()"
+                (discard)="editor.reset()"
+                (save)="editor.save()"
+                (textChange)="editor.updateText($event)"
+              />
+            }
+            @case ('error') {
+              @if (editorError(); as error) {
+                <p class="error editor-error" role="alert">
+                  {{ messages().modContent.editorFailed }} {{ messages().errors[error.code] }}
+                </p>
+                <button matButton type="button" class="retry" (click)="retryEditor()">
+                  {{ messages().actions.retry }}
+                </button>
+              }
+            }
+            @default {
+              <p class="loading">{{ messages().modContent.loading }}</p>
+            }
+          }
         }
         @case ('entityTable') {
-          <zmt-entity-table
-            [actions]="entities.actionViews()"
-            [columns]="entities.columns()"
-            [messages]="messages()"
-            [rows]="entities.sortedRows()"
-            [selectedRowId]="entities.selectedRowId()"
-            (runAction)="entities.runAction($event)"
-            (selectRow)="entities.selectRow($event)"
-          />
+          @switch (entities.status().kind) {
+            @case ('success') {
+              @if (actionError(); as error) {
+                <p class="error action-error" role="alert">
+                  {{ messages().modContent.actionFailed }} {{ messages().errors[error.code] }}
+                </p>
+              }
+              <zmt-entity-table
+                [actions]="entities.actionViews()"
+                [columns]="entities.columns()"
+                [messages]="messages()"
+                [rows]="entities.sortedRows()"
+                [selectedRowId]="entities.selectedRowId()"
+                (runAction)="entities.runAction($event)"
+                (selectRow)="entities.selectRow($event)"
+              />
+              @if (entities.form(); as form) {
+                <zmt-entity-form-shell
+                  chrome="dialog"
+                  [messages]="messages()"
+                  [model]="form"
+                  [saving]="entities.formStatus().kind === 'loading'"
+                  (dismiss)="entities.closeForm()"
+                  (save)="entities.submitForm($event)"
+                />
+              }
+            }
+            @case ('error') {
+              @if (entitiesError(); as error) {
+                <p class="error entities-error" role="alert">
+                  {{ messages().modContent.entityTableFailed }} {{ messages().errors[error.code] }}
+                </p>
+                <button matButton type="button" class="retry" (click)="entities.reload()">
+                  {{ messages().actions.retry }}
+                </button>
+              }
+            }
+            @default {
+              <p class="loading">{{ messages().modContent.loading }}</p>
+            }
+          }
         }
         @default {
           <zmt-content-placeholder [messages]="messages()" />
@@ -69,5 +129,10 @@
     </section>
   </div>
 } @else {
+  @if (folderError(); as error) {
+    <p class="error folder-error" role="alert">
+      {{ messages().modContent.folderFailed }} {{ messages().errors[error.code] }}
+    </p>
+  }
   <zmt-no-folder-state [messages]="messages()" (openFolder)="workspace.openFolder()" />
 }

@@ -1,13 +1,12 @@
 import type { FileSelection } from '@zmt/renderer/mod-content/util';
 
 import { computed } from '@angular/core';
-import { signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import {
   type ContentKind,
   type StructuredView,
   type ViewMode,
 } from '@zmt/renderer/mod-content/util';
-import { pending } from '@zmt/renderer/pending/util';
 
 export interface ModContentState {
   readonly selection: FileSelection | null;
@@ -39,6 +38,10 @@ export function resolveContentKind(
   return selection.support === 'editable' ? 'editor' : 'placeholder';
 }
 
+export function naturalViewMode(selection: FileSelection | null): ViewMode {
+  return selection?.isDescriptor === true ? 'code' : 'table';
+}
+
 export const ModContentStore = signalStore(
   { providedIn: 'root' },
   withState(INITIAL_STATE),
@@ -53,9 +56,17 @@ export const ModContentStore = signalStore(
       selection()?.isDescriptor === true ? 'form' : 'table',
     ),
   })),
-  withMethods(() => {
-    const select: (selection: FileSelection | null) => void = () => pending('ZMT-A-5');
-    const setViewMode: (mode: ViewMode) => void = () => pending('ZMT-A-5');
+  withMethods((store) => {
+    const select = (selection: FileSelection | null): void => {
+      patchState(store, (state) => ({
+        selection,
+        viewMode:
+          selection?.path === state.selection?.path ? state.viewMode : naturalViewMode(selection),
+      }));
+    };
+    const setViewMode = (viewMode: ViewMode): void => {
+      patchState(store, { viewMode });
+    };
     return { select, setViewMode };
   }),
 );

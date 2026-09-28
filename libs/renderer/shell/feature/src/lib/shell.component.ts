@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal, untracked } from '@angular/core';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { Router, RouterOutlet } from '@angular/router';
 import { APP_VERSION } from '@zmt/renderer/app-info/data-access';
@@ -35,6 +35,17 @@ export class ShellComponent {
   protected readonly messages = this.i18n.messages;
   protected readonly version = inject(APP_VERSION);
   protected readonly workspace = inject(WorkspaceStore);
+
+  constructor() {
+    let previousRoot = untracked(this.workspace.root);
+    effect(() => {
+      const root = this.workspace.root();
+      if (root !== null && root !== previousRoot) {
+        void this.router.navigate(['/', ROUTE_PATHS.modContent]);
+      }
+      previousRoot = root;
+    });
+  }
 
   protected openSettings(): void {
     void this.router.navigate(['/', ROUTE_PATHS.appSettings]);
