@@ -1,6 +1,4 @@
-import type { HasUnsavedChanges } from '@zmt/renderer/core';
-
-import { Component, computed, inject, input, model, output } from '@angular/core';
+import { Component, inject, input, model, output, signal } from '@angular/core';
 import { form, FormField, readonly } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
@@ -25,7 +23,8 @@ export const EMPTY_DESCRIPTOR: ModDescriptorValues = {
   styleUrl: './mod-info-form.component.scss',
   templateUrl: './mod-info-form.component.html',
 })
-export class ModInfoFormComponent implements HasUnsavedChanges {
+export class ModInfoFormComponent {
+  readonly dirty = input(false);
   readonly discard = output();
   protected readonly messages = inject(MESSAGES);
   readonly save = output<ModDescriptorValues>();
@@ -35,16 +34,15 @@ export class ModInfoFormComponent implements HasUnsavedChanges {
   protected readonly descriptorForm = form(this.values, (path) => {
     readonly(path.name);
   });
-  readonly dirty = computed(() => this.descriptorForm().dirty());
+  protected readonly tagDraft = signal('');
+  protected readonly tagForm = form(this.tagDraft);
 
   protected addTag(event: Event): void {
     event.preventDefault();
-    const target = event.target;
-    if (target instanceof HTMLInputElement && target.value.trim() !== '') {
-      const tag = target.value.trim();
-      this.values.update((current) => ({ ...current, tags: [...current.tags, tag] }));
-      this.descriptorForm.tags().markAsDirty();
-      target.value = '';
+    const tag = this.tagDraft().trim();
+    if (tag !== '') {
+      this.descriptorForm.tags().value.update((tags) => [...tags, tag]);
+      this.tagForm().reset('');
     }
   }
 

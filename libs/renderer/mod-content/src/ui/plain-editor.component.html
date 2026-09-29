@@ -27,8 +27,6 @@
   <textarea
     class="surface"
     [attr.aria-label]="messages().modContent.editorLabel"
-    [readOnly]="!writable()"
-    [value]="text()"
-    (input)="onInput($event)"
+    [formField]="editorForm"
   ></textarea>
 </section>

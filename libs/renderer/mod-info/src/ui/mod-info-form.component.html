@@ -24,6 +24,7 @@
         matInput
         class="tag-input"
         [placeholder]="messages().modInfo.tagsPlaceholder"
+        [formField]="tagForm"
         (keydown.enter)="addTag($event)"
       />
     </mat-form-field>

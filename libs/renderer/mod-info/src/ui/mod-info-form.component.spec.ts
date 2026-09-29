@@ -35,7 +35,7 @@ describe('ModInfoFormComponent', () => {
   }
 
   it('binds the descriptor fields and tags from the values model', async () => {
-    const { fixture, loader } = await setup();
+    const { loader } = await setup();
     const inputs = await loader.getAllHarnesses(MatInputHarness);
     expect(await Promise.all(inputs.map((input) => input.getValue()))).toEqual([
       'My mod',
@@ -45,37 +45,64 @@ describe('ModInfoFormComponent', () => {
       'thumbnail.png',
       'mod/my-mod',
     ]);
+    expect(await Promise.all(inputs.map((input) => input.isReadonly()))).toEqual([
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+    ]);
     const chips = await (await loader.getHarness(MatChipSetHarness)).getChips();
     expect(await Promise.all(chips.map((chip) => chip.getText()))).toEqual(['Gameplay']);
-    expect(fixture.componentInstance.dirty()).toBe(false);
   });
 
-  it('tracks dirtiness through the signal form and emits save and cancel', async () => {
+  it('writes typed values into the model and emits save and cancel once dirty', async () => {
     const { fixture, loader } = await setup();
     const events = vi.fn<(event: ModDescriptorValues | string) => void>();
     fixture.componentInstance.save.subscribe(events);
     fixture.componentInstance.discard.subscribe(() => {
       events('discard');
     });
+    const save = await loader.getHarness(MatButtonHarness.with({ selector: '.save' }));
+    expect(await save.isDisabled()).toBe(true);
 
     const [, version] = await loader.getAllHarnesses(MatInputHarness);
     await version?.setValue('0.2');
-    expect(fixture.componentInstance.values().version).toBe('0.2');
-    expect(fixture.componentInstance.dirty()).toBe(true);
+    expect(fixture.componentInstance.values()).toEqual({ ...VALUES, version: '0.2' });
 
-    await (await loader.getHarness(MatButtonHarness.with({ selector: '.save' }))).click();
+    fixture.componentRef.setInput('dirty', true);
+    expect(await save.isDisabled()).toBe(false);
+    await save.click();
     await (await loader.getHarness(MatButtonHarness.with({ selector: '.cancel' }))).click();
     expect(events.mock.calls).toEqual([[{ ...VALUES, version: '0.2' }], ['discard']]);
   });
 
-  it('adds a typed tag on enter and marks the tags dirty', async () => {
+  it('adds a typed tag on enter through the form and clears the draft', async () => {
     const { fixture, loader } = await setup();
+    const changes = vi.fn<(values: ModDescriptorValues) => void>();
+    fixture.componentInstance.values.subscribe(changes);
     const tagInput = await loader.getHarness(MatInputHarness.with({ selector: '.tag-input' }));
-    await tagInput.setValue('Balance');
+    await tagInput.setValue('  Balance ');
     const host = await tagInput.host();
     await host.dispatchEvent('keydown', { key: 'Enter' });
+    await fixture.whenStable();
     expect(fixture.componentInstance.values().tags).toEqual(['Gameplay', 'Balance']);
-    expect(fixture.componentInstance.dirty()).toBe(true);
+    expect(changes).toHaveBeenLastCalledWith({ ...VALUES, tags: ['Gameplay', 'Balance'] });
     expect(await tagInput.getValue()).toBe('');
+
+    await host.dispatchEvent('keydown', { key: 'Enter' });
+    await fixture.whenStable();
+    expect(fixture.componentInstance.values().tags).toEqual(['Gameplay', 'Balance']);
+  });
+
+  it('disables both actions while saving', async () => {
+    const { fixture, loader } = await setup();
+    fixture.componentRef.setInput('dirty', true);
+    fixture.componentRef.setInput('saving', true);
+    const save = await loader.getHarness(MatButtonHarness.with({ selector: '.save' }));
+    const cancel = await loader.getHarness(MatButtonHarness.with({ selector: '.cancel' }));
+    expect(await save.isDisabled()).toBe(true);
+    expect(await cancel.isDisabled()).toBe(true);
   });
 });

@@ -64,9 +64,11 @@ describe('ModInfoComponent', () => {
       .query(By.directive(ModInfoFormComponent))
       .injector.get(ModInfoFormComponent);
     expect(form.values().name).toBe('My mod');
+    expect(fixture.componentInstance.dirty()).toBe(false);
     form.values.set({ ...form.values(), version: '0.2' });
     await fixture.whenStable();
-    expect(fixture.componentInstance.dirty()).toBe(form.dirty());
+    expect(fixture.componentInstance.dirty()).toBe(true);
+    expect(form.dirty()).toBe(true);
 
     const store = TestBed.inject(ModInfoStore);
     const save = vi.spyOn(store, 'save').mockImplementation(() => ({ destroy: () => undefined }));
@@ -75,6 +77,31 @@ describe('ModInfoComponent', () => {
     form.discard.emit();
     await fixture.whenStable();
     expect(form.values().version).toBe('0.1');
+    expect(fixture.componentInstance.dirty()).toBe(false);
+    expect(form.dirty()).toBe(false);
+  });
+
+  it('derives dirtiness from the draft values, not from the edit history', async () => {
+    patchState(unprotected(TestBed.inject(WorkspaceStore)), { root: '/mods/my-mod' });
+    const { fixture } = await setup();
+    const form = fixture.debugElement
+      .query(By.directive(ModInfoFormComponent))
+      .injector.get(ModInfoFormComponent);
+    const original = form.values();
+    form.values.set({ ...original, tags: [...original.tags, 'Balance'] });
+    await fixture.whenStable();
+    expect(fixture.componentInstance.dirty()).toBe(true);
+    form.values.set({ ...original, tags: [...original.tags] });
+    await fixture.whenStable();
+    expect(fixture.componentInstance.dirty()).toBe(false);
+
+    form.values.set({ ...original, version: '0.2' });
+    await fixture.whenStable();
+    expect(fixture.componentInstance.dirty()).toBe(true);
+    TestBed.inject(ModInfoStore).save(form.values());
+    await flushPromises();
+    await fixture.whenStable();
+    expect(fixture.componentInstance.dirty()).toBe(false);
   });
 
   it('shows the load error with a retry that reloads the descriptor', async () => {

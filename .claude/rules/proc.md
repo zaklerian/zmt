@@ -2,7 +2,7 @@
 
 Applies repo-wide. Format: `ID — rule. Why: … Enforced: mechanism (status).` Rationale: `docs/rationale/PROC.md`.
 
-PROC-1 — Work happens on `dev/ZMT-A-<N>` or `hotfix/ZMT-A-<N>` (subtasks `ZMT-A-<N>.<M>`), branched from updated `main`; `main` changes only through a PR. Why: every change is traceable to a ticket and reviewed. Enforced: hook — PreToolUse `check-branch.sh` blocks Edit, Write and MultiEdit on any other branch (active); lefthook pre-push blocking non-ticket branches and pushes to `main` (active).
+PROC-1 — Work happens on `dev/ZMT-A-<N>` or `hotfix/ZMT-A-<N>` (subtasks `ZMT-A-<N>.<M>`, cleanup tickets `ZMT-A-D<N><letter>`), branched from updated `main`; `main` changes only through a PR. Why: every change is traceable to a ticket and reviewed. Enforced: hook — PreToolUse `check-branch.sh` blocks Edit, Write and MultiEdit on any other branch (active); lefthook pre-push blocking non-ticket branches and pushes to `main` (active).
 PROC-2 — A commit's first line is the ticket ID; body lines start with `+` added, `-` removed, `*` changed, `~` fixed, `!` breaking. Why: history stays scannable and greppable by ticket. Enforced: hook — commitlint custom plugin via lefthook commit-msg (active).
 PROC-3 — One ticket maps to one PR; the commit ticket ID equals the branch ticket ID, and prep work becomes a subtask with its own PR. Why: each PR is reviewable and revertible as one decision. Enforced: hook — commitlint plugin comparing the commit ID with the branch (active).
 PROC-4 — A task is done only when its prompt's Definition-of-Done commands pass; the Stop hook runs the governance checks and `nx affected -t lint typecheck test`. Why: "done" is a verified state, not a claim. Enforced: hook — Stop `verify.sh` (active).

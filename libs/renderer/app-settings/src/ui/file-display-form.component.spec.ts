@@ -14,14 +14,21 @@ describe('FileDisplayFormComponent', () => {
     });
   });
 
-  it('mirrors the hide-unsupported toggle into its model', async () => {
+  it('mirrors the hide-unsupported toggle into its model and back', async () => {
     const fixture = TestBed.createComponent(FileDisplayFormComponent);
     await fixture.whenStable();
+    const changes = vi.fn<(hide: boolean) => void>();
+    fixture.componentInstance.hideUnsupportedFiles.subscribe(changes);
     const toggle =
       await TestbedHarnessEnvironment.loader(fixture).getHarness(MatSlideToggleHarness);
     expect(await toggle.getLabelText()).toBe(EN_MESSAGES.appSettings.hideUnsupportedFiles);
     expect(await toggle.isChecked()).toBe(false);
     await toggle.check();
     expect(fixture.componentInstance.hideUnsupportedFiles()).toBe(true);
+    expect(changes).toHaveBeenLastCalledWith(true);
+
+    fixture.componentRef.setInput('hideUnsupportedFiles', false);
+    await fixture.whenStable();
+    expect(await toggle.isChecked()).toBe(false);
   });
 });

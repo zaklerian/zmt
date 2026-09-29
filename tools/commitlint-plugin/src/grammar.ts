@@ -1,5 +1,5 @@
-export const TICKET = /^ZMT-A-\d+(?:\.\d+)?$/u;
-export const TICKET_BRANCH = /^(?:dev|hotfix)\/(ZMT-A-\d+(?:\.\d+)?)$/u;
+export const TICKET = /^ZMT-A-(?:D\d+[a-z]?|\d+(?:\.\d+)?)$/u;
+export const TICKET_BRANCH = /^(?:dev|hotfix)\/(ZMT-A-(?:D\d+[a-z]?|\d+(?:\.\d+)?))$/u;
 export const BODY_LINE = /^[+\-*~!] \S/u;
 export const TRAILER_LINE = /^[A-Za-z][\w-]*: \S/u;
 export const MAX_NARROW_FILES = 5;

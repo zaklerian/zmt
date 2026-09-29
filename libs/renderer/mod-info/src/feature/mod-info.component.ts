@@ -1,6 +1,6 @@
 import type { HasUnsavedChanges } from '@zmt/renderer/core';
 
-import { Component, computed, inject, linkedSignal, viewChild } from '@angular/core';
+import { Component, computed, inject, linkedSignal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -10,7 +10,7 @@ import { filter, map } from 'rxjs';
 
 import { ModInfoStore } from '../data-access';
 import { ModInfoFormComponent, ParserWarningsComponent } from '../ui';
-import { descriptorPathForRoot } from '../util';
+import { descriptorPathForRoot, descriptorValuesEqual } from '../util';
 
 export const SAVED_SNACKBAR_MS = 3000;
 
@@ -50,6 +50,7 @@ export const SAVED_SNACKBAR_MS = 3000;
         @case ('success') {
           @if (draft(); as values) {
             <zmt-mod-info-form
+              [dirty]="dirty()"
               [saving]="store.saving()"
               [values]="values"
               (valuesChange)="draft.set($event)"
@@ -80,7 +81,6 @@ export const SAVED_SNACKBAR_MS = 3000;
 })
 export class ModInfoComponent implements HasUnsavedChanges {
   private readonly dialog = inject(DialogService);
-  private readonly form = viewChild(ModInfoFormComponent);
   private readonly snackBar = inject(MatSnackBar);
   protected readonly messages = inject(I18nStore).messages;
   protected readonly store = inject(ModInfoStore);
@@ -89,7 +89,11 @@ export class ModInfoComponent implements HasUnsavedChanges {
   protected readonly draft = linkedSignal(() => this.store.values());
   protected readonly loadError = computed(() => errorOf(this.store.status()));
 
-  readonly dirty = computed(() => this.form()?.dirty() ?? false);
+  readonly dirty = computed(() => {
+    const saved = this.store.values();
+    const draft = this.draft();
+    return saved !== null && draft !== null && !descriptorValuesEqual(draft, saved);
+  });
 
   constructor() {
     this.store.load(

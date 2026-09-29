@@ -303,3 +303,15 @@ export function serializeDescriptor(
 export function defaultDescriptorValues(): ModDescriptorValues {
   return EMPTY_DESCRIPTOR_VALUES;
 }
+
+export function descriptorValuesEqual(a: ModDescriptorValues, b: ModDescriptorValues): boolean {
+  return (
+    a.name === b.name &&
+    a.path === b.path &&
+    a.picture === b.picture &&
+    a.supportedVersion === b.supportedVersion &&
+    a.version === b.version &&
+    a.tags.length === b.tags.length &&
+    a.tags.every((tag, index) => tag === b.tags[index])
+  );
+}

@@ -1,7 +1,9 @@
 import { EFFECT_NO_SIGNAL_WRITE, EFFECT_NO_SIGNAL_WRITE_RULE } from './effect-no-signal-write';
+import { NO_HAND_ROLLED_CONTROLS, NO_HAND_ROLLED_CONTROLS_RULE } from './no-hand-rolled-controls';
 import { NO_RAW_TEMPLATE_TEXT, NO_RAW_TEMPLATE_TEXT_RULE } from './no-raw-template-text';
 
 export const rules = {
   [EFFECT_NO_SIGNAL_WRITE]: EFFECT_NO_SIGNAL_WRITE_RULE,
+  [NO_HAND_ROLLED_CONTROLS]: NO_HAND_ROLLED_CONTROLS_RULE,
   [NO_RAW_TEMPLATE_TEXT]: NO_RAW_TEMPLATE_TEXT_RULE,
 };

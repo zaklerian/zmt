@@ -18,7 +18,7 @@ if [ -n "$FILE" ]; then
 fi
 
 BRANCH=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || echo "(detached)")
-if ! grep -qE '^(dev|hotfix)/ZMT-A-[0-9]+(\.[0-9]+)?$' <<<"$BRANCH"; then
+if ! grep -qE '^(dev|hotfix)/ZMT-A-(D[0-9]+[a-z]?|[0-9]+(\.[0-9]+)?)$' <<<"$BRANCH"; then
   echo "check-branch: edits are blocked on '$BRANCH' (PROC-1). Create the task branch first: git checkout -b dev/ZMT-A-<N>" >&2
   exit 2
 fi

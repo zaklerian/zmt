@@ -4,7 +4,7 @@ Long-form reasoning for the rules in `.claude/rules/proc.md`, keyed by rule ID. 
 
 ## PROC-1 — Branch grammar
 
-A branch named after its ticket makes branch → PR → commit → ticket traceable in both directions. The Claude Code hook blocks file edits on any other branch, so work cannot start on a harness-created or mistyped branch. A lefthook pre-push check covers humans once the toolchain lands.
+A branch named after its ticket makes branch → PR → commit → ticket traceable in both directions. The Claude Code hook blocks file edits on any other branch, so work cannot start on a harness-created or mistyped branch. A lefthook pre-push check covers humans once the toolchain lands. The grammar accepts numeric tickets, their subtasks and the `D<N><letter>` cleanup series; the first three cleanup tickets shipped from harness branches because the grammar was numeric-only, which is the `finding:d-series-ticket-grammar` recorded in the ledger and closed by widening the grammar in ZMT-A-D3c.
 
 ## PROC-2 — Commit grammar
 

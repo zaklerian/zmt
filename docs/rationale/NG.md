@@ -42,6 +42,8 @@ An eager route puts its whole feature in the startup bundle. Lazy loading keeps 
 
 Signal Forms model form state as signals, validated by schema, with type-safe field access. One form technology means one set of test patterns and one set of harnesses. Reactive and template-driven forms are excluded so they cannot coexist.
 
+The import ban alone let a third form technology in: native controls wired by hand with `[value]` and `(input)` handlers that read `event.target`, cleared the element imperatively and marked fields dirty by call. The `no-hand-rolled-controls` template rule closes that gap for `input`, `textarea` and `select`: without `[formField]` they may not bind `value` or `checked` and may not listen to `input` or `change`. Readonly and disabled state belong in the schema (`readonly(path, { when })`, `disabled(path, { when })`), a draft that is consumed on Enter is its own `form()` reset through the field, and a model's dirtiness is the container's value comparison of its draft against the saved values, because the field's interaction flag survives a discard and a save. Material controls used as event sources (a select that emits a game switch, a locale toggle group, a store-backed toggle) are not form controls and stay outside the rule.
+
 ## NG-11 — Dirty-form dialogs
 
 Escape, backdrop click and the close button are three routes to losing edits. A single helper that opens form dialogs and confirms on dirty close covers all three once. Restricting `MatDialog` imports to the helper's library makes the helper the only way in.
