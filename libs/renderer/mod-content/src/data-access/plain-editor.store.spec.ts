@@ -7,7 +7,7 @@ import { fail, ok } from '@zmt/contracts';
 import { deferred, flushPromises } from '@zmt/renderer/core';
 
 import { ModContentService } from './mod-content.service';
-import { PlainEditorStore } from './plain-editor.store';
+import { NO_FILE_LOADED, PlainEditorStore, type TextSaveResult } from './plain-editor.store';
 
 type ReadResult = IpcChannelResult<'fs:readTextFile'>;
 type WriteResult = IpcChannelResult<'fs:writeTextFile'>;
@@ -124,24 +124,68 @@ describe('PlainEditorStore', () => {
     },
   );
 
-  it('ignores a save without a loaded file and cancels a save when another file loads', async () => {
+  it('rejects a save issued before a file is loaded instead of dropping it', async () => {
+    const results = vi.fn<(result: TextSaveResult) => void>();
+    store.saveResult$.subscribe(results);
     store.save();
     await flushPromises();
     expect(writeTextFile).not.toHaveBeenCalled();
+    expect(store.saveStatus()).toEqual({ error: NO_FILE_LOADED.error, kind: 'error' });
+    expect(results.mock.calls).toEqual([[NO_FILE_LOADED]]);
+  });
 
+  it('queues a rapid second save behind the first so the buffer ends equal to the last write', async () => {
+    readTextFile.mockResolvedValue(ok('a = 1'));
+    store.load('/mod/a.txt');
+    await flushPromises();
+    const results = vi.fn<(result: TextSaveResult) => void>();
+    store.saveResult$.subscribe(results);
+    const first = deferred<WriteResult>();
+    const second = deferred<WriteResult>();
+    writeTextFile.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+
+    store.updateText('a = 2');
+    store.save();
+    store.updateText('a = 3');
+    store.save();
+    expect(writeTextFile).toHaveBeenCalledTimes(1);
+    expect(writeTextFile).toHaveBeenLastCalledWith({ content: 'a = 2', path: '/mod/a.txt' });
+
+    first.resolve(ok(null));
+    await flushPromises();
+    expect(store.originalText()).toBe('a = 2');
+    expect(writeTextFile).toHaveBeenCalledTimes(2);
+    expect(writeTextFile).toHaveBeenLastCalledWith({ content: 'a = 3', path: '/mod/a.txt' });
+    expect(store.saveStatus()).toEqual({ kind: 'loading' });
+
+    second.resolve(ok(null));
+    await flushPromises();
+    expect(store.originalText()).toBe('a = 3');
+    expect(store.saveStatus()).toEqual({ kind: 'success' });
+    expect(store.dirty()).toBe(false);
+    expect(results.mock.calls).toEqual([[ok(null)], [ok(null)]]);
+  });
+
+  it('lets a write for a file that was left finish without touching the newly loaded file', async () => {
     readTextFile.mockResolvedValueOnce(ok('a')).mockResolvedValueOnce(ok('b'));
     store.load('/mod/a.txt');
     await flushPromises();
     store.updateText('a2');
+    const results = vi.fn<(result: TextSaveResult) => void>();
+    store.saveResult$.subscribe(results);
     const write = deferred<WriteResult>();
     writeTextFile.mockReturnValue(write.promise);
     store.save();
     store.load('/mod/b.txt');
     await flushPromises();
+    expect(store.saveStatus()).toEqual({ kind: 'idle' });
     write.resolve(ok(null));
     await flushPromises();
+    expect(writeTextFile).toHaveBeenCalledWith({ content: 'a2', path: '/mod/a.txt' });
     expect(store.filePath()).toBe('/mod/b.txt');
+    expect(store.text()).toBe('b');
     expect(store.originalText()).toBe('b');
     expect(store.saveStatus()).toEqual({ kind: 'idle' });
+    expect(results).not.toHaveBeenCalled();
   });
 });

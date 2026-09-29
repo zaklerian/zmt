@@ -106,6 +106,34 @@ describe('AppSettingsComponent', () => {
     expect(fixture.componentInstance.dirty()).toBe(false);
   });
 
+  it('shows the saved snackbar once per save and not again when the route is re-entered', async () => {
+    const open = vi.spyOn(TestBed.inject(MatSnackBar), 'open');
+    const first = await setup();
+    const fileDisplay = first.fixture.debugElement
+      .query(By.directive(FileDisplayFormComponent))
+      .injector.get(FileDisplayFormComponent);
+    fileDisplay.hideUnsupportedFiles.set(true);
+    await first.fixture.whenStable();
+    await (await first.loader.getHarness(MatButtonHarness.with({ selector: '.save' }))).click();
+    await first.fixture.whenStable();
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(TestBed.inject(AppSettingsStore).saveStatus()).toEqual({ kind: 'success' });
+
+    first.fixture.destroy();
+    const second = await setup();
+    expect(second.fixture.componentInstance.dirty()).toBe(false);
+    expect(open).toHaveBeenCalledTimes(1);
+
+    const secondFileDisplay = second.fixture.debugElement
+      .query(By.directive(FileDisplayFormComponent))
+      .injector.get(FileDisplayFormComponent);
+    secondFileDisplay.hideUnsupportedFiles.set(false);
+    await second.fixture.whenStable();
+    await (await second.loader.getHarness(MatButtonHarness.with({ selector: '.save' }))).click();
+    await second.fixture.whenStable();
+    expect(open).toHaveBeenCalledTimes(2);
+  });
+
   it('switches the game directly when clean and asks first when dirty', async () => {
     const store = TestBed.inject(AppSettingsStore);
     const { fixture } = await setup();

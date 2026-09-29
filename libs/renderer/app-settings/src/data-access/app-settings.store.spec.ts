@@ -6,6 +6,8 @@ import { unprotected } from '@ngrx/signals/testing';
 import { fail, ok } from '@zmt/contracts';
 import { deferred, flushPromises } from '@zmt/renderer/core';
 
+import type { AppSettingsValues } from '../util';
+
 import { AppSettingsStore } from './app-settings.store';
 import { PluginService } from './plugin.service';
 
@@ -112,9 +114,14 @@ describe('AppSettingsStore', () => {
     expect(store.activeGameId()).toBe('stellaris');
   });
 
-  it('saves the values in memory and marks the save as done', () => {
+  it('saves the values in memory, marks the save as done and announces it once', () => {
     patchState(unprotected(store), { activeGameId: 'hoi4', plugins: [HOI4] });
+    const saved = vi.fn<(values: AppSettingsValues) => void>();
+    store.saved$.subscribe(saved);
     store.save({ activeGameId: 'hoi4', features: { aircraft: false }, hideUnsupportedFiles: true });
+    expect(saved.mock.calls).toEqual([
+      [{ activeGameId: 'hoi4', features: { aircraft: false }, hideUnsupportedFiles: true }],
+    ]);
     expect(store.featureToggles()).toEqual({ aircraft: false });
     expect(store.hideUnsupportedFiles()).toBe(true);
     expect(store.saveStatus()).toEqual({ kind: 'success' });

@@ -1,10 +1,10 @@
 import type { HasUnsavedChanges } from '@zmt/renderer/core';
 
-import { Component, computed, effect, inject, linkedSignal, viewChild } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { Component, computed, inject, linkedSignal, viewChild } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { DialogService, errorOf } from '@zmt/renderer/core';
+import { DialogService, errorOf, settle } from '@zmt/renderer/core';
 import { I18nStore, WorkspaceStore } from '@zmt/renderer/shell/data-access';
 import { filter, map } from 'rxjs';
 
@@ -98,14 +98,10 @@ export class ModInfoComponent implements HasUnsavedChanges {
         map(descriptorPathForRoot),
       ),
     );
-    effect(() => {
-      const status = this.store.saveStatus();
+    this.store.saveResult$.pipe(takeUntilDestroyed()).subscribe((result) => {
       const texts = this.messages().modInfo;
-      switch (status.kind) {
-        case 'success':
-          this.snackBar.open(texts.saveSuccess, undefined, { duration: SAVED_SNACKBAR_MS });
-          return;
-        case 'error':
+      settle(result, {
+        failure: () => {
           this.dialog
             .info({
               confirmLabel: this.messages().actions.close,
@@ -113,13 +109,11 @@ export class ModInfoComponent implements HasUnsavedChanges {
               title: texts.saveFailedTitle,
             })
             .subscribe();
-          return;
-        case 'idle':
-        case 'loading':
-          return;
-        default:
-          return status satisfies never;
-      }
+        },
+        success: () => {
+          this.snackBar.open(texts.saveSuccess, undefined, { duration: SAVED_SNACKBAR_MS });
+        },
+      });
     });
   }
 

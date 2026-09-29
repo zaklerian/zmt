@@ -2,6 +2,7 @@ import type { FsNode } from '@zmt/contracts';
 
 import { inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
 import { patchState } from '@ngrx/signals';
@@ -29,7 +30,7 @@ import {
   NoFolderStateComponent,
   PlainEditorComponent,
 } from '../ui';
-import { ModContentComponent } from './mod-content.component';
+import { ModContentComponent, SAVED_SNACKBAR_MS } from './mod-content.component';
 
 const ROOT_ITEM: FileTreeItem = {
   children: null,
@@ -188,6 +189,7 @@ describe('ModContentComponent', () => {
   it('loads a selected text file into the editor and saves through it', async () => {
     patchState(unprotected(TestBed.inject(WorkspaceStore)), { root: '/mods/my-mod' });
     writeTextFile.mockResolvedValue(ok(null));
+    const open = vi.spyOn(TestBed.inject(MatSnackBar), 'open');
     const { fixture } = await setup();
     const tree = fixture.debugElement
       .query(By.directive(FileTreeComponent))
@@ -210,6 +212,14 @@ describe('ModContentComponent', () => {
       path: README_ITEM.id,
     });
     expect(TestBed.inject(PlainEditorStore).saveStatus()).toEqual({ kind: 'success' });
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(open).toHaveBeenCalledWith(EN_MESSAGES.modContent.saved, undefined, {
+      duration: SAVED_SNACKBAR_MS,
+    });
+
+    fixture.destroy();
+    await setup();
+    expect(open).toHaveBeenCalledTimes(1);
   });
 
   it('asks before replacing a dirty editor and keeps the file when refused', async () => {

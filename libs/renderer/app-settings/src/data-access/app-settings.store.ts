@@ -1,7 +1,14 @@
 import type { GameId, GamePlugin } from '@zmt/contracts';
 
 import { computed, inject } from '@angular/core';
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import {
+  patchState,
+  signalStore,
+  withComputed,
+  withMethods,
+  withProps,
+  withState,
+} from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import {
   ASYNC_IDLE,
@@ -11,7 +18,7 @@ import {
   type AsyncStatus,
   settle,
 } from '@zmt/renderer/core';
-import { from, type Observable, switchMap, tap } from 'rxjs';
+import { from, type Observable, Subject, switchMap, tap } from 'rxjs';
 
 import type { AppSettingsValues, FeatureToggles } from '../util';
 
@@ -58,11 +65,24 @@ export const AppSettingsStore = signalStore(
       }),
     };
   }),
+  withProps(() => {
+    const saved = new Subject<AppSettingsValues>();
+    return { _saved: saved, saved$: saved.asObservable() };
+  }),
   withMethods((store, service = inject(PluginService)) => {
     const selectGame = (gameId: GameId): void => {
       if (store.plugins().some((plugin) => plugin.gameId === gameId)) {
         patchState(store, { activeGameId: gameId });
       }
+    };
+    const save = (values: AppSettingsValues): void => {
+      patchState(store, {
+        activeGameId: values.activeGameId,
+        featureToggles: values.features,
+        hideUnsupportedFiles: values.hideUnsupportedFiles,
+        saveStatus: ASYNC_SUCCESS,
+      });
+      store._saved.next(values);
     };
     return {
       load: rxMethod((source$: Observable<void>) =>
@@ -90,16 +110,7 @@ export const AppSettingsStore = signalStore(
           }),
         ),
       ),
-      save: rxMethod<AppSettingsValues>(
-        tap((values) => {
-          patchState(store, {
-            activeGameId: values.activeGameId,
-            featureToggles: values.features,
-            hideUnsupportedFiles: values.hideUnsupportedFiles,
-            saveStatus: ASYNC_SUCCESS,
-          });
-        }),
-      ),
+      save,
       selectGame,
     };
   }),

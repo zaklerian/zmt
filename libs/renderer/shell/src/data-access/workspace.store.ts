@@ -1,5 +1,12 @@
 import { computed, inject } from '@angular/core';
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import {
+  patchState,
+  signalStore,
+  withComputed,
+  withMethods,
+  withProps,
+  withState,
+} from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import {
   ASYNC_IDLE,
@@ -9,7 +16,7 @@ import {
   type AsyncStatus,
   settle,
 } from '@zmt/renderer/core';
-import { from, type Observable, switchMap, tap } from 'rxjs';
+import { from, type Observable, Subject, switchMap, tap } from 'rxjs';
 
 import { WorkspaceService } from './workspace.service';
 
@@ -38,6 +45,10 @@ export const WorkspaceStore = signalStore(
       return current === null ? null : basename(current);
     }),
   })),
+  withProps(() => {
+    const folderOpened = new Subject<string>();
+    return { _folderOpened: folderOpened, folderOpened$: folderOpened.asObservable() };
+  }),
   withMethods((store, service = inject(WorkspaceService)) => {
     const closeFolder = (): void => {
       patchState(store, { root: null, status: ASYNC_IDLE });
@@ -56,12 +67,12 @@ export const WorkspaceStore = signalStore(
                 patchState(store, { status: asyncError(error) });
               },
               success: (chosen) => {
-                patchState(
-                  store,
-                  chosen === null
-                    ? { status: ASYNC_IDLE }
-                    : { root: chosen, status: ASYNC_SUCCESS },
-                );
+                if (chosen === null) {
+                  patchState(store, { status: ASYNC_IDLE });
+                  return;
+                }
+                patchState(store, { root: chosen, status: ASYNC_SUCCESS });
+                store._folderOpened.next(chosen);
               },
             });
           }),

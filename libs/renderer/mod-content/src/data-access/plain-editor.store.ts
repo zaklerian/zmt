@@ -1,8 +1,16 @@
-import type { IpcChannelResult } from '@zmt/contracts';
+import type { IpcChannelResult, IpcFail } from '@zmt/contracts';
 
 import { computed, inject } from '@angular/core';
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import {
+  patchState,
+  signalStore,
+  withComputed,
+  withMethods,
+  withProps,
+  withState,
+} from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { fail, IPC_ERROR_CODES } from '@zmt/contracts';
 import {
   ASYNC_IDLE,
   ASYNC_LOADING,
@@ -11,7 +19,7 @@ import {
   type AsyncStatus,
   settle,
 } from '@zmt/renderer/core';
-import { from, map, merge, type Observable, Subject, switchMap, tap } from 'rxjs';
+import { concatMap, from, map, type Observable, of, pipe, Subject, switchMap, tap } from 'rxjs';
 
 import { ModContentService } from './mod-content.service';
 
@@ -23,13 +31,18 @@ export interface PlainEditorState {
   readonly text: string;
 }
 
-type EditorEvent =
-  | { readonly kind: 'read'; readonly result: IpcChannelResult<'fs:readTextFile'> }
-  | {
-      readonly kind: 'written';
-      readonly result: IpcChannelResult<'fs:writeTextFile'>;
-      readonly text: string;
-    };
+export type TextSaveResult = IpcChannelResult<'fs:writeTextFile'>;
+
+interface WriteEvent {
+  readonly path: null | string;
+  readonly result: TextSaveResult;
+  readonly text: string;
+}
+
+export const NO_FILE_LOADED: IpcFail = fail(
+  IPC_ERROR_CODES.badRequest,
+  'A file must be loaded before it can be saved.',
+);
 
 const INITIAL_STATE: PlainEditorState = {
   filePath: null,
@@ -46,45 +59,47 @@ export const PlainEditorStore = signalStore(
     dirty: computed(() => text() !== originalText()),
     saving: computed(() => saveStatus().kind === 'loading'),
   })),
+  withProps(() => {
+    const saveResults = new Subject<TextSaveResult>();
+    return { _saveResults: saveResults, saveResult$: saveResults.asObservable() };
+  }),
   withMethods((store, service = inject(ModContentService)) => {
-    const saveRequests = new Subject<void>();
+    const applyRead = (result: IpcChannelResult<'fs:readTextFile'>): void => {
+      settle(result, {
+        failure: (error) => {
+          patchState(store, { status: asyncError(error) });
+        },
+        success: (text) => {
+          patchState(store, { originalText: text, status: ASYNC_SUCCESS, text });
+        },
+      });
+    };
 
-    const read = (path: string): Observable<EditorEvent> =>
-      from(service.readTextFile({ path })).pipe(map((result) => ({ kind: 'read', result })));
-
-    const write = (path: string): Observable<EditorEvent> => {
+    const write = (): Observable<WriteEvent> => {
+      const path = store.filePath();
       const text = store.text();
+      if (path === null) {
+        return of({ path, result: NO_FILE_LOADED, text });
+      }
       patchState(store, { saveStatus: ASYNC_LOADING });
       return from(service.writeTextFile({ content: text, path })).pipe(
-        map((result) => ({ kind: 'written', result, text })),
+        map((result) => ({ path, result, text })),
       );
     };
 
-    const apply = (event: EditorEvent): void => {
-      switch (event.kind) {
-        case 'read':
-          settle(event.result, {
-            failure: (error) => {
-              patchState(store, { status: asyncError(error) });
-            },
-            success: (text) => {
-              patchState(store, { originalText: text, status: ASYNC_SUCCESS, text });
-            },
-          });
-          return;
-        case 'written':
-          settle(event.result, {
-            failure: (error) => {
-              patchState(store, { saveStatus: asyncError(error) });
-            },
-            success: () => {
-              patchState(store, { originalText: event.text, saveStatus: ASYNC_SUCCESS });
-            },
-          });
-          return;
-        default:
-          return event satisfies never;
+    const applyWrite = ({ path, result, text }: WriteEvent): void => {
+      if (path !== store.filePath()) {
+        return;
       }
+      settle(result, {
+        failure: (error) => {
+          patchState(store, { saveStatus: asyncError(error) });
+        },
+        success: () => {
+          patchState(store, { originalText: text, saveStatus: ASYNC_SUCCESS });
+        },
+      });
+      store._saveResults.next(result);
     };
 
     const reset = (): void => {
@@ -96,8 +111,8 @@ export const PlainEditorStore = signalStore(
     };
 
     return {
-      load: rxMethod<string>((source$) =>
-        source$.pipe(
+      load: rxMethod<string>(
+        pipe(
           tap((filePath) => {
             patchState(store, {
               filePath,
@@ -107,19 +122,13 @@ export const PlainEditorStore = signalStore(
               text: '',
             });
           }),
-          switchMap((filePath) =>
-            merge(read(filePath), saveRequests.pipe(switchMap(() => write(filePath)))),
-          ),
-          tap(apply),
+          switchMap((filePath) => from(service.readTextFile({ path: filePath }))),
+          tap(applyRead),
         ),
       ),
       reset,
       save: rxMethod((source$: Observable<void>) =>
-        source$.pipe(
-          tap(() => {
-            saveRequests.next();
-          }),
-        ),
+        source$.pipe(concatMap(write), tap(applyWrite)),
       ),
       updateText,
     };

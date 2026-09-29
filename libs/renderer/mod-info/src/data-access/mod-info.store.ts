@@ -1,8 +1,16 @@
-import type { IpcChannelResult } from '@zmt/contracts';
+import type { IpcChannelResult, IpcFail } from '@zmt/contracts';
 
 import { computed, inject } from '@angular/core';
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import {
+  patchState,
+  signalStore,
+  withComputed,
+  withMethods,
+  withProps,
+  withState,
+} from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { fail, IPC_ERROR_CODES } from '@zmt/contracts';
 import {
   ASYNC_IDLE,
   ASYNC_LOADING,
@@ -11,7 +19,7 @@ import {
   type AsyncStatus,
   settle,
 } from '@zmt/renderer/core';
-import { from, map, merge, type Observable, Subject, switchMap, tap } from 'rxjs';
+import { concatMap, from, map, type Observable, of, pipe, Subject, switchMap, tap } from 'rxjs';
 
 import type { ModDescriptorValues, ParserWarning } from '../util';
 
@@ -27,13 +35,18 @@ export interface ModInfoState {
   readonly values: ModDescriptorValues | null;
 }
 
-type DescriptorEvent =
-  | { readonly kind: 'read'; readonly result: IpcChannelResult<'fs:readTextFile'> }
-  | {
-      readonly kind: 'written';
-      readonly result: IpcChannelResult<'fs:writeTextFile'>;
-      readonly text: string;
-    };
+export type DescriptorSaveResult = IpcChannelResult<'fs:writeTextFile'>;
+
+interface WriteEvent {
+  readonly path: null | string;
+  readonly result: DescriptorSaveResult;
+  readonly text: string;
+}
+
+export const NO_DESCRIPTOR_LOADED: IpcFail = fail(
+  IPC_ERROR_CODES.badRequest,
+  'A descriptor must be loaded before it can be saved.',
+);
 
 const INITIAL_STATE: ModInfoState = {
   descriptorPath: null,
@@ -52,9 +65,11 @@ export const ModInfoStore = signalStore(
     saving: computed(() => saveStatus().kind === 'loading'),
     warningCount: computed(() => parserWarnings().length),
   })),
+  withProps(() => {
+    const saveResults = new Subject<DescriptorSaveResult>();
+    return { _saveResults: saveResults, saveResult$: saveResults.asObservable() };
+  }),
   withMethods((store, service = inject(ModInfoService)) => {
-    const saveRequests = new Subject<ModDescriptorValues>();
-
     const applyText = (text: string): void => {
       const document = parseDescriptor(text);
       patchState(store, {
@@ -65,63 +80,54 @@ export const ModInfoStore = signalStore(
       });
     };
 
-    const read = (path: string): Observable<DescriptorEvent> =>
-      from(service.readDescriptor(path)).pipe(map((result) => ({ kind: 'read', result })));
+    const applyRead = (result: IpcChannelResult<'fs:readTextFile'>): void => {
+      settle(result, {
+        failure: (error) => {
+          patchState(store, { status: asyncError(error) });
+        },
+        success: applyText,
+      });
+    };
 
-    const write = (path: string, values: ModDescriptorValues): Observable<DescriptorEvent> => {
+    const write = (values: ModDescriptorValues): Observable<WriteEvent> => {
+      const path = store.descriptorPath();
       const text = serializeDescriptor(parseDescriptor(store.source()), values);
+      if (path === null) {
+        return of({ path, result: NO_DESCRIPTOR_LOADED, text });
+      }
       patchState(store, { saveStatus: ASYNC_LOADING });
       return from(service.writeDescriptor(path, text)).pipe(
-        map((result) => ({ kind: 'written', result, text })),
+        map((result) => ({ path, result, text })),
       );
     };
 
-    const apply = (event: DescriptorEvent): void => {
-      switch (event.kind) {
-        case 'read':
-          settle(event.result, {
-            failure: (error) => {
-              patchState(store, { status: asyncError(error) });
-            },
-            success: applyText,
-          });
-          return;
-        case 'written':
-          settle(event.result, {
-            failure: (error) => {
-              patchState(store, { saveStatus: asyncError(error) });
-            },
-            success: () => {
-              applyText(event.text);
-              patchState(store, { saveStatus: ASYNC_SUCCESS });
-            },
-          });
-          return;
-        default:
-          return event satisfies never;
+    const applyWrite = ({ path, result, text }: WriteEvent): void => {
+      if (path !== store.descriptorPath()) {
+        return;
       }
+      settle(result, {
+        failure: (error) => {
+          patchState(store, { saveStatus: asyncError(error) });
+        },
+        success: () => {
+          applyText(text);
+          patchState(store, { saveStatus: ASYNC_SUCCESS });
+        },
+      });
+      store._saveResults.next(result);
     };
 
     return {
-      load: rxMethod<string>((source$) =>
-        source$.pipe(
+      load: rxMethod<string>(
+        pipe(
           tap((descriptorPath) => {
             patchState(store, { ...INITIAL_STATE, descriptorPath, status: ASYNC_LOADING });
           }),
-          switchMap((descriptorPath) =>
-            merge(
-              read(descriptorPath),
-              saveRequests.pipe(switchMap((values) => write(descriptorPath, values))),
-            ),
-          ),
-          tap(apply),
+          switchMap((descriptorPath) => from(service.readDescriptor(descriptorPath))),
+          tap(applyRead),
         ),
       ),
-      save: rxMethod<ModDescriptorValues>(
-        tap((values) => {
-          saveRequests.next(values);
-        }),
-      ),
+      save: rxMethod<ModDescriptorValues>(pipe(concatMap(write), tap(applyWrite))),
     };
   }),
 );

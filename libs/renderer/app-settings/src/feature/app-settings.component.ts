@@ -1,7 +1,8 @@
 import type { GameId } from '@zmt/contracts';
 import type { HasUnsavedChanges } from '@zmt/renderer/core';
 
-import { Component, computed, effect, inject, linkedSignal } from '@angular/core';
+import { Component, computed, inject, linkedSignal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DialogService, errorOf } from '@zmt/renderer/core';
@@ -98,12 +99,10 @@ export class AppSettingsComponent implements HasUnsavedChanges {
 
   constructor() {
     this.store.load();
-    effect(() => {
-      if (this.store.saveStatus().kind === 'success') {
-        this.snackBar.open(this.messages().appSettings.saved, undefined, {
-          duration: SAVED_SNACKBAR_MS,
-        });
-      }
+    this.store.saved$.pipe(takeUntilDestroyed()).subscribe(() => {
+      this.snackBar.open(this.messages().appSettings.saved, undefined, {
+        duration: SAVED_SNACKBAR_MS,
+      });
     });
   }
 

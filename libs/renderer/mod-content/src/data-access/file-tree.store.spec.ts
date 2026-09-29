@@ -163,6 +163,21 @@ describe('FileTreeStore', () => {
     expect(store.childrenByPath()).toEqual({ '/second': [COMMON] });
   });
 
+  it('drops a child listing requested before the file filter changed', async () => {
+    listDirectory.mockResolvedValueOnce(ok([COMMON]));
+    store.loadRoot({ hideUnsupportedFiles: false, root: '/mod' });
+    await flushPromises();
+    const child = deferred<ListResult>();
+    listDirectory.mockReturnValueOnce(child.promise).mockResolvedValueOnce(ok([COMMON]));
+    store.loadChildren('/mod/common');
+    store.loadRoot({ hideUnsupportedFiles: true, root: '/mod' });
+    await flushPromises();
+    child.resolve(ok([AIR]));
+    await flushPromises();
+    expect(store.childrenByPath()).toEqual({ '/mod': [COMMON] });
+    expect(store.status()).toEqual({ kind: 'success' });
+  });
+
   it('replaces the expanded paths', () => {
     store.setExpanded(['/mod', '/mod/common']);
     expect(store.expanded()).toEqual(['/mod', '/mod/common']);
