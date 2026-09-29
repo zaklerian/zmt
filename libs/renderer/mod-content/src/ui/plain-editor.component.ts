@@ -1,11 +1,12 @@
 import type { IpcError } from '@zmt/contracts';
 
-import { Component, inject, input, output } from '@angular/core';
+import { Component, inject, input, model, output } from '@angular/core';
+import { form, FormField, readonly } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MESSAGES } from '@zmt/renderer/shell/ui';
 
 @Component({
-  imports: [MatButtonModule],
+  imports: [FormField, MatButtonModule],
   selector: 'zmt-plain-editor',
   styleUrl: './plain-editor.component.scss',
   templateUrl: './plain-editor.component.html',
@@ -17,14 +18,10 @@ export class PlainEditorComponent {
   readonly save = output();
   readonly saveError = input<IpcError | null>(null);
   readonly saving = input(false);
-  readonly text = input.required<string>();
-  readonly textChange = output<string>();
+  readonly text = model.required<string>();
   readonly writable = input(false);
 
-  protected onInput(event: Event): void {
-    const target = event.target;
-    if (target instanceof HTMLTextAreaElement) {
-      this.textChange.emit(target.value);
-    }
-  }
+  protected readonly editorForm = form(this.text, (path) => {
+    readonly(path, { when: () => !this.writable() });
+  });
 }

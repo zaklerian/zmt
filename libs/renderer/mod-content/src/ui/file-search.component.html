@@ -3,11 +3,9 @@
   <input
     matInput
     type="search"
-    [disabled]="disabled()"
     [placeholder]="placeholder()"
-    [value]="query()"
     [matAutocomplete]="auto"
-    (input)="onInput($event)"
+    [formField]="searchForm"
   />
   <mat-autocomplete #auto (optionSelected)="pick($event)">
     @for (node of results(); track node.path) {

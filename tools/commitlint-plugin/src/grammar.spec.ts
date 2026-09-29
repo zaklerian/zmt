@@ -21,11 +21,19 @@ describe('ticketOfBranch', () => {
     expect(ticketOfBranch('dev/ZMT-A-3.1')).toBe('ZMT-A-3.1');
   });
 
+  it('extracts cleanup tickets of the D series', () => {
+    expect(ticketOfBranch('dev/ZMT-A-D1')).toBe('ZMT-A-D1');
+    expect(ticketOfBranch('dev/ZMT-A-D3c')).toBe('ZMT-A-D3c');
+  });
+
   it('rejects any other branch', () => {
     expect(ticketOfBranch('main')).toBeNull();
     expect(ticketOfBranch('feature/ZMT-A-2')).toBeNull();
     expect(ticketOfBranch('dev/ZMT-A-2-extra')).toBeNull();
     expect(ticketOfBranch('dev/zmt-a-2')).toBeNull();
+    expect(ticketOfBranch('dev/ZMT-A-D')).toBeNull();
+    expect(ticketOfBranch('dev/ZMT-A-d3c')).toBeNull();
+    expect(ticketOfBranch('dev/ZMT-A-D3.1')).toBeNull();
   });
 });
 

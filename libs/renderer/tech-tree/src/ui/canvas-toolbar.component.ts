@@ -1,11 +1,12 @@
 import { Component, inject, input, model } from '@angular/core';
+import { form, FormField } from '@angular/forms/signals';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { type MatSelectChange, MatSelectModule } from '@angular/material/select';
+import { MatSelectModule } from '@angular/material/select';
 import { MESSAGES } from '@zmt/renderer/shell/ui';
 
 @Component({
-  imports: [MatFormFieldModule, MatInputModule, MatSelectModule],
+  imports: [FormField, MatFormFieldModule, MatInputModule, MatSelectModule],
   selector: 'zmt-canvas-toolbar',
   styles: `
     .toolbar {
@@ -18,15 +19,11 @@ import { MESSAGES } from '@zmt/renderer/shell/ui';
     <div class="toolbar" role="toolbar" [attr.aria-label]="messages().modContent.panelToolbar">
       <mat-form-field appearance="outline" class="search">
         <mat-label>{{ messages().techTree.search }}</mat-label>
-        <input matInput type="search" [value]="search()" (input)="onSearchInput($event)" />
+        <input matInput type="search" [formField]="searchForm" />
       </mat-form-field>
       <mat-form-field appearance="outline" class="categories">
         <mat-label>{{ messages().techTree.categories }}</mat-label>
-        <mat-select
-          multiple
-          [value]="selectedCategories()"
-          (selectionChange)="onCategories($event)"
-        >
+        <mat-select multiple [formField]="categoriesForm">
           @for (category of categories(); track category) {
             <mat-option [value]="category">{{ category }}</mat-option>
           }
@@ -41,17 +38,6 @@ export class CanvasToolbarComponent {
   readonly search = model('');
   readonly selectedCategories = model<readonly string[]>([]);
 
-  protected onCategories(change: MatSelectChange): void {
-    const value: unknown = change.value;
-    if (Array.isArray(value)) {
-      this.selectedCategories.set(value.filter((entry) => typeof entry === 'string'));
-    }
-  }
-
-  protected onSearchInput(event: Event): void {
-    const target = event.target;
-    if (target instanceof HTMLInputElement) {
-      this.search.set(target.value);
-    }
-  }
+  protected readonly categoriesForm = form(this.selectedCategories);
+  protected readonly searchForm = form(this.search);
 }

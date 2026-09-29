@@ -4,6 +4,7 @@ import { EMPTY_DESCRIPTOR_VALUES } from './mod-descriptor.model';
 import {
   defaultDescriptorValues,
   descriptorValues,
+  descriptorValuesEqual,
   parseDescriptor,
   quote,
   serializeDescriptor,
@@ -107,6 +108,28 @@ describe('parseDescriptor', () => {
   it('exposes the default values', () => {
     expect(defaultDescriptorValues()).toEqual(EMPTY_DESCRIPTOR_VALUES);
     expect(quote('a"b')).toBe('"a\\"b"');
+  });
+});
+
+describe('descriptorValuesEqual', () => {
+  const values: ModDescriptorValues = {
+    name: 'My mod',
+    path: 'mod/my-mod',
+    picture: 'thumbnail.png',
+    supportedVersion: '1.14.*',
+    tags: ['Gameplay', 'Balance'],
+    version: '0.1',
+  };
+
+  it('compares every scalar and the tag list by value', () => {
+    expect(descriptorValuesEqual(values, { ...values, tags: ['Gameplay', 'Balance'] })).toBe(true);
+    expect(descriptorValuesEqual(values, { ...values, version: '0.2' })).toBe(false);
+    expect(descriptorValuesEqual(values, { ...values, name: 'Other' })).toBe(false);
+    expect(descriptorValuesEqual(values, { ...values, path: 'mod/other' })).toBe(false);
+    expect(descriptorValuesEqual(values, { ...values, picture: 'other.png' })).toBe(false);
+    expect(descriptorValuesEqual(values, { ...values, supportedVersion: '1.15.*' })).toBe(false);
+    expect(descriptorValuesEqual(values, { ...values, tags: ['Gameplay'] })).toBe(false);
+    expect(descriptorValuesEqual(values, { ...values, tags: ['Balance', 'Gameplay'] })).toBe(false);
   });
 });
 

@@ -1,6 +1,7 @@
 import type { FsNode } from '@zmt/contracts';
 
 import { Component, computed, inject, input, model, output } from '@angular/core';
+import { disabled, form, FormField } from '@angular/forms/signals';
 import {
   MatAutocompleteModule,
   type MatAutocompleteSelectedEvent,
@@ -10,7 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MESSAGES } from '@zmt/renderer/shell/ui';
 
 @Component({
-  imports: [MatAutocompleteModule, MatFormFieldModule, MatInputModule],
+  imports: [FormField, MatAutocompleteModule, MatFormFieldModule, MatInputModule],
   selector: 'zmt-file-search',
   templateUrl: './file-search.component.html',
 })
@@ -27,12 +28,9 @@ export class FileSearchComponent {
       : this.messages().modContent.searchReady,
   );
 
-  protected onInput(event: Event): void {
-    const target = event.target;
-    if (target instanceof HTMLInputElement) {
-      this.query.set(target.value);
-    }
-  }
+  protected readonly searchForm = form(this.query, (path) => {
+    disabled(path, { when: () => this.disabled() });
+  });
 
   protected pick(event: MatAutocompleteSelectedEvent): void {
     const value: unknown = event.option.value;

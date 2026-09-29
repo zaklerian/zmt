@@ -203,7 +203,7 @@ describe('ModContentComponent', () => {
       .query(By.directive(PlainEditorComponent))
       .injector.get(PlainEditorComponent);
     expect(editor.text()).toBe('hello');
-    editor.textChange.emit('hello world');
+    editor.text.set('hello world');
     expect(fixture.componentInstance.dirty()).toBe(true);
     editor.save.emit();
     await flushPromises();

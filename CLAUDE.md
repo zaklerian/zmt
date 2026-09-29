@@ -53,8 +53,8 @@ bash .claude/hooks/verify.sh                   governance + nx gate
 
 ## Tickets, branches, commits
 
-- Ticket IDs: `ZMT-A-<N>`; subtasks `ZMT-A-<N>.<M>` ship as their own PR before the parent (PROC-3).
-- Branches: `dev/ZMT-A-<N>` or `hotfix/ZMT-A-<N>`, from updated `main`. File edits on any other branch are blocked by a hook (PROC-1).
+- Ticket IDs: `ZMT-A-<N>`; subtasks `ZMT-A-<N>.<M>` ship as their own PR before the parent (PROC-3); cleanup tickets are `ZMT-A-D<N><letter>`.
+- Branches: `dev/ZMT-A-<N>` or `hotfix/ZMT-A-<N>` (same forms for subtasks and cleanup tickets), from updated `main`. File edits on any other branch are blocked by a hook (PROC-1).
 - Commits: first line is the ticket ID; body lines use `+` added, `-` removed, `*` changed, `~` fixed, `!` breaking (PROC-2). Use the `commit` skill; Option B body when the change spans more than one project or more than five files (PROC-10).
 - Claude Code commits, pushes its ticket branch and opens the PR (`ZMT-A-<N> — <title>`); pushing to `main` and force-pushing are denied (settings and lefthook pre-push). Squash-merge to `main`.
 

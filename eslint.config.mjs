@@ -417,6 +417,7 @@ export default tseslint.config(
     rules: {
       '@angular-eslint/template/prefer-control-flow': 'error',
       '@angular-eslint/template/prefer-ngsrc': 'error',
+      '@nx/workspace-no-hand-rolled-controls': 'error',
       '@nx/workspace-no-raw-template-text': 'error',
     },
   },
